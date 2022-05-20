@@ -1,5 +1,5 @@
 [package]
-name = "atwinc1500-rs"
+name = "atwinc1500"
 version = "0.1.0"
 edition = "2021"
 
