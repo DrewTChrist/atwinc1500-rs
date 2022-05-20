@@ -2,7 +2,8 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-use embedded_hal::spi;
+use embedded_hal::blocking::spi::Transfer;
+use embedded_hal::spi::FullDuplex;
 use embedded_nal::SocketAddr;
 use embedded_nal::TcpClientStack;
 use embedded_nal::TcpFullStack;
@@ -19,6 +20,7 @@ pub struct TcpSocket {}
 //
 // I'll be leaving these constant names the same as they're
 // found in the driver code so they can be found later.
+
 #[rustfmt::skip]
 mod constants {
     const WIFI_HOST_RCV_CTRL_0:    u32 = 0x1070;
@@ -56,16 +58,35 @@ mod constants {
 /// Atwin1500 driver struct
 pub struct Atwinc1500<SPI>
 where
-    SPI: spi::FullDuplex<u8>,
+    SPI: FullDuplex<u8> + Transfer<u8>,
 {
     spi: SPI,
 }
 
-impl<SPI> Atwinc1500<SPI> where SPI: spi::FullDuplex<u8> {}
+impl<SPI> Atwinc1500<SPI>
+where
+    SPI: FullDuplex<u8> + Transfer<u8>,
+{
+    pub fn new(spi: SPI) -> Self {
+        Self { spi }
+    }
+
+    fn spi_transfer(&mut self) { todo!() }
+
+    fn spi_command(&mut self) { todo!() }
+
+    fn spi_read_register(&mut self) { todo!() }
+
+    fn spi_read_data(&mut self) { todo!() }
+
+    fn spi_write_register(&mut self) { todo!() }
+
+    fn spi_write_data(&mut self) { todo!() }
+}
 
 impl<SPI> TcpClientStack for Atwinc1500<SPI>
 where
-    SPI: spi::FullDuplex<u8>,
+    SPI: FullDuplex<u8> + Transfer<u8>,
 {
     type TcpSocket = TcpSocket;
     type Error = Error;
@@ -109,7 +130,7 @@ where
 
 impl<SPI> TcpFullStack for Atwinc1500<SPI>
 where
-    SPI: spi::FullDuplex<u8>,
+    SPI: FullDuplex<u8> + Transfer<u8>,
 {
     fn bind(&mut self, socket: &mut TcpSocket, port: u16) -> Result<(), Error> {
         todo!()
