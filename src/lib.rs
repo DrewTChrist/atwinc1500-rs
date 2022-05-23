@@ -1,6 +1,10 @@
 #![no_std]
 #![allow(dead_code)]
 #![allow(unused_variables)]
+#![allow(unused_imports)]
+
+pub mod error;
+mod spi_command;
 
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
@@ -9,10 +13,9 @@ use embedded_nal::SocketAddr;
 use embedded_nal::TcpClientStack;
 use embedded_nal::TcpFullStack;
 
-#[derive(Debug)]
-pub enum Error {
-    SpiTransferError,
-}
+use crate::error::Error;
+use crate::spi_command::SpiCommand;
+
 pub struct TcpSocket {}
 
 // I was unable to find these anywhere in the Microchip/Atmel
@@ -23,7 +26,6 @@ pub struct TcpSocket {}
 //
 // I'll be leaving these constant names the same as they're
 // found in the driver code so they can be found later.
-
 #[rustfmt::skip]
 mod constants {
     const WIFI_HOST_RCV_CTRL_0:    u32 = 0x1070;
@@ -44,18 +46,6 @@ mod constants {
     const NMI_SPI_PROTOCOL_CONFIG: u32 = 0xe824;
     const BOOTROM_REG:             u32 = 0xc000c;
     const M2M_WAIT_FOR_HOST_REG:   u32 = 0x207bc;
-
-    const CMD_DMA_WRITE:           u32 = 0xc1;
-    const CMD_DMA_READ:            u32 = 0xc2;
-    const CMD_INTERNAL_WRITE:      u32 = 0xc3;
-    const CMD_INTERNAL_READ:       u32 = 0xc4;
-    const CMD_TERMINATE:           u32 = 0xc5;
-    const CMD_REPEAT:              u32 = 0xc6;
-    const CMD_DMA_EXT_WRITE:       u32 = 0xc7;
-    const CMD_DMA_EXT_READ:        u32 = 0xc8;
-    const CMD_SINGLE_WRITE:        u32 = 0xc9;
-    const CMD_SINGLE_READ:         u32 = 0xca;
-    const CMD_RESET:               u32 = 0xcf;
 }
 
 /// Atwin1500 driver struct
@@ -71,6 +61,7 @@ where
     irq: I,
     reset: O,
     wake: O,
+    crc: bool,
 }
 
 impl<SPI, O, I> Atwinc1500<SPI, O, I>
@@ -79,7 +70,7 @@ where
     O: OutputPin,
     I: InputPin,
 {
-    pub fn new(spi: SPI, cs: O, sclk: I, irq: I, reset: O, wake: O) -> Self {
+    pub fn new(spi: SPI, cs: O, sclk: I, irq: I, reset: O, wake: O, crc: bool) -> Self {
         Self {
             spi,
             cs,
@@ -87,20 +78,25 @@ where
             irq,
             reset,
             wake,
+            crc,
         }
     }
 
-    fn spi_transfer<'w>(&mut self, data: &'w mut [u8]) -> Result<&'w [u8], Error> {
-        if self.cs.set_low().is_err() {}
-        let rec = self.spi.transfer(data);
-        if self.cs.set_high().is_err() {}
+    fn spi_transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
+        if self.cs.set_low().is_err() {
+            return Err(Error::PinStateError);
+        }
+        let rec = self.spi.transfer(words);
+        if self.cs.set_high().is_err() {
+            return Err(Error::PinStateError);
+        }
         match rec {
             Ok(val) => Ok(val),
             Err(e) => Err(Error::SpiTransferError),
         }
     }
 
-    fn spi_command(&mut self) {
+    fn spi_command<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
         todo!()
     }
 
