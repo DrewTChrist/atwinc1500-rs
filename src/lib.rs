@@ -3,13 +3,16 @@
 #![allow(unused_variables)]
 
 use embedded_hal::blocking::spi::Transfer;
+use embedded_hal::digital::v2::{InputPin, OutputPin};
 use embedded_hal::spi::FullDuplex;
 use embedded_nal::SocketAddr;
 use embedded_nal::TcpClientStack;
 use embedded_nal::TcpFullStack;
 
 #[derive(Debug)]
-pub struct Error {}
+pub enum Error {
+    SpiTransferError,
+}
 pub struct TcpSocket {}
 
 // I was unable to find these anywhere in the Microchip/Atmel
@@ -56,37 +59,73 @@ mod constants {
 }
 
 /// Atwin1500 driver struct
-pub struct Atwinc1500<SPI>
+pub struct Atwinc1500<SPI, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
 {
     spi: SPI,
+    cs: O,
+    sclk: I,
+    irq: I,
+    reset: O,
+    wake: O,
 }
 
-impl<SPI> Atwinc1500<SPI>
+impl<SPI, O, I> Atwinc1500<SPI, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
 {
-    pub fn new(spi: SPI) -> Self {
-        Self { spi }
+    pub fn new(spi: SPI, cs: O, sclk: I, irq: I, reset: O, wake: O) -> Self {
+        Self {
+            spi,
+            cs,
+            sclk,
+            irq,
+            reset,
+            wake,
+        }
     }
 
-    fn spi_transfer(&mut self) { todo!() }
+    fn spi_transfer<'w>(&mut self, data: &'w mut [u8]) -> Result<&'w [u8], Error> {
+        if self.cs.set_low().is_err() {}
+        let rec = self.spi.transfer(data);
+        if self.cs.set_high().is_err() {}
+        match rec {
+            Ok(val) => Ok(val),
+            Err(e) => Err(Error::SpiTransferError),
+        }
+    }
 
-    fn spi_command(&mut self) { todo!() }
+    fn spi_command(&mut self) {
+        todo!()
+    }
 
-    fn spi_read_register(&mut self) { todo!() }
+    fn spi_read_register(&mut self) {
+        todo!()
+    }
 
-    fn spi_read_data(&mut self) { todo!() }
+    fn spi_read_data(&mut self) {
+        todo!()
+    }
 
-    fn spi_write_register(&mut self) { todo!() }
+    fn spi_write_register(&mut self) {
+        todo!()
+    }
 
-    fn spi_write_data(&mut self) { todo!() }
+    fn spi_write_data(&mut self) {
+        todo!()
+    }
 }
 
-impl<SPI> TcpClientStack for Atwinc1500<SPI>
+impl<SPI, O, I> TcpClientStack for Atwinc1500<SPI, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
 {
     type TcpSocket = TcpSocket;
     type Error = Error;
@@ -128,9 +167,11 @@ where
     }
 }
 
-impl<SPI> TcpFullStack for Atwinc1500<SPI>
+impl<SPI, O, I> TcpFullStack for Atwinc1500<SPI, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
 {
     fn bind(&mut self, socket: &mut TcpSocket, port: u16) -> Result<(), Error> {
         todo!()
