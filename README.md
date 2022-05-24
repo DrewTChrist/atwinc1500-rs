@@ -1,1 +1,1 @@
-# Rust driver for the adafruit atwinc1500-rs breakout board
+# Rust driver for the adafruit atwinc1500 breakout board
