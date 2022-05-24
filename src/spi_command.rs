@@ -18,84 +18,71 @@ pub mod constants {
     pub const CMD_RESET:          u8 = 0xcf;
 }
 
+// Full command packet size with crc bit
+const A_SIZE: usize = 5;
+const B_SIZE: usize = 7;
+const C_SIZE: usize = 8;
+const D_SIZE: usize = 9;
+
 #[derive(Debug)]
 enum PayloadType {
-    A([u8; 3]),
-    B([u8; 5]),
-    C([u8; 6]),
-    D([u8; 7]),
+    A([u8; A_SIZE]),
+    B([u8; B_SIZE]),
+    C([u8; C_SIZE]),
+    D([u8; D_SIZE]),
 }
 
 #[derive(Debug)]
 pub struct SpiCommand {
-    cmd: u8,
     payload: PayloadType,
-    crc: u8,
 }
 
 impl SpiCommand {
     pub fn new(cmd: u8, addr: u32, data: u32) -> Result<Self, Error> {
         match cmd {
             constants::CMD_DMA_WRITE => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::D([0, 0, 0, 0, 0, 0, 0]),
-                crc: 0,
+                payload: PayloadType::D([cmd, 0, 0, 0, 0, 0, 0, 0, 0]),
             }),
             constants::CMD_DMA_READ => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::A([0, 0, 0]),
-                crc: 0,
+                payload: PayloadType::A([cmd, 0, 0, 0, 0]),
             }),
             constants::CMD_INTERNAL_WRITE => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::C([0, 0, 0, 0, 0, 0]),
-                crc: 0,
+                payload: PayloadType::C([cmd, 0, 0, 0, 0, 0, 0, 0]),
             }),
             constants::CMD_INTERNAL_READ => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::A([0, 0, 0]),
-                crc: 0,
+                payload: PayloadType::A([cmd, 0, 0, 0, 0]),
             }),
             constants::CMD_TERMINATE => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::A([0, 0, 0]),
-                crc: 0,
+                payload: PayloadType::A([cmd, 0, 0, 0, 0]),
             }),
             constants::CMD_REPEAT => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::A([0, 0, 0]),
-                crc: 0,
+                payload: PayloadType::A([cmd, 0, 0, 0, 0]),
             }),
             constants::CMD_DMA_EXT_WRITE => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::C([0, 0, 0, 0, 0, 0]),
-                crc: 0,
+                payload: PayloadType::C([cmd, 0, 0, 0, 0, 0, 0, 0]),
             }),
             constants::CMD_DMA_EXT_READ => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::C([0, 0, 0, 0, 0, 0]),
-                crc: 0,
+                payload: PayloadType::C([cmd, 0, 0, 0, 0, 0, 0, 0]),
             }),
             constants::CMD_SINGLE_WRITE => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::B([0, 0, 0, 0, 0]),
-                crc: 0,
+                payload: PayloadType::B([cmd, 0, 0, 0, 0, 0, 0]),
             }),
             constants::CMD_SINGLE_READ => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::B([0, 0, 0, 0, 0]),
-                crc: 0,
+                payload: PayloadType::B([cmd, 0, 0, 0, 0, 0, 0]),
             }),
             constants::CMD_RESET => Ok(SpiCommand {
-                cmd,
-                payload: PayloadType::A([0xFF, 0xFF, 0xFF]),
-                crc: 0,
+                payload: PayloadType::A([cmd, 0xFF, 0xFF, 0xFF, 0]),
             }),
             _ => Err(Error::InvalidSpiCommandError),
         }
     }
 
-    pub fn to_slice(&self) -> &[u8] {
-        todo!()
+    pub fn buffer(&self) -> &[u8] {
+        match self.payload {
+            PayloadType::A(p) => &p,
+            PayloadType::B(p) => &p,
+            PayloadType::C(p) => &p,
+            PayloadType::D(p) => &p,
+        }
     }
 }
