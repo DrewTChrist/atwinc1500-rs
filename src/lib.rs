@@ -4,7 +4,7 @@
 #![allow(unused_imports)]
 
 pub mod error;
-mod spi_command;
+pub mod spi_command;
 
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
@@ -96,7 +96,7 @@ where
         }
     }
 
-    fn spi_command<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
+    fn spi_command<'w>(&mut self, command: SpiCommand) -> Result<&'w [u8], Error> {
         todo!()
     }
 
