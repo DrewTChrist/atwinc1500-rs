@@ -26,63 +26,69 @@ const D_SIZE: usize = 9;
 
 #[derive(Debug)]
 enum PayloadType {
-    A([u8; A_SIZE]),
-    B([u8; B_SIZE]),
-    C([u8; C_SIZE]),
-    D([u8; D_SIZE]),
+    A,
+    B,
+    C,
+    D,
 }
 
 #[derive(Debug)]
-pub struct SpiCommand {
-    payload: PayloadType,
+pub struct SpiCommand<const S: usize> {
+    payload_type: PayloadType,
+    payload: [u8; S]
 }
 
-impl SpiCommand {
+impl<const S: usize> SpiCommand<S> {
     pub fn new(cmd: u8, addr: u32, data: u32) -> Result<Self, Error> {
         match cmd {
-            constants::CMD_DMA_WRITE => Ok(SpiCommand {
-                payload: PayloadType::D([cmd, 0, 0, 0, 0, 0, 0, 0, 0]),
-            }),
-            constants::CMD_DMA_READ => Ok(SpiCommand {
-                payload: PayloadType::A([cmd, 0, 0, 0, 0]),
-            }),
-            constants::CMD_INTERNAL_WRITE => Ok(SpiCommand {
-                payload: PayloadType::C([cmd, 0, 0, 0, 0, 0, 0, 0]),
-            }),
-            constants::CMD_INTERNAL_READ => Ok(SpiCommand {
-                payload: PayloadType::A([cmd, 0, 0, 0, 0]),
-            }),
-            constants::CMD_TERMINATE => Ok(SpiCommand {
-                payload: PayloadType::A([cmd, 0, 0, 0, 0]),
-            }),
-            constants::CMD_REPEAT => Ok(SpiCommand {
-                payload: PayloadType::A([cmd, 0, 0, 0, 0]),
-            }),
-            constants::CMD_DMA_EXT_WRITE => Ok(SpiCommand {
-                payload: PayloadType::C([cmd, 0, 0, 0, 0, 0, 0, 0]),
-            }),
-            constants::CMD_DMA_EXT_READ => Ok(SpiCommand {
-                payload: PayloadType::C([cmd, 0, 0, 0, 0, 0, 0, 0]),
-            }),
-            constants::CMD_SINGLE_WRITE => Ok(SpiCommand {
-                payload: PayloadType::B([cmd, 0, 0, 0, 0, 0, 0]),
-            }),
-            constants::CMD_SINGLE_READ => Ok(SpiCommand {
-                payload: PayloadType::B([cmd, 0, 0, 0, 0, 0, 0]),
-            }),
-            constants::CMD_RESET => Ok(SpiCommand {
-                payload: PayloadType::A([cmd, 0xFF, 0xFF, 0xFF, 0]),
-            }),
+            constants::CMD_DMA_WRITE => {}
+            constants::CMD_DMA_READ => {}
+            constants::CMD_INTERNAL_WRITE => {} 
+            constants::CMD_INTERNAL_READ => {} 
+            constants::CMD_TERMINATE => {} 
+            constants::CMD_REPEAT => {} 
+            constants::CMD_DMA_EXT_WRITE => {} 
+            constants::CMD_DMA_EXT_READ => {} 
+            constants::CMD_SINGLE_WRITE => {} 
+            constants::CMD_SINGLE_READ => {} 
+            constants::CMD_RESET => {} 
             _ => Err(Error::InvalidSpiCommandError),
         }
-    }
-
-    pub fn buffer(&self) -> &[u8] {
-        match self.payload {
-            PayloadType::A(p) => &p,
-            PayloadType::B(p) => &p,
-            PayloadType::C(p) => &p,
-            PayloadType::D(p) => &p,
-        }
+        //match cmd {
+        //    constants::CMD_DMA_WRITE => Ok(SpiCommand {
+        //        payload: PayloadType::D([cmd, 0, 0, 0, 0, 0, 0, 0, 0]),
+        //    }),
+        //    constants::CMD_DMA_READ => Ok(SpiCommand {
+        //        payload: PayloadType::A([cmd, 0, 0, 0, 0]),
+        //    }),
+        //    constants::CMD_INTERNAL_WRITE => Ok(SpiCommand {
+        //        payload: PayloadType::C([cmd, 0, 0, 0, 0, 0, 0, 0]),
+        //    }),
+        //    constants::CMD_INTERNAL_READ => Ok(SpiCommand {
+        //        payload: PayloadType::A([cmd, 0, 0, 0, 0]),
+        //    }),
+        //    constants::CMD_TERMINATE => Ok(SpiCommand {
+        //        payload: PayloadType::A([cmd, 0, 0, 0, 0]),
+        //    }),
+        //    constants::CMD_REPEAT => Ok(SpiCommand {
+        //        payload: PayloadType::A([cmd, 0, 0, 0, 0]),
+        //    }),
+        //    constants::CMD_DMA_EXT_WRITE => Ok(SpiCommand {
+        //        payload: PayloadType::C([cmd, 0, 0, 0, 0, 0, 0, 0]),
+        //    }),
+        //    constants::CMD_DMA_EXT_READ => Ok(SpiCommand {
+        //        payload: PayloadType::C([cmd, 0, 0, 0, 0, 0, 0, 0]),
+        //    }),
+        //    constants::CMD_SINGLE_WRITE => Ok(SpiCommand {
+        //        payload: PayloadType::B([cmd, 0, 0, 0, 0, 0, 0]),
+        //    }),
+        //    constants::CMD_SINGLE_READ => Ok(SpiCommand {
+        //        payload: PayloadType::B([cmd, 0, 0, 0, 0, 0, 0]),
+        //    }),
+        //    constants::CMD_RESET => Ok(SpiCommand {
+        //        payload: PayloadType::A([cmd, 0xFF, 0xFF, 0xFF, 0]),
+        //    }),
+        //    _ => Err(Error::InvalidSpiCommandError),
+        //}
     }
 }
