@@ -13,8 +13,8 @@ use embedded_nal::SocketAddr;
 use embedded_nal::TcpClientStack;
 use embedded_nal::TcpFullStack;
 
-use crate::error::Error;
-use crate::spi_command::SpiCommand;
+use error::Error;
+use spi_command::SpiCommand;
 
 pub struct TcpSocket {}
 
@@ -96,12 +96,24 @@ where
         }
     }
 
-    fn spi_command<'w>(&mut self, command: SpiCommand) -> Result<&'w [u8], Error> {
-        todo!()
+    fn spi_command<'w, const S: usize>(
+        &mut self,
+        command: &'w mut SpiCommand<S>,
+    ) -> Result<&'w [u8], Error> {
+        //todo!()
+        self.spi_transfer(command.data())
     }
 
     fn spi_read_register(&mut self) {
-        todo!()
+        //todo!()
+        let mut buffer: [u8; spi_command::A_SIZE] = [0; spi_command::A_SIZE];
+        let mut command = SpiCommand::<{ spi_command::A_SIZE }>::new(buffer, 0, 0, 0);
+        match command {
+            Ok(mut c) => {
+                self.spi_command(&mut c);
+            }
+            Err(e) => {}
+        }
     }
 
     fn spi_read_data(&mut self) {

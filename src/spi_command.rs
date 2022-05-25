@@ -17,73 +17,73 @@ pub const CMD_SINGLE_READ: u8 = 0xca;
 pub const CMD_RESET: u8 = 0xcf;
 
 // Full command packet size with crc bit
-const A_SIZE: usize = 5;
-const B_SIZE: usize = 7;
-const C_SIZE: usize = 8;
-const D_SIZE: usize = 9;
+pub const A_SIZE: usize = 5;
+pub const B_SIZE: usize = 7;
+pub const C_SIZE: usize = 8;
+pub const D_SIZE: usize = 9;
 
 #[derive(Debug)]
-pub enum SpiCommand {
-    A([u8; A_SIZE]),
-    B([u8; B_SIZE]),
-    C([u8; C_SIZE]),
-    D([u8; D_SIZE]),
+pub enum SpiCommand<const S: usize> {
+    A([u8; S]),
+    B([u8; S]),
+    C([u8; S]),
+    D([u8; S]),
 }
 
-impl SpiCommand {
-    pub fn new(cmd: u8, addr: u32, data: u32) -> Result<Self, Error> {
-        let command: SpiCommand;
+impl<const S: usize> SpiCommand<S> {
+    pub fn new(buffer: [u8; S], cmd: u8, addr: u32, data: u32) -> Result<Self, Error> {
+        let command: SpiCommand<S>;
         match cmd {
             CMD_DMA_WRITE => {
-                command = SpiCommand::D([cmd, 0, 0, 0, 0, 0, 0, 0, 0]);
+                command = SpiCommand::D(buffer);
                 Ok(command)
             }
             CMD_DMA_READ => {
-                command = SpiCommand::A([cmd, 0, 0, 0, 0]);
+                command = SpiCommand::A(buffer);
                 Ok(command)
             }
             CMD_INTERNAL_WRITE => {
-                command = SpiCommand::C([cmd, 0, 0, 0, 0, 0, 0, 0]);
+                command = SpiCommand::C(buffer);
                 Ok(command)
             }
             CMD_INTERNAL_READ => {
-                command = SpiCommand::A([cmd, 0, 0, 0, 0]);
+                command = SpiCommand::A(buffer);
                 Ok(command)
             }
             CMD_TERMINATE => {
-                command = SpiCommand::A([cmd, 0, 0, 0, 0]);
+                command = SpiCommand::A(buffer);
                 Ok(command)
             }
             CMD_REPEAT => {
-                command = SpiCommand::A([cmd, 0, 0, 0, 0]);
+                command = SpiCommand::A(buffer);
                 Ok(command)
             }
             CMD_DMA_EXT_WRITE => {
-                command = SpiCommand::C([cmd, 0, 0, 0, 0, 0, 0, 0]);
+                command = SpiCommand::C(buffer);
                 Ok(command)
             }
             CMD_DMA_EXT_READ => {
-                command = SpiCommand::C([cmd, 0, 0, 0, 0, 0, 0, 0]);
+                command = SpiCommand::C(buffer);
                 Ok(command)
             }
             CMD_SINGLE_WRITE => {
-                command = SpiCommand::B([cmd, 0, 0, 0, 0, 0, 0]);
+                command = SpiCommand::B(buffer);
                 Ok(command)
             }
             CMD_SINGLE_READ => {
-                command = SpiCommand::B([cmd, 0, 0, 0, 0, 0, 0]);
+                command = SpiCommand::B(buffer);
                 Ok(command)
             }
             CMD_RESET => {
-                command = SpiCommand::A([cmd, 0xFF, 0xFF, 0xFF, 0]);
+                command = SpiCommand::A(buffer);
                 Ok(command)
             }
             _ => Err(Error::InvalidSpiCommandError),
         }
     }
 
-    pub fn data(&self) -> &[u8] {
-        match &self {
+    pub fn data(&mut self) -> &mut [u8; S] {
+        match self {
             SpiCommand::A(p) => p,
             SpiCommand::B(p) => p,
             SpiCommand::C(p) => p,
