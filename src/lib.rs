@@ -100,20 +100,16 @@ where
         &mut self,
         command: &'w mut SpiCommand<S>,
     ) -> Result<&'w [u8], Error> {
-        //todo!()
-        self.spi_transfer(command.data())
+        match command {
+            SpiCommand::A(d) => self.spi_transfer(d.as_mut_slice()),
+            SpiCommand::B(d) => self.spi_transfer(d.as_mut_slice()),
+            SpiCommand::C(d) => self.spi_transfer(d.as_mut_slice()),
+            SpiCommand::D(d) => self.spi_transfer(d.as_mut_slice()),
+        }
     }
 
-    fn spi_read_register(&mut self) {
-        //todo!()
-        let mut buffer: [u8; spi_command::A_SIZE] = [0; spi_command::A_SIZE];
-        let mut command = SpiCommand::<{ spi_command::A_SIZE }>::new(buffer, 0, 0, 0);
-        match command {
-            Ok(mut c) => {
-                self.spi_command(&mut c);
-            }
-            Err(e) => {}
-        }
+    fn spi_read_register<'w, const S: usize>(&mut self, command: &'w mut SpiCommand<S>) -> Result<&'w [u8], Error> {
+        self.spi_command(command)
     }
 
     fn spi_read_data(&mut self) {
@@ -126,6 +122,53 @@ where
 
     fn spi_write_data(&mut self) {
         todo!()
+    }
+
+    fn hif_chip_wake(&mut self) {
+        todo!()
+    }
+
+    fn hif_chip_sleep(&mut self) {
+        todo!()
+    }
+
+    fn hif_register_cb(&mut self) {
+        todo!()
+    }
+
+    fn hif_isr(&mut self) {
+        todo!()
+    }
+
+    fn hif_receive(&mut self) {
+        todo!()
+    }
+
+    fn hif_send(&mut self) {
+        todo!()
+    }
+
+    fn hif_set_sleep_mode(&mut self) {
+        todo!()
+    }
+
+    fn hif_get_sleep_mode(&mut self) {
+        todo!()
+    }
+
+    pub fn get_chip_info(&mut self) {
+        let mut buffer: [u8; spi_command::A_SIZE] = [0; spi_command::A_SIZE];
+        let command = SpiCommand::<{ spi_command::A_SIZE }>::new(
+            &mut buffer,
+            spi_command::CMD_INTERNAL_READ,
+            0,
+            0,
+        );
+        match command {
+            Ok(mut c) => self.spi_read_register(&mut c), 
+            Err(e) => Err(e)
+        };
+        
     }
 }
 

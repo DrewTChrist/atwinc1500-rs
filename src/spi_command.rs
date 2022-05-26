@@ -23,15 +23,15 @@ pub const C_SIZE: usize = 8;
 pub const D_SIZE: usize = 9;
 
 #[derive(Debug)]
-pub enum SpiCommand<const S: usize> {
-    A([u8; S]),
-    B([u8; S]),
-    C([u8; S]),
-    D([u8; S]),
+pub enum SpiCommand<'b, const S: usize> {
+    A(&'b mut [u8; S]),
+    B(&'b mut [u8; S]),
+    C(&'b mut [u8; S]),
+    D(&'b mut [u8; S]),
 }
 
-impl<const S: usize> SpiCommand<S> {
-    pub fn new(buffer: [u8; S], cmd: u8, addr: u32, data: u32) -> Result<Self, Error> {
+impl<'b, const S: usize> SpiCommand<'b, S> {
+    pub fn new(buffer: &'b mut [u8; S], cmd: u8, addr: u32, data: u32) -> Result<Self, Error> {
         let command: SpiCommand<S>;
         match cmd {
             CMD_DMA_WRITE => {
@@ -79,15 +79,6 @@ impl<const S: usize> SpiCommand<S> {
                 Ok(command)
             }
             _ => Err(Error::InvalidSpiCommandError),
-        }
-    }
-
-    pub fn data(&mut self) -> &mut [u8; S] {
-        match self {
-            SpiCommand::A(p) => p,
-            SpiCommand::B(p) => p,
-            SpiCommand::C(p) => p,
-            SpiCommand::D(p) => p,
         }
     }
 }
