@@ -53,6 +53,7 @@ where
         }
     }
 
+    /// Transfers some data then receives some data on the spi bus
     fn spi_transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
         if self.cs.set_low().is_err() {
             return Err(Error::PinStateError);
@@ -67,20 +68,27 @@ where
         }
     }
 
-    fn spi_read_register<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
+    fn spi_read_register<'w>(&mut self, cmd_buffer: &'w mut [u8], address: u16) -> Result<&'w [u8], Error> {
+        // Command value goes in first byte
+        // address next two bytes little endian
+        // fourth byte is zero
+        // fifth byte is crc
         cmd_buffer[0] = spi::commands::CMD_INTERNAL_READ;
+        cmd_buffer[1] = (address >> 8) as u8;
+        cmd_buffer[2] = (address & 0x0f) as u8;
+        cmd_buffer[3] = 0;
         self.spi_transfer(cmd_buffer)
     }
 
-    fn spi_read_data(&mut self) {
+    fn spi_read_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
         todo!()
     }
 
-    fn spi_write_register(&mut self) {
+    fn spi_write_register<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
         todo!()
     }
 
-    fn spi_write_data(&mut self) {
+    fn spi_write_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
         todo!()
     }
 
@@ -117,8 +125,8 @@ where
     }
 
     pub fn get_chip_info(&mut self) {
-        let mut buffer: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
-        self.spi_read_register(&mut buffer);
+        //let mut buffer: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
+        //self.spi_read_register(&mut buffer);
     }
 }
 
