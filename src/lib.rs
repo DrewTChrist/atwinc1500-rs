@@ -4,7 +4,9 @@
 #![allow(unused_imports)]
 
 pub mod error;
-pub mod spi_command;
+mod hif;
+mod registers;
+mod spi;
 
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
@@ -14,39 +16,8 @@ use embedded_nal::TcpClientStack;
 use embedded_nal::TcpFullStack;
 
 use error::Error;
-use spi_command::SpiCommand;
 
 pub struct TcpSocket {}
-
-// I was unable to find these anywhere in the Microchip/Atmel
-// datasheets.
-//
-// They are of course in the driver code for those
-// that don't mind wading around knee deep in some nasty C.
-//
-// I'll be leaving these constant names the same as they're
-// found in the driver code so they can be found later.
-#[rustfmt::skip]
-mod constants {
-    const WIFI_HOST_RCV_CTRL_0:    u32 = 0x1070;
-    const WIFI_HOST_RCV_CTRL_1:    u32 = 0x1084;
-    const WIFI_HOST_RCV_CTRL_2:    u32 = 0x1078;
-    const WIFI_HOST_RCV_CTRL_3:    u32 = 0x106c;
-    const WIFI_HOST_RCV_CTRL_4:    u32 = 0x150400;
-    const WIFI_HOST_RCV_CTRL_5:    u32 = 0x1088;
-
-    const NMI_CHIPID:              u32 = 0x1000;
-    const NMI_STATE_REG:           u32 = 0x108c;
-    const NMI_PIN_MUX_0:           u32 = 0x1408;
-    #[allow(non_upper_case_globals)]
-    const rNMI_GP_REG_1:           u32 = 0x14a0;
-    #[allow(non_upper_case_globals)]
-    const rNMI_GP_REG_2:           u32 = 0xc0008;
-    const NMI_INTR_REG_BASE:       u32 = 0x1a00;
-    const NMI_SPI_PROTOCOL_CONFIG: u32 = 0xe824;
-    const BOOTROM_REG:             u32 = 0xc000c;
-    const M2M_WAIT_FOR_HOST_REG:   u32 = 0x207bc;
-}
 
 /// Atwin1500 driver struct
 pub struct Atwinc1500<SPI, O, I>
@@ -96,20 +67,9 @@ where
         }
     }
 
-    fn spi_command<'w, const S: usize>(
-        &mut self,
-        command: &'w mut SpiCommand<S>,
-    ) -> Result<&'w [u8], Error> {
-        match command {
-            SpiCommand::A(d) => self.spi_transfer(d.as_mut_slice()),
-            SpiCommand::B(d) => self.spi_transfer(d.as_mut_slice()),
-            SpiCommand::C(d) => self.spi_transfer(d.as_mut_slice()),
-            SpiCommand::D(d) => self.spi_transfer(d.as_mut_slice()),
-        }
-    }
-
-    fn spi_read_register<'w, const S: usize>(&mut self, command: &'w mut SpiCommand<S>) -> Result<&'w [u8], Error> {
-        self.spi_command(command)
+    fn spi_read_register<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
+        cmd_buffer[0] = spi::commands::CMD_INTERNAL_READ;
+        self.spi_transfer(cmd_buffer)
     }
 
     fn spi_read_data(&mut self) {
@@ -157,18 +117,8 @@ where
     }
 
     pub fn get_chip_info(&mut self) {
-        let mut buffer: [u8; spi_command::A_SIZE] = [0; spi_command::A_SIZE];
-        let command = SpiCommand::<{ spi_command::A_SIZE }>::new(
-            &mut buffer,
-            spi_command::CMD_INTERNAL_READ,
-            0,
-            0,
-        );
-        match command {
-            Ok(mut c) => self.spi_read_register(&mut c), 
-            Err(e) => Err(e)
-        };
-        
+        let mut buffer: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
+        self.spi_read_register(&mut buffer);
     }
 }
 
