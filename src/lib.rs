@@ -93,7 +93,7 @@ where
     /// [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
     ///
     pub fn new(spi: SPI, cs: O, sclk: I, irq: I, reset: O, wake: O, crc: bool) -> Self {
-        Self {
+        let mut s = Self {
             spi,
             cs,
             sclk,
@@ -101,7 +101,13 @@ where
             reset,
             wake,
             crc,
-        }
+        };
+        s.initialize();
+        s
+    }
+
+    fn initialize(&mut self) {
+        todo!()
     }
 
     /// Get chip firmware version and mac address
@@ -122,11 +128,12 @@ where
         if self.cs.set_low().is_err() {
             return Err(Error::PinStateError);
         }
-        let rec = self.spi.transfer(words);
+        let rcv = self.spi.transfer(words);
+        while self.sclk.is_high().is_ok() {}
         if self.cs.set_high().is_err() {
             return Err(Error::PinStateError);
         }
-        match rec {
+        match rcv {
             Ok(val) => Ok(val),
             Err(e) => Err(Error::SpiTransferError),
         }
