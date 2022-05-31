@@ -1,7 +1,6 @@
 #![no_std]
 #![allow(dead_code)]
 #![allow(unused_variables)]
-#![allow(unused_imports)]
 
 pub mod error;
 mod hif;
@@ -16,6 +15,33 @@ use embedded_nal::TcpClientStack;
 use embedded_nal::TcpFullStack;
 
 use error::Error;
+
+/// Defines the needed functions to handle the spi layer
+/// as described in the atwinc1500 software design guide
+trait SpiLayer {
+    fn spi_transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error>;
+    fn spi_read_register<'w>(
+        &mut self,
+        cmd_buffer: &'w mut [u8],
+        address: u16,
+    ) -> Result<&'w [u8], Error>;
+    fn spi_read_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error>;
+    fn spi_write_register<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error>;
+    fn spi_write_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error>;
+}
+
+/// Defines the needed functions to handle the host interface
+/// layer as described in the atwinc1500 software design guide
+trait HifLayer {
+    fn hif_chip_wake(&mut self);
+    fn hif_chip_sleep(&mut self);
+    fn hif_register_cb(&mut self);
+    fn hif_isr(&mut self);
+    fn hif_receive(&mut self);
+    fn hif_send(&mut self);
+    fn hif_set_sleep_mode(&mut self);
+    fn hif_get_sleep_mode(&mut self);
+}
 
 pub struct TcpSocket {}
 
@@ -35,12 +61,37 @@ where
     crc: bool,
 }
 
+/// Atwinc1500 struct implementation containing non embedded-nal
+/// public methods
 impl<SPI, O, I> Atwinc1500<SPI, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
     O: OutputPin,
     I: InputPin,
 {
+    /// Returns an Atwin1500 struct
+    ///
+    /// # Arguments
+    ///
+    /// * `spi` - An spi struct implementing traits from embedded-hal
+    ///
+    /// * `cs` - An OutputPin for the chip select
+    ///
+    /// * `sclk` - The spi clock InputPin
+    ///
+    /// * `irq` - An InputPin for interrupt requests
+    ///
+    /// * `reset` - An OutputPin for chip reset
+    ///
+    /// * `wake` - An OutputPin for chip wake
+    ///
+    /// * `crc` - Turn on CRC in transactions
+    ///
+    /// # Examples
+    ///
+    /// Examples can be found at
+    /// [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
+    ///
     pub fn new(spi: SPI, cs: O, sclk: I, irq: I, reset: O, wake: O, crc: bool) -> Self {
         Self {
             spi,
@@ -53,6 +104,19 @@ where
         }
     }
 
+    /// Get chip firmware version and mac address
+    pub fn get_chip_info(&mut self) {
+        //let mut buffer: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
+        //self.spi_read_register(&mut buffer);
+    }
+}
+
+impl<SPI, O, I> SpiLayer for Atwinc1500<SPI, O, I>
+where
+    SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
+{
     /// Transfers some data then receives some data on the spi bus
     fn spi_transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
         if self.cs.set_low().is_err() {
@@ -68,14 +132,18 @@ where
         }
     }
 
-    fn spi_read_register<'w>(&mut self, cmd_buffer: &'w mut [u8], address: u16) -> Result<&'w [u8], Error> {
+    fn spi_read_register<'w>(
+        &mut self,
+        cmd_buffer: &'w mut [u8],
+        address: u16,
+    ) -> Result<&'w [u8], Error> {
         // Command value goes in first byte
         // address next two bytes little endian
         // fourth byte is zero
         // fifth byte is crc
         cmd_buffer[0] = spi::commands::CMD_INTERNAL_READ;
-        cmd_buffer[1] = (address >> 8) as u8;
-        cmd_buffer[2] = (address & 0x0f) as u8;
+        cmd_buffer[1] = (address & 0x0f) as u8;
+        cmd_buffer[2] = (address >> 8) as u8;
         cmd_buffer[3] = 0;
         self.spi_transfer(cmd_buffer)
     }
@@ -91,42 +159,52 @@ where
     fn spi_write_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
         todo!()
     }
+}
 
+impl<SPI, O, I> HifLayer for Atwinc1500<SPI, O, I>
+where
+    SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
+{
+    /// This method wakes the chip from sleep mode using clockless register access
     fn hif_chip_wake(&mut self) {
         todo!()
     }
 
+    /// This method enables sleep mode for the chip
     fn hif_chip_sleep(&mut self) {
         todo!()
     }
 
+    /// This method sets the callback function for different events
     fn hif_register_cb(&mut self) {
         todo!()
     }
 
+    /// This method is the host interface interrupt service
     fn hif_isr(&mut self) {
         todo!()
     }
 
+    /// This method receives data read from the chip
     fn hif_receive(&mut self) {
         todo!()
     }
 
+    /// This method sends data to the chip
     fn hif_send(&mut self) {
         todo!()
     }
 
+    /// This method sets the chip sleep mode
     fn hif_set_sleep_mode(&mut self) {
         todo!()
     }
 
+    /// This method returns the chip sleep mode
     fn hif_get_sleep_mode(&mut self) {
         todo!()
-    }
-
-    pub fn get_chip_info(&mut self) {
-        //let mut buffer: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
-        //self.spi_read_register(&mut buffer);
     }
 }
 
