@@ -20,13 +20,26 @@ use error::Error;
 /// as described in the atwinc1500 software design guide
 trait SpiLayer {
     fn spi_transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error>;
+    fn spi_command<'w>(
+        &mut self,
+        cmd_buffer: &'w mut [u8],
+        command: u8,
+        address: u32,
+        data: u32,
+        clockless: bool,
+    ) -> Result<&'w [u8], Error>;
     fn spi_read_register<'w>(
         &mut self,
         cmd_buffer: &'w mut [u8],
-        address: u16,
+        address: u32,
     ) -> Result<&'w [u8], Error>;
     fn spi_read_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error>;
-    fn spi_write_register<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error>;
+    fn spi_write_register<'w>(
+        &mut self,
+        cmd_buffer: &'w mut [u8],
+        address: u32,
+        data: u32,
+    ) -> Result<&'w [u8], Error>;
     fn spi_write_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error>;
 }
 
@@ -129,7 +142,8 @@ where
             return Err(Error::PinStateError);
         }
         let rcv = self.spi.transfer(words);
-        while self.sclk.is_high().is_ok() {}
+        // This while loop may not be needed
+        //while self.sclk.is_high().is_ok() {}
         if self.cs.set_high().is_err() {
             return Err(Error::PinStateError);
         }
@@ -139,27 +153,56 @@ where
         }
     }
 
+    fn spi_command<'w>(
+        &mut self,
+        cmd_buffer: &'w mut [u8],
+        command: u8,
+        address: u32,
+        data: u32,
+        clockless: bool,
+    ) -> Result<&'w [u8], Error> {
+        cmd_buffer[0] = command;
+        match command {
+            spi::commands::CMD_DMA_WRITE => {}
+            spi::commands::CMD_DMA_READ => {}
+            spi::commands::CMD_INTERNAL_WRITE => {}
+            spi::commands::CMD_INTERNAL_READ => {
+                cmd_buffer[1] = (address >> 8) as u8;
+                cmd_buffer[2] = (address & 0xff) as u8;
+                cmd_buffer[3] = 0;
+            }
+            spi::commands::CMD_TERMINATE => {}
+            spi::commands::CMD_REPEAT => {}
+            spi::commands::CMD_DMA_EXT_WRITE => {}
+            spi::commands::CMD_DMA_EXT_READ => {}
+            spi::commands::CMD_SINGLE_WRITE => {}
+            spi::commands::CMD_SINGLE_READ => {}
+            spi::commands::CMD_RESET => {}
+            _ => {
+                return Err(Error::InvalidSpiCommandError);
+            }
+        }
+        self.spi_transfer(cmd_buffer)
+    }
+
     fn spi_read_register<'w>(
         &mut self,
         cmd_buffer: &'w mut [u8],
-        address: u16,
+        address: u32,
     ) -> Result<&'w [u8], Error> {
-        // Command value goes in first byte
-        // address next two bytes little endian
-        // fourth byte is zero
-        // fifth byte is crc
-        cmd_buffer[0] = spi::commands::CMD_INTERNAL_READ;
-        cmd_buffer[1] = (address & 0x0f) as u8;
-        cmd_buffer[2] = (address >> 8) as u8;
-        cmd_buffer[3] = 0;
-        self.spi_transfer(cmd_buffer)
+        todo!()
     }
 
     fn spi_read_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
         todo!()
     }
 
-    fn spi_write_register<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
+    fn spi_write_register<'w>(
+        &mut self,
+        cmd_buffer: &'w mut [u8],
+        address: u32,
+        data: u32,
+    ) -> Result<&'w [u8], Error> {
         todo!()
     }
 
