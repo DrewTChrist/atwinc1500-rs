@@ -26,6 +26,7 @@ trait SpiLayer {
         command: u8,
         address: u32,
         data: u32,
+        size: u32,
         clockless: bool,
     ) -> Result<&'w [u8], Error>;
     fn spi_read_register<'w>(
@@ -159,25 +160,76 @@ where
         command: u8,
         address: u32,
         data: u32,
+        size: u32,
         clockless: bool,
     ) -> Result<&'w [u8], Error> {
         cmd_buffer[0] = command;
         match command {
             spi::commands::CMD_DMA_WRITE => {}
-            spi::commands::CMD_DMA_READ => {}
-            spi::commands::CMD_INTERNAL_WRITE => {}
+            spi::commands::CMD_DMA_READ => {
+                cmd_buffer[1] = (address >> 16) as u8;
+                cmd_buffer[2] = (address >> 8) as u8;
+                cmd_buffer[3] = address as u8;
+                cmd_buffer[4] = (size >> 8) as u8;
+                cmd_buffer[5] = size as u8;
+            }
+            spi::commands::CMD_INTERNAL_WRITE => {
+                cmd_buffer[1] = (address >> 8) as u8;
+                if clockless {
+                    cmd_buffer[1] |= 1 << 7;
+                }
+                cmd_buffer[2] = address as u8;
+                cmd_buffer[3] = (data >> 24) as u8;
+                cmd_buffer[4] = (data >> 16) as u8;
+                cmd_buffer[5] = (data >> 8) as u8;
+                cmd_buffer[6] = data as u8;
+            }
             spi::commands::CMD_INTERNAL_READ => {
                 cmd_buffer[1] = (address >> 8) as u8;
-                cmd_buffer[2] = (address & 0xff) as u8;
+                if clockless {
+                    cmd_buffer[1] |= 1 << 7;
+                }
+                cmd_buffer[2] = address as u8;
                 cmd_buffer[3] = 0;
             }
-            spi::commands::CMD_TERMINATE => {}
-            spi::commands::CMD_REPEAT => {}
+            spi::commands::CMD_TERMINATE => {
+                cmd_buffer[1] = 0x0;
+                cmd_buffer[2] = 0x0;
+                cmd_buffer[3] = 0x0;
+            }
+            spi::commands::CMD_REPEAT => {
+                cmd_buffer[1] = 0x0;
+                cmd_buffer[2] = 0x0;
+                cmd_buffer[3] = 0x0;
+            }
             spi::commands::CMD_DMA_EXT_WRITE => {}
-            spi::commands::CMD_DMA_EXT_READ => {}
-            spi::commands::CMD_SINGLE_WRITE => {}
-            spi::commands::CMD_SINGLE_READ => {}
-            spi::commands::CMD_RESET => {}
+            spi::commands::CMD_DMA_EXT_READ => {
+                cmd_buffer[1] = (address >> 16) as u8;
+                cmd_buffer[2] = (address >> 8) as u8;
+                cmd_buffer[3] = address as u8;
+                cmd_buffer[4] = (size >> 16) as u8;
+                cmd_buffer[5] = (size >> 8) as u8;
+                cmd_buffer[6] = size as u8;
+            }
+            spi::commands::CMD_SINGLE_WRITE => {
+                cmd_buffer[1] = (address >> 16) as u8;
+                cmd_buffer[2] = (address >> 8) as u8;
+                cmd_buffer[3] = address as u8;
+                cmd_buffer[4] = (data >> 24) as u8;
+                cmd_buffer[5] = (data >> 16) as u8;
+                cmd_buffer[6] = (data >> 8) as u8;
+                cmd_buffer[7] = data as u8;
+            }
+            spi::commands::CMD_SINGLE_READ => {
+                cmd_buffer[1] = (address >> 16) as u8;
+                cmd_buffer[2] = (address >> 8) as u8;
+                cmd_buffer[3] = address as u8;
+            }
+            spi::commands::CMD_RESET => {
+                cmd_buffer[1] = 0xff;
+                cmd_buffer[2] = 0xff;
+                cmd_buffer[3] = 0xff;
+            }
             _ => {
                 return Err(Error::InvalidSpiCommandError);
             }
