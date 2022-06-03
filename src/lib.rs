@@ -68,7 +68,6 @@ where
 {
     spi: SPI,
     cs: O,
-    sclk: I,
     irq: I,
     reset: O,
     wake: O,
@@ -91,8 +90,6 @@ where
     ///
     /// * `cs` - An OutputPin for the chip select
     ///
-    /// * `sclk` - The spi clock InputPin
-    ///
     /// * `irq` - An InputPin for interrupt requests
     ///
     /// * `reset` - An OutputPin for chip reset
@@ -106,11 +103,10 @@ where
     /// Examples can be found at
     /// [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
     ///
-    pub fn new(spi: SPI, cs: O, sclk: I, irq: I, reset: O, wake: O, crc: bool) -> Self {
+    pub fn new(spi: SPI, cs: O, irq: I, reset: O, wake: O, crc: bool) -> Self {
         let mut s = Self {
             spi,
             cs,
-            sclk,
             irq,
             reset,
             wake,
@@ -143,8 +139,6 @@ where
             return Err(Error::PinStateError);
         }
         let rcv = self.spi.transfer(words);
-        // This while loop may not be needed
-        //while self.sclk.is_high().is_ok() {}
         if self.cs.set_high().is_err() {
             return Err(Error::PinStateError);
         }
