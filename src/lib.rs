@@ -78,9 +78,9 @@ where
 /// public methods
 impl<SPI, O, I> Atwinc1500<SPI, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
-    O: OutputPin,
-    I: InputPin,
+    SPI: FullDuplex<u8, Error = error::Error> + Transfer<u8, Error = error::Error>,
+    O: OutputPin<Error = error::Error>,
+    I: InputPin<Error = error::Error>,
 {
     /// Returns an Atwin1500 struct
     ///
@@ -129,23 +129,16 @@ where
 
 impl<SPI, O, I> SpiLayer for Atwinc1500<SPI, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
-    O: OutputPin,
-    I: InputPin,
+    SPI: FullDuplex<u8, Error = error::Error> + Transfer<u8, Error = error::Error>,
+    O: OutputPin<Error = error::Error>,
+    I: InputPin<Error = error::Error>,
 {
-    /// Transfers some data then receives some data on the spi bus
+    /// Sends some data then receives some data on the spi bus
     fn spi_transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
-        if self.cs.set_low().is_err() {
-            return Err(Error::PinStateError);
-        }
-        let rcv = self.spi.transfer(words);
-        if self.cs.set_high().is_err() {
-            return Err(Error::PinStateError);
-        }
-        match rcv {
-            Ok(val) => Ok(val),
-            Err(e) => Err(Error::SpiTransferError),
-        }
+        self.cs.set_low()?;
+        let response = self.spi.transfer(words);
+        self.cs.set_high()?;
+        response
     }
 
     fn spi_command<'w>(
@@ -259,9 +252,9 @@ where
 
 impl<SPI, O, I> HifLayer for Atwinc1500<SPI, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
-    O: OutputPin,
-    I: InputPin,
+    SPI: FullDuplex<u8, Error = error::Error> + Transfer<u8, Error = error::Error>,
+    O: OutputPin<Error = error::Error>,
+    I: InputPin<Error = error::Error>,
 {
     /// This method wakes the chip from sleep mode using clockless register access
     fn hif_chip_wake(&mut self) {
@@ -306,9 +299,9 @@ where
 
 impl<SPI, O, I> TcpClientStack for Atwinc1500<SPI, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
-    O: OutputPin,
-    I: InputPin,
+    SPI: FullDuplex<u8, Error = error::Error> + Transfer<u8, Error = error::Error>,
+    O: OutputPin<Error = error::Error>,
+    I: InputPin<Error = error::Error>,
 {
     type TcpSocket = TcpSocket;
     type Error = Error;
@@ -352,9 +345,9 @@ where
 
 impl<SPI, O, I> TcpFullStack for Atwinc1500<SPI, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
-    O: OutputPin,
-    I: InputPin,
+    SPI: FullDuplex<u8, Error = error::Error> + Transfer<u8, Error = error::Error>,
+    O: OutputPin<Error = error::Error>,
+    I: InputPin<Error = error::Error>,
 {
     fn bind(&mut self, socket: &mut TcpSocket, port: u16) -> Result<(), Error> {
         todo!()
