@@ -103,7 +103,7 @@ where
     /// Examples can be found at
     /// [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
     ///
-    pub fn new(spi: SPI, cs: O, irq: I, reset: O, wake: O, crc: bool) -> Self {
+    pub fn new(spi: SPI, cs: O, irq: I, reset: O, wake: O, crc: bool) -> Result<Self, Error> {
         let mut s = Self {
             spi,
             cs,
@@ -112,11 +112,11 @@ where
             wake,
             crc,
         };
-        s.initialize();
-        s
+        s.initialize()?;
+        Ok(s)
     }
 
-    fn initialize(&mut self) {
+    fn initialize(&mut self) -> Result<(), Error> {
         todo!()
     }
 
