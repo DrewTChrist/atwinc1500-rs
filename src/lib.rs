@@ -47,14 +47,14 @@ trait SpiLayer {
 /// Defines the needed functions to handle the host interface
 /// layer as described in the atwinc1500 software design guide
 trait HifLayer {
-    fn hif_chip_wake(&mut self);
-    fn hif_chip_sleep(&mut self);
-    fn hif_register_cb(&mut self);
-    fn hif_isr(&mut self);
-    fn hif_receive(&mut self);
-    fn hif_send(&mut self);
-    fn hif_set_sleep_mode(&mut self);
-    fn hif_get_sleep_mode(&mut self);
+    fn hif_chip_wake(&mut self) -> Result<(), Error>;
+    fn hif_chip_sleep(&mut self) -> Result<(), Error>;
+    fn hif_register_cb(&mut self) -> Result<(), Error>;
+    fn hif_isr(&mut self) -> Result<(), Error>;
+    fn hif_receive(&mut self) -> Result<(), Error>;
+    fn hif_send(&mut self) -> Result<(), Error>;
+    fn hif_set_sleep_mode(&mut self) -> Result<(), Error>;
+    fn hif_get_sleep_mode(&mut self) -> Result<(), Error>;
 }
 
 pub struct TcpSocket {}
@@ -257,42 +257,42 @@ where
     I: InputPin<Error = error::Error>,
 {
     /// This method wakes the chip from sleep mode using clockless register access
-    fn hif_chip_wake(&mut self) {
+    fn hif_chip_wake(&mut self) -> Result<(), Error> {
         todo!()
     }
 
     /// This method enables sleep mode for the chip
-    fn hif_chip_sleep(&mut self) {
+    fn hif_chip_sleep(&mut self) -> Result<(), Error> {
         todo!()
     }
 
     /// This method sets the callback function for different events
-    fn hif_register_cb(&mut self) {
+    fn hif_register_cb(&mut self) -> Result<(), Error> {
         todo!()
     }
 
     /// This method is the host interface interrupt service
-    fn hif_isr(&mut self) {
+    fn hif_isr(&mut self) -> Result<(), Error> {
         todo!()
     }
 
     /// This method receives data read from the chip
-    fn hif_receive(&mut self) {
+    fn hif_receive(&mut self) -> Result<(), Error> {
         todo!()
     }
 
     /// This method sends data to the chip
-    fn hif_send(&mut self) {
+    fn hif_send(&mut self) -> Result<(), Error> {
         todo!()
     }
 
     /// This method sets the chip sleep mode
-    fn hif_set_sleep_mode(&mut self) {
+    fn hif_set_sleep_mode(&mut self) -> Result<(), Error> {
         todo!()
     }
 
     /// This method returns the chip sleep mode
-    fn hif_get_sleep_mode(&mut self) {
+    fn hif_get_sleep_mode(&mut self) -> Result<(), Error> {
         todo!()
     }
 }
