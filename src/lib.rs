@@ -7,6 +7,7 @@ mod hif;
 mod registers;
 mod spi;
 
+use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
 use embedded_hal::spi::FullDuplex;
@@ -60,13 +61,15 @@ trait HifLayer {
 pub struct TcpSocket {}
 
 /// Atwin1500 driver struct
-pub struct Atwinc1500<SPI, O, I>
+pub struct Atwinc1500<SPI, D, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
+    D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
 {
     spi: SPI,
+    delay: D,
     cs: O,
     irq: I,
     reset: O,
@@ -76,9 +79,10 @@ where
 
 /// Atwinc1500 struct implementation containing non embedded-nal
 /// public methods
-impl<SPI, O, I> Atwinc1500<SPI, O, I>
+impl<SPI, D, O, I> Atwinc1500<SPI, D, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
+    D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
 {
@@ -103,36 +107,33 @@ where
     /// Examples can be found at
     /// [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
     ///
-    pub fn new(spi: SPI, cs: O, irq: I, reset: O, wake: O, crc: bool) -> Result<Self, Error> {
+    pub fn new(
+        spi: SPI,
+        delay: D,
+        cs: O,
+        irq: I,
+        reset: O,
+        wake: O,
+        crc: bool,
+    ) -> Result<Self, Error> {
         let mut s = Self {
             spi,
+            delay,
             cs,
             irq,
             reset,
             wake,
             crc,
         };
-        if !crc {
-            s.disable_crc()?;
-        }
         s.initialize()?;
         Ok(s)
     }
 
     fn initialize(&mut self) -> Result<(), Error> {
-        if self.cs.set_high().is_err() {
-            return Err(Error::PinStateError);
+        self.init_pins()?;
+        if !self.crc {
+            self.disable_crc()?;
         }
-        if self.wake.set_high().is_err() {
-            return Err(Error::PinStateError);
-        }
-        if self.reset.set_low().is_err() {
-            return Err(Error::PinStateError);
-        }
-        if self.reset.set_high().is_err() {
-            return Err(Error::PinStateError);
-        }
-
         let mut read_buf: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
         let write_buf: [u8; spi::commands::sizes::TYPE_D] = [0; spi::commands::sizes::TYPE_D];
         while read_buf[0] == 0 {
@@ -142,8 +143,31 @@ where
         Ok(())
     }
 
+    /// Pulls the chip select and wake pins high
+    /// Then pulses (low/high) the reset pin with
+    /// a delay
+    fn init_pins(&mut self) -> Result<(), Error> {
+        if self.cs.set_high().is_err() {
+            return Err(Error::PinStateError);
+        }
+        if self.wake.set_high().is_err() {
+            return Err(Error::PinStateError);
+        }
+        if self.reset.set_low().is_err() {
+            return Err(Error::PinStateError);
+        }
+        self.delay.delay_ms(1000);
+        if self.reset.set_high().is_err() {
+            return Err(Error::PinStateError);
+        }
+        self.delay.delay_ms(1000);
+        Ok(())
+    }
+
+    /// Sends a command to the atwinc1500
+    /// to disable crc checks
     fn disable_crc(&mut self) -> Result<(), Error> {
-        let mut disable_crc_cmd: [u8; 11] = [0xC9, 0, 0xE8, 0x24, 0,  0,  0, 0x52, 0x5C, 0, 0];
+        let mut disable_crc_cmd: [u8; 11] = [0xC9, 0, 0xE8, 0x24, 0, 0, 0, 0x52, 0x5C, 0, 0];
         self.spi_transfer(&mut disable_crc_cmd)?;
         Ok(())
     }
@@ -155,9 +179,10 @@ where
     }
 }
 
-impl<SPI, O, I> SpiLayer for Atwinc1500<SPI, O, I>
+impl<SPI, D, O, I> SpiLayer for Atwinc1500<SPI, D, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
+    D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
 {
@@ -172,7 +197,7 @@ where
         }
         match response {
             Ok(val) => Ok(val),
-            Err(_) => Err(Error::SpiTransferError)
+            Err(_) => Err(Error::SpiTransferError),
         }
     }
 
@@ -265,9 +290,23 @@ where
         address: u32,
     ) -> Result<&'w [u8], Error> {
         if address <= 0x30 {
-            self.spi_command(cmd_buffer, spi::commands::CMD_INTERNAL_READ, address, 0, 0, true)
+            self.spi_command(
+                cmd_buffer,
+                spi::commands::CMD_INTERNAL_READ,
+                address,
+                0,
+                0,
+                true,
+            )
         } else {
-            self.spi_command(cmd_buffer, spi::commands::CMD_SINGLE_READ, address, 0, 0, false)
+            self.spi_command(
+                cmd_buffer,
+                spi::commands::CMD_SINGLE_READ,
+                address,
+                0,
+                0,
+                false,
+            )
         }
     }
 
@@ -281,7 +320,14 @@ where
         address: u32,
         data: u32,
     ) -> Result<&'w [u8], Error> {
-        self.spi_command(cmd_buffer, spi::commands::CMD_SINGLE_WRITE, address, data, 0, false)
+        self.spi_command(
+            cmd_buffer,
+            spi::commands::CMD_SINGLE_WRITE,
+            address,
+            data,
+            0,
+            false,
+        )
     }
 
     fn spi_write_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
@@ -289,9 +335,10 @@ where
     }
 }
 
-impl<SPI, O, I> HifLayer for Atwinc1500<SPI, O, I>
+impl<SPI, D, O, I> HifLayer for Atwinc1500<SPI, D, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
+    D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
 {
@@ -336,9 +383,10 @@ where
     }
 }
 
-impl<SPI, O, I> TcpClientStack for Atwinc1500<SPI, O, I>
+impl<SPI, D, O, I> TcpClientStack for Atwinc1500<SPI, D, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
+    D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
 {
@@ -382,9 +430,10 @@ where
     }
 }
 
-impl<SPI, O, I> TcpFullStack for Atwinc1500<SPI, O, I>
+impl<SPI, D, O, I> TcpFullStack for Atwinc1500<SPI, D, O, I>
 where
     SPI: FullDuplex<u8> + Transfer<u8>,
+    D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
 {
