@@ -5,6 +5,10 @@ pub const WIFI_HOST_RCV_CTRL_3: u32 = 0x106c;
 pub const WIFI_HOST_RCV_CTRL_4: u32 = 0x150400;
 pub const WIFI_HOST_RCV_CTRL_5: u32 = 0x1088;
 pub const NMI_CHIPID: u32 = 0x1000;
+// The efuse register is a magic number
+// in the atmel driver and is not 
+// explicitly listed in the datasheet
+pub const EFUSE_REG: u32 = 0x1014;
 pub const NMI_STATE_REG: u32 = 0x108c;
 pub const NMI_PIN_MUX_0: u32 = 0x1408;
 #[allow(non_upper_case_globals)]

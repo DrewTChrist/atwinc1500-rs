@@ -78,9 +78,9 @@ where
 /// public methods
 impl<SPI, O, I> Atwinc1500<SPI, O, I>
 where
-    SPI: FullDuplex<u8, Error = error::Error> + Transfer<u8, Error = error::Error>,
-    O: OutputPin<Error = error::Error>,
-    I: InputPin<Error = error::Error>,
+    SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
 {
     /// Returns an Atwin1500 struct
     ///
@@ -112,12 +112,46 @@ where
             wake,
             crc,
         };
+        if !crc {
+            s.disable_crc()?;
+        }
         s.initialize()?;
         Ok(s)
     }
 
     fn initialize(&mut self) -> Result<(), Error> {
-        todo!()
+        if self.cs.set_high().is_err() {
+            return Err(Error::PinStateError);
+        }
+        if self.wake.set_high().is_err() {
+            return Err(Error::PinStateError);
+        }
+        if self.reset.set_low().is_err() {
+            return Err(Error::PinStateError);
+        }
+        if self.reset.set_high().is_err() {
+            return Err(Error::PinStateError);
+        }
+
+        let mut read_buf: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
+        let write_buf: [u8; spi::commands::sizes::TYPE_D] = [0; spi::commands::sizes::TYPE_D];
+        while read_buf[0] == 0 {
+            if let Err(e) = self.spi_read_register(&mut read_buf, registers::EFUSE_REG) {
+                return Err(e);
+            }
+        }
+        if let Err(e) = self.spi_read_register(&mut read_buf, registers::M2M_WAIT_FOR_HOST_REG) {
+            return Err(e);
+        } 
+        Ok(())
+    }
+
+    fn disable_crc(&mut self) -> Result<(), Error> {
+        let mut disable_crc_cmd: [u8; 11] = [0xC9, 0, 0xE8, 0x24, 0,  0,  0, 0x52, 0x5C, 0, 0];
+        match self.spi_transfer(&mut disable_crc_cmd) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(e),
+        }
     }
 
     /// Get chip firmware version and mac address
@@ -129,16 +163,23 @@ where
 
 impl<SPI, O, I> SpiLayer for Atwinc1500<SPI, O, I>
 where
-    SPI: FullDuplex<u8, Error = error::Error> + Transfer<u8, Error = error::Error>,
-    O: OutputPin<Error = error::Error>,
-    I: InputPin<Error = error::Error>,
+    SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
 {
     /// Sends some data then receives some data on the spi bus
     fn spi_transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
-        self.cs.set_low()?;
+        if self.cs.set_low().is_err() {
+            return Err(Error::PinStateError);
+        }
         let response = self.spi.transfer(words);
-        self.cs.set_high()?;
-        response
+        if self.cs.set_high().is_err() {
+            return Err(Error::PinStateError);
+        }
+        match response {
+            Ok(val) => Ok(val),
+            Err(_) => Err(Error::SpiTransferError)
+        }
     }
 
     fn spi_command<'w>(
@@ -229,7 +270,11 @@ where
         cmd_buffer: &'w mut [u8],
         address: u32,
     ) -> Result<&'w [u8], Error> {
-        todo!()
+        if address <= 0x30 {
+            self.spi_command(cmd_buffer, spi::commands::CMD_INTERNAL_READ, address, 0, 0, true)
+        } else {
+            self.spi_command(cmd_buffer, spi::commands::CMD_SINGLE_READ, address, 0, 0, false)
+        }
     }
 
     fn spi_read_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
@@ -242,7 +287,7 @@ where
         address: u32,
         data: u32,
     ) -> Result<&'w [u8], Error> {
-        todo!()
+        self.spi_command(cmd_buffer, spi::commands::CMD_SINGLE_WRITE, address, data, 0, false)
     }
 
     fn spi_write_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
@@ -252,9 +297,9 @@ where
 
 impl<SPI, O, I> HifLayer for Atwinc1500<SPI, O, I>
 where
-    SPI: FullDuplex<u8, Error = error::Error> + Transfer<u8, Error = error::Error>,
-    O: OutputPin<Error = error::Error>,
-    I: InputPin<Error = error::Error>,
+    SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
 {
     /// This method wakes the chip from sleep mode using clockless register access
     fn hif_chip_wake(&mut self) -> Result<(), Error> {
@@ -299,9 +344,9 @@ where
 
 impl<SPI, O, I> TcpClientStack for Atwinc1500<SPI, O, I>
 where
-    SPI: FullDuplex<u8, Error = error::Error> + Transfer<u8, Error = error::Error>,
-    O: OutputPin<Error = error::Error>,
-    I: InputPin<Error = error::Error>,
+    SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
 {
     type TcpSocket = TcpSocket;
     type Error = Error;
@@ -345,9 +390,9 @@ where
 
 impl<SPI, O, I> TcpFullStack for Atwinc1500<SPI, O, I>
 where
-    SPI: FullDuplex<u8, Error = error::Error> + Transfer<u8, Error = error::Error>,
-    O: OutputPin<Error = error::Error>,
-    I: InputPin<Error = error::Error>,
+    SPI: FullDuplex<u8> + Transfer<u8>,
+    O: OutputPin,
+    I: InputPin,
 {
     fn bind(&mut self, socket: &mut TcpSocket, port: u16) -> Result<(), Error> {
         todo!()
