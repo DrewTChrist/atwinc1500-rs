@@ -58,6 +58,24 @@ trait HifLayer {
     fn hif_get_sleep_mode(&mut self) -> Result<(), Error>;
 }
 
+/// Takes an array of bytes
+/// combines it into one u32
+/// 
+/// If the size of the buffer 
+/// is greater than 4, the
+/// remaining bytes will still
+/// be shifted in
+macro_rules! combine_bytes {
+    ($buffer:expr) => {{
+        let mut value: u32 = 0;
+        for i in 0..$buffer.len() {
+            value <<= 8_u32;
+            value |= $buffer[i] as u32;
+        }
+        value
+    }};
+}
+
 pub struct TcpSocket {}
 
 /// Atwin1500 driver struct
@@ -137,16 +155,33 @@ where
     /// * Writes driver version and configuration
     /// * Enables chip interrupt
     fn initialize(&mut self) -> Result<(), Error> {
+        const FINISH_BOOT_VAL: u32 = 0x10add09e;
+        const DRIVER_VER_INFO: u32 = 0x13521330;
+        const CONF_VAL: u32 = 0x102;
+        const START_FIRMWARE: u32 = 0xef522f61;
+        const FINISH_INIT_VAL: u32 = 0x02532636;
+
         self.init_pins()?;
         if !self.crc {
             self.disable_crc()?;
         }
         let mut read_buf: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
         let write_buf: [u8; spi::commands::sizes::TYPE_D] = [0; spi::commands::sizes::TYPE_D];
-        while read_buf[0] == 0 {
+        let mut tries: u8 = 10;
+        while tries > 0 && read_buf[0] != 0x80 {
             self.spi_read_register(&mut read_buf, registers::EFUSE_REG)?;
+            self.delay.delay_ms(1000);
+            tries -= 1;
         }
         self.spi_read_register(&mut read_buf, registers::M2M_WAIT_FOR_HOST_REG)?;
+        if (combine_bytes!(read_buf[0..read_buf.len() - 1]) & 1) == 0 {
+            tries = 3;
+            while tries > 0 && combine_bytes!(read_buf[0..read_buf.len() - 1]) != FINISH_BOOT_VAL {
+                self.spi_read_register(&mut read_buf, registers::BOOTROM_REG)?;
+                self.delay.delay_ms(1000);
+                tries -= 1;
+            }
+        }
         Ok(())
     }
 
