@@ -136,22 +136,16 @@ where
         let mut read_buf: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
         let write_buf: [u8; spi::commands::sizes::TYPE_D] = [0; spi::commands::sizes::TYPE_D];
         while read_buf[0] == 0 {
-            if let Err(e) = self.spi_read_register(&mut read_buf, registers::EFUSE_REG) {
-                return Err(e);
-            }
+            self.spi_read_register(&mut read_buf, registers::EFUSE_REG)?;
         }
-        if let Err(e) = self.spi_read_register(&mut read_buf, registers::M2M_WAIT_FOR_HOST_REG) {
-            return Err(e);
-        } 
+        self.spi_read_register(&mut read_buf, registers::M2M_WAIT_FOR_HOST_REG)?;
         Ok(())
     }
 
     fn disable_crc(&mut self) -> Result<(), Error> {
         let mut disable_crc_cmd: [u8; 11] = [0xC9, 0, 0xE8, 0x24, 0,  0,  0, 0x52, 0x5C, 0, 0];
-        match self.spi_transfer(&mut disable_crc_cmd) {
-            Ok(_) => Ok(()),
-            Err(e) => Err(e),
-        }
+        self.spi_transfer(&mut disable_crc_cmd)?;
+        Ok(())
     }
 
     /// Get chip firmware version and mac address
