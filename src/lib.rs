@@ -60,8 +60,8 @@ trait HifLayer {
 
 /// Takes an array of bytes
 /// combines it into one u32
-/// 
-/// If the size of the buffer 
+///
+/// If the size of the buffer
 /// is greater than 4, the
 /// remaining bytes will still
 /// be shifted in
@@ -160,14 +160,14 @@ where
         const CONF_VAL: u32 = 0x102;
         const START_FIRMWARE: u32 = 0xef522f61;
         const FINISH_INIT_VAL: u32 = 0x02532636;
+        let mut read_buf: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
+        let mut write_buf: [u8; spi::commands::sizes::TYPE_D] = [0; spi::commands::sizes::TYPE_D];
+        let mut tries: u8 = 10;
 
         self.init_pins()?;
         if !self.crc {
             self.disable_crc()?;
         }
-        let mut read_buf: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
-        let write_buf: [u8; spi::commands::sizes::TYPE_D] = [0; spi::commands::sizes::TYPE_D];
-        let mut tries: u8 = 10;
         while tries > 0 && read_buf[0] != 0x80 {
             self.spi_read_register(&mut read_buf, registers::EFUSE_REG)?;
             self.delay.delay_ms(1000);
@@ -182,6 +182,9 @@ where
                 tries -= 1;
             }
         }
+        self.spi_write_register(&mut write_buf, registers::NMI_STATE_REG, DRIVER_VER_INFO)?;
+        self.spi_write_register(&mut write_buf, registers::rNMI_GP_REG_1, CONF_VAL)?;
+        self.spi_write_register(&mut write_buf, registers::BOOTROM_REG, START_FIRMWARE)?;
         Ok(())
     }
 
