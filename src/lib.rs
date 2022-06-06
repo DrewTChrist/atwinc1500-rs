@@ -224,6 +224,10 @@ where
         Ok(())
     }
 
+    fn enable_chip_interrupt(&mut self) -> Result<(), Error> {
+        Ok(())
+    }
+
     /// Get chip firmware version and mac address
     pub fn get_chip_info(&mut self) {
         //let mut buffer: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
