@@ -185,6 +185,13 @@ where
         self.spi_write_register(&mut write_buf, registers::NMI_STATE_REG, DRIVER_VER_INFO)?;
         self.spi_write_register(&mut write_buf, registers::rNMI_GP_REG_1, CONF_VAL)?;
         self.spi_write_register(&mut write_buf, registers::BOOTROM_REG, START_FIRMWARE)?;
+        tries = 20;
+        while tries > 0 && combine_bytes!(read_buf[0..read_buf.len() - 1]) !=  FINISH_INIT_VAL {
+            self.spi_read_register(&mut read_buf, registers::NMI_STATE_REG)?;
+            self.delay.delay_ms(1000);
+            tries -= 1;
+        }
+        self.spi_write_register(&mut write_buf, registers::NMI_STATE_REG, 0)?;
         Ok(())
     }
 
