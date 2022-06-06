@@ -129,6 +129,13 @@ where
         Ok(s)
     }
 
+    /// Initializes the driver by:
+    /// * Initializing pins between devices
+    /// * Disables crc if needed
+    /// * Waits for efuse ready
+    /// * Waits for boot rom ready
+    /// * Writes driver version and configuration
+    /// * Enables chip interrupt
     fn initialize(&mut self) -> Result<(), Error> {
         self.init_pins()?;
         if !self.crc {
