@@ -1,4 +1,3 @@
-
 /// Takes an array of bytes
 /// combines it into one u32
 ///
@@ -16,4 +15,3 @@ macro_rules! combine_bytes {
         value
     }};
 }
-
