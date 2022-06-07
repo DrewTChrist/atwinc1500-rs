@@ -1,6 +1,7 @@
 use core::fmt;
+use defmt::Format;
 
-#[derive(Debug)]
+#[derive(Debug, Format)]
 pub enum Error {
     SpiTransferError,
     InvalidSpiCommandError,

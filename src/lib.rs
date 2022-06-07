@@ -186,12 +186,13 @@ where
         self.spi_write_register(&mut write_buf, registers::rNMI_GP_REG_1, CONF_VAL)?;
         self.spi_write_register(&mut write_buf, registers::BOOTROM_REG, START_FIRMWARE)?;
         tries = 20;
-        while tries > 0 && combine_bytes!(read_buf[0..read_buf.len() - 1]) !=  FINISH_INIT_VAL {
+        while tries > 0 && combine_bytes!(read_buf[0..read_buf.len() - 1]) != FINISH_INIT_VAL {
             self.spi_read_register(&mut read_buf, registers::NMI_STATE_REG)?;
             self.delay.delay_ms(1000);
             tries -= 1;
         }
         self.spi_write_register(&mut write_buf, registers::NMI_STATE_REG, 0)?;
+        self.enable_chip_interrupt(&mut read_buf, &mut write_buf)?;
         Ok(())
     }
 
@@ -224,7 +225,11 @@ where
         Ok(())
     }
 
-    fn enable_chip_interrupt(&mut self) -> Result<(), Error> {
+    fn enable_chip_interrupt<'w>(&mut self, read_buf: &'w mut [u8], write_buf: &'w mut [u8]) -> Result<(), Error> {
+        self.spi_read_register(read_buf, registers::NMI_PIN_MUX_0)?;
+        self.spi_write_register(write_buf, registers::NMI_PIN_MUX_0, combine_bytes!(read_buf[0..read_buf.len() - 1]) | 0x100)?;
+        self.spi_read_register(read_buf, registers::NMI_INTR_REG_BASE)?; 
+        self.spi_write_register(write_buf, registers::NMI_INTR_REG_BASE, combine_bytes!(read_buf[0..read_buf.len() - 1]) | 0x10000)?;
         Ok(())
     }
 
