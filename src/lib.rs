@@ -35,14 +35,23 @@ trait SpiLayer {
         cmd_buffer: &'w mut [u8],
         address: u32,
     ) -> Result<&'w [u8], Error>;
-    fn spi_read_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error>;
+    fn spi_read_data<'w>(
+        &mut self,
+        cmd_buffer: &'w mut [u8],
+        address: u32,
+    ) -> Result<&'w [u8], Error>;
     fn spi_write_register<'w>(
         &mut self,
         cmd_buffer: &'w mut [u8],
         address: u32,
         data: u32,
     ) -> Result<&'w [u8], Error>;
-    fn spi_write_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error>;
+    fn spi_write_data<'w>(
+        &mut self,
+        cmd_buffer: &'w mut [u8],
+        address: u32,
+        data: u32,
+    ) -> Result<&'w [u8], Error>;
 }
 
 /// Defines the needed functions to handle the host interface
@@ -225,11 +234,23 @@ where
         Ok(())
     }
 
-    fn enable_chip_interrupt<'w>(&mut self, read_buf: &'w mut [u8], write_buf: &'w mut [u8]) -> Result<(), Error> {
+    fn enable_chip_interrupt<'w>(
+        &mut self,
+        read_buf: &'w mut [u8],
+        write_buf: &'w mut [u8],
+    ) -> Result<(), Error> {
         self.spi_read_register(read_buf, registers::NMI_PIN_MUX_0)?;
-        self.spi_write_register(write_buf, registers::NMI_PIN_MUX_0, combine_bytes!(read_buf[0..read_buf.len() - 1]) | 0x100)?;
-        self.spi_read_register(read_buf, registers::NMI_INTR_REG_BASE)?; 
-        self.spi_write_register(write_buf, registers::NMI_INTR_REG_BASE, combine_bytes!(read_buf[0..read_buf.len() - 1]) | 0x10000)?;
+        self.spi_write_register(
+            write_buf,
+            registers::NMI_PIN_MUX_0,
+            combine_bytes!(read_buf[0..read_buf.len() - 1]) | 0x100,
+        )?;
+        self.spi_read_register(read_buf, registers::NMI_INTR_REG_BASE)?;
+        self.spi_write_register(
+            write_buf,
+            registers::NMI_INTR_REG_BASE,
+            combine_bytes!(read_buf[0..read_buf.len() - 1]) | 0x10000,
+        )?;
         Ok(())
     }
 
@@ -371,7 +392,11 @@ where
         }
     }
 
-    fn spi_read_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
+    fn spi_read_data<'w>(
+        &mut self,
+        cmd_buffer: &'w mut [u8],
+        address: u32,
+    ) -> Result<&'w [u8], Error> {
         todo!()
     }
 
@@ -391,7 +416,12 @@ where
         )
     }
 
-    fn spi_write_data<'w>(&mut self, cmd_buffer: &'w mut [u8]) -> Result<&'w [u8], Error> {
+    fn spi_write_data<'w>(
+        &mut self,
+        cmd_buffer: &'w mut [u8],
+        address: u32,
+        data: u32,
+    ) -> Result<&'w [u8], Error> {
         todo!()
     }
 }
