@@ -13,7 +13,6 @@ mod traits;
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
-use embedded_hal::spi::FullDuplex;
 use embedded_nal::SocketAddr;
 use embedded_nal::TcpClientStack;
 use embedded_nal::TcpFullStack;
@@ -27,7 +26,7 @@ pub struct TcpSocket {}
 /// Atwin1500 driver struct
 pub struct Atwinc1500<SPI, D, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
+    SPI: Transfer<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
@@ -45,7 +44,7 @@ where
 /// public methods
 impl<SPI, D, O, I> Atwinc1500<SPI, D, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
+    SPI: Transfer<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
@@ -200,7 +199,7 @@ where
 
 impl<SPI, D, O, I> SpiLayer for Atwinc1500<SPI, D, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
+    SPI: Transfer<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
@@ -304,11 +303,7 @@ where
         Ok(())
     }
 
-    fn spi_read_register(
-        &mut self,
-        cmd_buffer: &'_ mut [u8],
-        address: u32,
-    ) -> Result<(), Error> {
+    fn spi_read_register(&mut self, cmd_buffer: &'_ mut [u8], address: u32) -> Result<(), Error> {
         if address <= 0x30 {
             self.spi_command(
                 cmd_buffer,
@@ -364,7 +359,7 @@ where
 
 impl<SPI, D, O, I> HifLayer for Atwinc1500<SPI, D, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
+    SPI: Transfer<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
@@ -412,7 +407,7 @@ where
 
 impl<SPI, D, O, I> TcpClientStack for Atwinc1500<SPI, D, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
+    SPI: Transfer<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
@@ -459,7 +454,7 @@ where
 
 impl<SPI, D, O, I> TcpFullStack for Atwinc1500<SPI, D, O, I>
 where
-    SPI: FullDuplex<u8> + Transfer<u8>,
+    SPI: Transfer<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,

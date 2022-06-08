@@ -13,16 +13,8 @@ pub trait SpiLayer {
         size: u32,
         clockless: bool,
     ) -> Result<(), Error>;
-    fn spi_read_register(
-        &mut self,
-        cmd_buffer: &'_ mut [u8],
-        address: u32,
-    ) -> Result<(), Error>;
-    fn spi_read_data(
-        &mut self,
-        cmd_buffer: &'_ mut [u8],
-        address: u32,
-    ) -> Result<(), Error>;
+    fn spi_read_register(&mut self, cmd_buffer: &'_ mut [u8], address: u32) -> Result<(), Error>;
+    fn spi_read_data(&mut self, cmd_buffer: &'_ mut [u8], address: u32) -> Result<(), Error>;
     fn spi_write_register(
         &mut self,
         cmd_buffer: &'_ mut [u8],
