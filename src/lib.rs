@@ -307,7 +307,14 @@ where
         Ok(())
     }
 
+    /// Reads a value from a register at address
+    /// then writes it to cmd_buffer
     fn spi_read_register(&mut self, cmd_buffer: &'_ mut [u8], address: u32) -> Result<(), Error> {
+        // The Atmel driver does a clockless read 
+        // if address is greater than 0x30. I did
+        // not spot any addresses less than 0x30.
+        // To me this is a magic number, I leave 
+        // it here just in case
         if address <= 0x30 {
             self.spi_command(
                 cmd_buffer,
