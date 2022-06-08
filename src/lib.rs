@@ -219,6 +219,10 @@ where
         }
     }
 
+    /// Matches the command argument and formats
+    /// the address, data, and size arguments
+    /// into the cmd_buffer as described in the
+    /// software design guide then sends the command
     fn spi_command(
         &mut self,
         cmd_buffer: &'_ mut [u8],
