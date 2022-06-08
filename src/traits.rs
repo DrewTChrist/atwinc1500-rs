@@ -3,38 +3,38 @@ use crate::error::Error;
 /// Defines the needed functions to handle the spi layer
 /// as described in the atwinc1500 software design guide
 pub trait SpiLayer {
-    fn spi_transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error>;
-    fn spi_command<'w>(
+    fn spi_transfer(&mut self, words: &'_ mut [u8]) -> Result<(), Error>;
+    fn spi_command(
         &mut self,
-        cmd_buffer: &'w mut [u8],
+        cmd_buffer: &'_ mut [u8],
         command: u8,
         address: u32,
         data: u32,
         size: u32,
         clockless: bool,
-    ) -> Result<&'w [u8], Error>;
-    fn spi_read_register<'w>(
+    ) -> Result<(), Error>;
+    fn spi_read_register(
         &mut self,
-        cmd_buffer: &'w mut [u8],
+        cmd_buffer: &'_ mut [u8],
         address: u32,
-    ) -> Result<&'w [u8], Error>;
-    fn spi_read_data<'w>(
+    ) -> Result<(), Error>;
+    fn spi_read_data(
         &mut self,
-        cmd_buffer: &'w mut [u8],
+        cmd_buffer: &'_ mut [u8],
         address: u32,
-    ) -> Result<&'w [u8], Error>;
-    fn spi_write_register<'w>(
+    ) -> Result<(), Error>;
+    fn spi_write_register(
         &mut self,
-        cmd_buffer: &'w mut [u8],
-        address: u32,
-        data: u32,
-    ) -> Result<&'w [u8], Error>;
-    fn spi_write_data<'w>(
-        &mut self,
-        cmd_buffer: &'w mut [u8],
+        cmd_buffer: &'_ mut [u8],
         address: u32,
         data: u32,
-    ) -> Result<&'w [u8], Error>;
+    ) -> Result<(), Error>;
+    fn spi_write_data(
+        &mut self,
+        cmd_buffer: &'_ mut [u8],
+        address: u32,
+        data: u32,
+    ) -> Result<(), Error>;
 }
 
 /// Defines the needed functions to handle the host interface

@@ -171,10 +171,10 @@ where
         Ok(())
     }
 
-    fn enable_chip_interrupt<'w>(
+    fn enable_chip_interrupt(
         &mut self,
-        read_buf: &'w mut [u8],
-        write_buf: &'w mut [u8],
+        read_buf: &'_ mut [u8],
+        write_buf: &'_ mut [u8],
     ) -> Result<(), Error> {
         self.spi_read_register(read_buf, registers::NMI_PIN_MUX_0)?;
         self.spi_write_register(
@@ -206,7 +206,7 @@ where
     I: InputPin,
 {
     /// Sends some data then receives some data on the spi bus
-    fn spi_transfer<'w>(&mut self, words: &'w mut [u8]) -> Result<&'w [u8], Error> {
+    fn spi_transfer(&mut self, words: &'_ mut [u8]) -> Result<(), Error> {
         if self.cs.set_low().is_err() {
             return Err(Error::PinStateError);
         }
@@ -215,20 +215,20 @@ where
             return Err(Error::PinStateError);
         }
         match response {
-            Ok(val) => Ok(val),
+            Ok(_) => Ok(()),
             Err(_) => Err(Error::SpiTransferError),
         }
     }
 
-    fn spi_command<'w>(
+    fn spi_command(
         &mut self,
-        cmd_buffer: &'w mut [u8],
+        cmd_buffer: &'_ mut [u8],
         command: u8,
         address: u32,
         data: u32,
         size: u32,
         clockless: bool,
-    ) -> Result<&'w [u8], Error> {
+    ) -> Result<(), Error> {
         cmd_buffer[0] = command;
         match command {
             spi::commands::CMD_DMA_WRITE => {}
@@ -300,14 +300,15 @@ where
                 return Err(Error::InvalidSpiCommandError);
             }
         }
-        self.spi_transfer(cmd_buffer)
+        self.spi_transfer(cmd_buffer)?;
+        Ok(())
     }
 
-    fn spi_read_register<'w>(
+    fn spi_read_register(
         &mut self,
-        cmd_buffer: &'w mut [u8],
+        cmd_buffer: &'_ mut [u8],
         address: u32,
-    ) -> Result<&'w [u8], Error> {
+    ) -> Result<(), Error> {
         if address <= 0x30 {
             self.spi_command(
                 cmd_buffer,
@@ -316,7 +317,7 @@ where
                 0,
                 0,
                 true,
-            )
+            )?;
         } else {
             self.spi_command(
                 cmd_buffer,
@@ -325,24 +326,21 @@ where
                 0,
                 0,
                 false,
-            )
+            )?;
         }
+        Ok(())
     }
 
-    fn spi_read_data<'w>(
-        &mut self,
-        cmd_buffer: &'w mut [u8],
-        address: u32,
-    ) -> Result<&'w [u8], Error> {
+    fn spi_read_data(&mut self, cmd_buffer: &'_ mut [u8], address: u32) -> Result<(), Error> {
         todo!()
     }
 
-    fn spi_write_register<'w>(
+    fn spi_write_register(
         &mut self,
-        cmd_buffer: &'w mut [u8],
+        cmd_buffer: &'_ mut [u8],
         address: u32,
         data: u32,
-    ) -> Result<&'w [u8], Error> {
+    ) -> Result<(), Error> {
         self.spi_command(
             cmd_buffer,
             spi::commands::CMD_SINGLE_WRITE,
@@ -350,15 +348,16 @@ where
             data,
             0,
             false,
-        )
+        )?;
+        Ok(())
     }
 
-    fn spi_write_data<'w>(
+    fn spi_write_data(
         &mut self,
-        cmd_buffer: &'w mut [u8],
+        cmd_buffer: &'_ mut [u8],
         address: u32,
         data: u32,
-    ) -> Result<&'w [u8], Error> {
+    ) -> Result<(), Error> {
         todo!()
     }
 }
