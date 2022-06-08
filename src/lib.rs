@@ -341,6 +341,9 @@ where
         todo!()
     }
 
+    /// Writes a value to a register at
+    /// address and writes the response
+    /// to cmd_buffer
     fn spi_write_register(
         &mut self,
         cmd_buffer: &'_ mut [u8],
