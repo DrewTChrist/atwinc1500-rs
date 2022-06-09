@@ -358,6 +358,9 @@ where
             0,
             false,
         )?;
+        if cmd_buffer[0] != spi::commands::CMD_SINGLE_WRITE || cmd_buffer[1] != 0 {
+            return Err(Error::SpiWriteRegisterError);
+        } 
         Ok(())
     }
 
