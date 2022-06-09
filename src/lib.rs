@@ -311,18 +311,18 @@ where
     /// then writes it to cmd_buffer
     fn spi_read_register(&mut self, cmd_buffer: &'_ mut [u8], address: u32) -> Result<(), Error> {
         // The Atmel driver does a clockless read 
-        // if address is greater than 0x30. I did
-        // not spot any addresses less than 0x30.
+        // if address is greater than 0xff (0b11111111). 
+        // I did not spot any addresses less than 0xff.
         // To me this is a magic number, I leave 
         // it here just in case
-        if address <= 0x30 {
+        if address <= 0xff {
             self.spi_command(
                 cmd_buffer,
                 spi::commands::CMD_INTERNAL_READ,
                 address,
                 0,
                 0,
-                true,
+                true, // Clockless enabled
             )?;
         } else {
             self.spi_command(
@@ -350,14 +350,30 @@ where
         address: u32,
         data: u32,
     ) -> Result<(), Error> {
-        self.spi_command(
-            cmd_buffer,
-            spi::commands::CMD_SINGLE_WRITE,
-            address,
-            data,
-            0,
-            false,
-        )?;
+        // The Atmel driver does a clockless write 
+        // if address is greater than 0x30 (0b00110000). 
+        // I did not spot any addresses less than 0x30.
+        // To me this is a magic number, I leave 
+        // it here just in case
+        if address <= 0x30 {
+            self.spi_command(
+                cmd_buffer,
+                spi::commands::CMD_INTERNAL_WRITE,
+                address,
+                data,
+                0,
+                true, // Clockless enabled
+            )?;
+        } else {
+            self.spi_command(
+                cmd_buffer,
+                spi::commands::CMD_SINGLE_WRITE,
+                address,
+                data,
+                0,
+                false,
+            )?;
+        }
         if cmd_buffer[0] != spi::commands::CMD_SINGLE_WRITE || cmd_buffer[1] != 0 {
             return Err(Error::SpiWriteRegisterError);
         } 
