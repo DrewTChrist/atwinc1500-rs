@@ -16,7 +16,6 @@ impl fmt::Display for Error {
             Error::PinStateError => write!(f, "Pin State Error"),
             Error::SpiTransferError => write!(f, "Spi Transfer Error"),
             Error::SpiWriteRegisterError => write!(f, "Error writing to register"),
-    
         }
     }
 }

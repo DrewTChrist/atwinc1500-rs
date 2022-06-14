@@ -110,9 +110,7 @@ where
         let mut tries: u8 = 10;
 
         self.init_pins()?;
-        if !self.crc {
-            self.disable_crc()?;
-        }
+        self.crc()?;
         while tries > 0 && read_buf[0] != 0x80 {
             self.spi_read_register(&mut read_buf, registers::EFUSE_REG)?;
             self.delay.delay_ms(1000);
@@ -162,11 +160,12 @@ where
         Ok(())
     }
 
-    /// Sends a command to the atwinc1500
-    /// to disable crc checks
+    /// Disables crc if self.crc is false
     fn disable_crc(&mut self) -> Result<(), Error> {
-        let mut disable_crc_cmd: [u8; 11] = [0xC9, 0, 0xE8, 0x24, 0, 0, 0, 0x52, 0x5C, 0, 0];
-        self.spi_transfer(&mut disable_crc_cmd)?;
+        if !self.crc {
+            let mut disable_crc_cmd: [u8; 11] = [0xC9, 0, 0xE8, 0x24, 0, 0, 0, 0x52, 0x5C, 0, 0];
+            self.spi_transfer(&mut disable_crc_cmd)?;
+        }
         Ok(())
     }
 
@@ -310,10 +309,10 @@ where
     /// Reads a value from a register at address
     /// then writes it to cmd_buffer
     fn spi_read_register(&mut self, cmd_buffer: &'_ mut [u8], address: u32) -> Result<(), Error> {
-        // The Atmel driver does a clockless read 
-        // if address is greater than 0xff (0b11111111). 
+        // The Atmel driver does a clockless read
+        // if address is greater than 0xff (0b11111111).
         // I did not spot any addresses less than 0xff.
-        // To me this is a magic number, I leave 
+        // To me this is a magic number, I leave
         // it here just in case
         if address <= 0xff {
             self.spi_command(
@@ -350,10 +349,10 @@ where
         address: u32,
         data: u32,
     ) -> Result<(), Error> {
-        // The Atmel driver does a clockless write 
-        // if address is greater than 0x30 (0b00110000). 
+        // The Atmel driver does a clockless write
+        // if address is greater than 0x30 (0b00110000).
         // I did not spot any addresses less than 0x30.
-        // To me this is a magic number, I leave 
+        // To me this is a magic number, I leave
         // it here just in case
         if address <= 0x30 {
             self.spi_command(
@@ -376,7 +375,7 @@ where
         }
         if cmd_buffer[0] != spi::commands::CMD_SINGLE_WRITE || cmd_buffer[1] != 0 {
             return Err(Error::SpiWriteRegisterError);
-        } 
+        }
         Ok(())
     }
 
