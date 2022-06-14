@@ -110,7 +110,7 @@ where
         let mut tries: u8 = 10;
 
         self.init_pins()?;
-        self.crc()?;
+        self.disable_crc()?;
         while tries > 0 && read_buf[0] != 0x80 {
             self.spi_read_register(&mut read_buf, registers::EFUSE_REG)?;
             self.delay.delay_ms(1000);
