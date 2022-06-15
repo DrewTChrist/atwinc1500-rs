@@ -310,29 +310,20 @@ where
     /// then writes it to cmd_buffer
     fn spi_read_register(&mut self, cmd_buffer: &'_ mut [u8], address: u32) -> Result<(), Error> {
         // The Atmel driver does a clockless read
-        // if address is greater than 0xff (0b11111111).
+        // if address is less than 0xff (0b11111111).
         // I did not spot any addresses less than 0xff.
         // To me this is a magic number, I leave
         // it here just in case
+        let cmd: u8;
+        let clockless: bool;
         if address <= 0xff {
-            self.spi_command(
-                cmd_buffer,
-                spi::commands::CMD_INTERNAL_READ,
-                address,
-                0,
-                0,
-                true, // Clockless enabled
-            )?;
+            cmd = spi::commands::CMD_INTERNAL_READ;
+            clockless = true;
         } else {
-            self.spi_command(
-                cmd_buffer,
-                spi::commands::CMD_SINGLE_READ,
-                address,
-                0,
-                0,
-                false,
-            )?;
+            cmd = spi::commands::CMD_SINGLE_READ;
+            clockless = false;
         }
+        self.spi_command(cmd_buffer, cmd, address, 0, 0, clockless)?;
         Ok(())
     }
 
@@ -350,30 +341,21 @@ where
         data: u32,
     ) -> Result<(), Error> {
         // The Atmel driver does a clockless write
-        // if address is greater than 0x30 (0b00110000).
+        // if address is less than 0x30 (0b00110000).
         // I did not spot any addresses less than 0x30.
         // To me this is a magic number, I leave
         // it here just in case
+        let cmd: u8;
+        let clockless: bool;
         if address <= 0x30 {
-            self.spi_command(
-                cmd_buffer,
-                spi::commands::CMD_INTERNAL_WRITE,
-                address,
-                data,
-                0,
-                true, // Clockless enabled
-            )?;
+            cmd = spi::commands::CMD_INTERNAL_WRITE;
+            clockless = true;
         } else {
-            self.spi_command(
-                cmd_buffer,
-                spi::commands::CMD_SINGLE_WRITE,
-                address,
-                data,
-                0,
-                false,
-            )?;
+            cmd = spi::commands::CMD_SINGLE_WRITE;
+            clockless = false;
         }
-        if cmd_buffer[0] != spi::commands::CMD_SINGLE_WRITE || cmd_buffer[1] != 0 {
+        self.spi_command(cmd_buffer, cmd, address, data, 0, clockless)?;
+        if cmd_buffer[0] != cmd || cmd_buffer[1] != 0 {
             return Err(Error::SpiWriteRegisterError);
         }
         Ok(())
