@@ -163,8 +163,11 @@ where
     /// Disables crc if self.crc is false
     fn disable_crc(&mut self) -> Result<(), Error> {
         if !self.crc {
-            let mut disable_crc_cmd: [u8; 11] = [0xC9, 0, 0xE8, 0x24, 0, 0, 0, 0x52, 0x5C, 0, 0];
-            self.spi_transfer(&mut disable_crc_cmd)?;
+            let mut cmd_buffer: [u8; 9] = [0; 9];
+            let address = registers::NMI_SPI_PROTOCOL_CONFIG;
+            let data = 0x52; // Still unsure of this value
+            cmd_buffer[8] = 0x5c; // CRC value for this write
+            self.spi_write_register(&mut cmd_buffer, address, data)?;
         }
         Ok(())
     }
