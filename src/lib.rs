@@ -11,8 +11,8 @@ mod spi;
 mod traits;
 
 use embedded_hal::blocking::delay::DelayMs;
-use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
+use embedded_hal::spi::FullDuplex;
 use embedded_nal::SocketAddr;
 use embedded_nal::TcpClientStack;
 use embedded_nal::TcpFullStack;
@@ -26,7 +26,7 @@ pub struct TcpSocket {}
 /// Atwin1500 driver struct
 pub struct Atwinc1500<SPI, D, O, I>
 where
-    SPI: Transfer<u8>,
+    SPI: FullDuplex<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
@@ -44,7 +44,7 @@ where
 /// public methods
 impl<SPI, D, O, I> Atwinc1500<SPI, D, O, I>
 where
-    SPI: Transfer<u8>,
+    SPI: FullDuplex<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
@@ -201,7 +201,7 @@ where
 
 impl<SPI, D, O, I> SpiLayer for Atwinc1500<SPI, D, O, I>
 where
-    SPI: Transfer<u8>,
+    SPI: FullDuplex<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
@@ -211,14 +211,21 @@ where
         if self.cs.set_low().is_err() {
             return Err(Error::PinStateError);
         }
-        let response = self.spi.transfer(words);
+        for w in words.iter_mut() {
+            if self.spi.send(w.clone()).is_err() {
+                return Err(Error::SpiTransferError);
+            }
+        }
+        for w in words.iter_mut() {
+            match self.spi.read() {
+                Ok(v) => *w = v,
+                Err(_) => return Err(Error::SpiTransferError),
+            }
+        }
         if self.cs.set_high().is_err() {
             return Err(Error::PinStateError);
         }
-        match response {
-            Ok(_) => Ok(()),
-            Err(_) => Err(Error::SpiTransferError),
-        }
+        Ok(())
     }
 
     /// Matches the command argument and formats
@@ -376,7 +383,7 @@ where
 
 impl<SPI, D, O, I> HifLayer for Atwinc1500<SPI, D, O, I>
 where
-    SPI: Transfer<u8>,
+    SPI: FullDuplex<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
@@ -424,7 +431,7 @@ where
 
 impl<SPI, D, O, I> TcpClientStack for Atwinc1500<SPI, D, O, I>
 where
-    SPI: Transfer<u8>,
+    SPI: FullDuplex<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
@@ -471,7 +478,7 @@ where
 
 impl<SPI, D, O, I> TcpFullStack for Atwinc1500<SPI, D, O, I>
 where
-    SPI: Transfer<u8>,
+    SPI: FullDuplex<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
     I: InputPin,
