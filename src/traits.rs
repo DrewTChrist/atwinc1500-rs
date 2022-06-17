@@ -18,20 +18,10 @@ pub trait SpiLayer {
         size: u32,
         clockless: bool,
     ) -> Result<(), Error>;
-    fn spi_read_register(&mut self, cmd_buffer: &'_ mut [u8], address: u32) -> Result<(), Error>;
-    fn spi_read_data(&mut self, cmd_buffer: &'_ mut [u8], address: u32) -> Result<(), Error>;
-    fn spi_write_register(
-        &mut self,
-        cmd_buffer: &'_ mut [u8],
-        address: u32,
-        data: u32,
-    ) -> Result<(), Error>;
-    fn spi_write_data(
-        &mut self,
-        cmd_buffer: &'_ mut [u8],
-        address: u32,
-        data: u32,
-    ) -> Result<(), Error>;
+    fn spi_read_register(&mut self, address: u32) -> Result<u32, Error>;
+    fn spi_read_data(&mut self, address: u32) -> Result<(), Error>;
+    fn spi_write_register(&mut self, address: u32, data: u32) -> Result<(), Error>;
+    fn spi_write_data(&mut self, address: u32, data: u32) -> Result<(), Error>;
 }
 
 /// Defines the needed functions to handle the host interface
