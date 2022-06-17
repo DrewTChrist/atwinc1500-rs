@@ -3,7 +3,12 @@ use crate::error::Error;
 /// Defines the needed functions to handle the spi layer
 /// as described in the atwinc1500 software design guide
 pub trait SpiLayer {
-    fn spi_transfer(&mut self, words: &'_ mut [u8]) -> Result<(), Error>;
+    fn spi_transfer(
+        &mut self,
+        words: &'_ mut [u8],
+        command_len: usize,
+        response_len: usize,
+    ) -> Result<(), Error>;
     fn spi_command(
         &mut self,
         cmd_buffer: &'_ mut [u8],

@@ -16,6 +16,8 @@ use embedded_hal::spi::FullDuplex;
 use embedded_nal::SocketAddr;
 use embedded_nal::TcpClientStack;
 use embedded_nal::TcpFullStack;
+#[macro_use(block)]
+extern crate nb;
 
 use error::Error;
 use traits::HifLayer;
@@ -108,7 +110,6 @@ where
         let mut read_buf: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
         let mut write_buf: [u8; spi::commands::sizes::TYPE_D] = [0; spi::commands::sizes::TYPE_D];
         let mut tries: u8 = 10;
-
         self.init_pins()?;
         self.disable_crc()?;
         while tries > 0 && read_buf[0] != 0x80 {
@@ -207,18 +208,25 @@ where
     I: InputPin,
 {
     /// Sends some data then receives some data on the spi bus
-    fn spi_transfer(&mut self, words: &'_ mut [u8]) -> Result<(), Error> {
+    fn spi_transfer(&mut self, words: &'_ mut [u8], command_len: usize, response_len: usize) -> Result<(), Error> {
         if self.cs.set_low().is_err() {
             return Err(Error::PinStateError);
         }
-        for w in words.iter_mut() {
-            if self.spi.send(w.clone()).is_err() {
+        for i in 0..command_len {
+            if block!(self.spi.send(words[i].clone())).is_err() {
                 return Err(Error::SpiTransferError);
             }
+            match block!(self.spi.read()) {
+                Ok(v) => words[i] = v,
+                Err(_) => return Err(Error::SpiTransferError),
+            }
         }
-        for w in words.iter_mut() {
-            match self.spi.read() {
-                Ok(v) => *w = v,
+        for i in 0..response_len {
+            if block!(self.spi.send(words[i].clone())).is_err() {
+                return Err(Error::SpiTransferError);
+            }
+            match block!(self.spi.read()) {
+                Ok(v) => words[i] = v,
                 Err(_) => return Err(Error::SpiTransferError),
             }
         }
@@ -241,6 +249,8 @@ where
         size: u32,
         clockless: bool,
     ) -> Result<(), Error> {
+        let mut command_len: usize = 0;
+        let mut response_len: usize = 0;
         cmd_buffer[0] = command;
         match command {
             spi::commands::CMD_DMA_WRITE => {}
@@ -261,6 +271,8 @@ where
                 cmd_buffer[4] = (data >> 16) as u8;
                 cmd_buffer[5] = (data >> 8) as u8;
                 cmd_buffer[6] = data as u8;
+                command_len = spi::commands::sizes::TYPE_D;
+                response_len = 2;
             }
             spi::commands::CMD_INTERNAL_READ => {
                 cmd_buffer[1] = (address >> 8) as u8;
@@ -269,6 +281,8 @@ where
                 }
                 cmd_buffer[2] = address as u8;
                 cmd_buffer[3] = 0;
+                command_len = spi::commands::sizes::TYPE_A;
+                response_len = 7;
             }
             spi::commands::CMD_TERMINATE => {
                 cmd_buffer[1] = 0x0;
@@ -297,11 +311,15 @@ where
                 cmd_buffer[5] = (data >> 16) as u8;
                 cmd_buffer[6] = (data >> 8) as u8;
                 cmd_buffer[7] = data as u8;
+                command_len = spi::commands::sizes::TYPE_D;
+                response_len = 2;
             }
             spi::commands::CMD_SINGLE_READ => {
                 cmd_buffer[1] = (address >> 16) as u8;
                 cmd_buffer[2] = (address >> 8) as u8;
                 cmd_buffer[3] = address as u8;
+                command_len = spi::commands::sizes::TYPE_A;
+                response_len = 7;
             }
             spi::commands::CMD_RESET => {
                 cmd_buffer[1] = 0xff;
@@ -312,7 +330,7 @@ where
                 return Err(Error::InvalidSpiCommandError);
             }
         }
-        self.spi_transfer(cmd_buffer)?;
+        self.spi_transfer(cmd_buffer, command_len, response_len)?;
         Ok(())
     }
 
