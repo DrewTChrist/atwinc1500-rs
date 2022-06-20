@@ -192,10 +192,48 @@ where
         let val = self.spi_read_register(registers::rNMI_GP_REG_2)?;
         self.spi_read_data(&mut data, val | 0x30000, count as u32)?;
         count = info.len();
-        self.spi_read_data(&mut info, combine_bytes!(data[4..6]) | 0x30000, count as u32)?;
+        self.spi_read_data(
+            &mut info,
+            combine_bytes!(data[4..6]) | 0x30000,
+            count as u32,
+        )?;
         count = mac.len();
         self.spi_read_data(&mut mac, combine_bytes!(data[2..4]) | 0x30000, count as u32)?;
         Ok((data, mac, info))
+    }
+
+    pub fn set_gpio_direction(&mut self, gpio: u8, direction: u8) -> Result<(), Error> {
+        const GPIO_DIR_REG: u32 = 0x20108;
+        let mut value = self.spi_read_register(GPIO_DIR_REG)?;
+        if direction == 0 {
+            value |= 1 << gpio;
+        } else {
+            value &= !(1 << gpio);
+        }
+        self.spi_write_register(GPIO_DIR_REG, value)
+    }
+
+    pub fn get_gpio_direction(&mut self, gpio: u8) -> Result<u8, Error> {
+        todo!()
+    }
+
+    pub fn set_gpio_value(&mut self, gpio: u8, value: u8) -> Result<(), Error> {
+        const GPIO_VAL_REG: u32 = 0x20100;
+        let mut response = self.spi_read_register(GPIO_VAL_REG)?;
+        if value == 0 {
+            response |= 1 << gpio;
+        } else {
+            response &= !(1 << gpio);
+        }
+        self.spi_write_register(GPIO_VAL_REG, response)
+    }
+
+    pub fn get_gpio_value(&mut self, gpio: u8) -> Result<u8, Error> {
+        const GPIO_GET_VAL_REG: u32 = 0x20104;
+        match self.spi_read_register(GPIO_GET_VAL_REG) {
+            Ok(v) => Ok(((v >> gpio as u32) & 0x01) as u8),
+            Err(e) => Err(e),
+        }
     }
 }
 
