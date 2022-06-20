@@ -192,9 +192,9 @@ where
         let val = self.spi_read_register(registers::rNMI_GP_REG_2)?;
         self.spi_read_data(&mut data, val | 0x30000, count as u32)?;
         count = info.len();
-        self.spi_read_data(&mut info, combine_bytes!(data[4..5]) | 0x30000, count as u32)?;
+        self.spi_read_data(&mut info, combine_bytes!(data[4..6]) | 0x30000, count as u32)?;
         count = mac.len();
-        self.spi_read_data(&mut mac, combine_bytes!(data[2..3]) | 0x30000, count as u32)?;
+        self.spi_read_data(&mut mac, combine_bytes!(data[2..4]) | 0x30000, count as u32)?;
         Ok((data, mac, info))
     }
 }
