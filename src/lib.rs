@@ -185,8 +185,7 @@ where
 
     /// Get chip firmware version and mac address
     pub fn get_chip_info(&mut self) {
-        //let mut buffer: [u8; spi::commands::sizes::TYPE_A] = [0; spi::commands::sizes::TYPE_A];
-        //self.spi_read_register(&mut buffer);
+        todo!()
     }
 }
 
@@ -198,12 +197,7 @@ where
     I: InputPin,
 {
     /// Sends some data then receives some data on the spi bus
-    fn spi_transfer(
-        &mut self,
-        words: &'_ mut [u8],
-        command_len: usize,
-        response_len: usize,
-    ) -> Result<(), Error> {
+    fn spi_transfer(&mut self, words: &'_ mut [u8]) -> Result<(), Error> {
         if self.cs.set_low().is_err() {
             return Err(Error::PinStateError);
         }
@@ -235,8 +229,6 @@ where
         size: u32,
         clockless: bool,
     ) -> Result<(), Error> {
-        let mut command_len: usize = 0;
-        let mut response_len: usize = 0;
         cmd_buffer[0] = command;
         match command {
             spi::commands::CMD_DMA_WRITE => {}
@@ -257,8 +249,6 @@ where
                 cmd_buffer[4] = (data >> 16) as u8;
                 cmd_buffer[5] = (data >> 8) as u8;
                 cmd_buffer[6] = data as u8;
-                command_len = spi::commands::sizes::TYPE_D;
-                response_len = 2;
             }
             spi::commands::CMD_INTERNAL_READ => {
                 cmd_buffer[1] = (address >> 8) as u8;
@@ -267,8 +257,6 @@ where
                 }
                 cmd_buffer[2] = address as u8;
                 cmd_buffer[3] = 0;
-                command_len = spi::commands::sizes::TYPE_A;
-                response_len = 7;
             }
             spi::commands::CMD_TERMINATE => {
                 cmd_buffer[1] = 0x0;
@@ -297,15 +285,11 @@ where
                 cmd_buffer[5] = (data >> 16) as u8;
                 cmd_buffer[6] = (data >> 8) as u8;
                 cmd_buffer[7] = data as u8;
-                command_len = spi::commands::sizes::TYPE_D;
-                response_len = 2;
             }
             spi::commands::CMD_SINGLE_READ => {
                 cmd_buffer[1] = (address >> 16) as u8;
                 cmd_buffer[2] = (address >> 8) as u8;
                 cmd_buffer[3] = address as u8;
-                command_len = spi::commands::sizes::TYPE_A;
-                response_len = 7;
             }
             spi::commands::CMD_RESET => {
                 cmd_buffer[1] = 0xff;
@@ -316,7 +300,7 @@ where
                 return Err(Error::InvalidSpiCommandError);
             }
         }
-        self.spi_transfer(cmd_buffer, command_len, response_len)?;
+        self.spi_transfer(cmd_buffer)?;
         Ok(())
     }
 
