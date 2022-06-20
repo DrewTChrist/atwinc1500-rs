@@ -14,7 +14,7 @@ pub trait SpiLayer {
         clockless: bool,
     ) -> Result<(), Error>;
     fn spi_read_register(&mut self, address: u32) -> Result<u32, Error>;
-    fn spi_read_data(&mut self, address: u32) -> Result<(), Error>;
+    fn spi_read_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error>;
     fn spi_write_register(&mut self, address: u32, data: u32) -> Result<(), Error>;
     fn spi_write_data(&mut self, address: u32, data: u32) -> Result<(), Error>;
 }

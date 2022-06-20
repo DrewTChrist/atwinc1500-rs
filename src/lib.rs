@@ -328,8 +328,20 @@ where
         Ok(combine_bytes_lsb!(cmd_buffer[7..11]))
     }
 
-    fn spi_read_data(&mut self, address: u32) -> Result<(), Error> {
-        todo!()
+    fn spi_read_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
+        let cmd: u8 = spi::commands::CMD_DMA_EXT_READ;
+        let mut cmd_buffer: [u8; 7] = [0; 7];
+        let mut transfer: [u8; 1] = [0; 1];
+        self.spi_command(&mut cmd_buffer, cmd, address, 0, count, false)?;
+        let mut tries = 10;
+        while tries > 0 && transfer[0] != 0 {
+            self.spi_transfer(&mut transfer)?;
+            tries -= 1;
+        }
+        if transfer[0] == cmd {
+            self.spi_transfer(data)?;
+        }
+        Ok(())
     }
 
     /// Writes a value to a register at
