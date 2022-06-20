@@ -111,7 +111,7 @@ where
         self.init_pins()?;
         self.disable_crc()?;
         let mut efuse_value: u32 = 0;
-        while tries > 0 && efuse_value != 0x80000000 {
+        while tries > 0 && (efuse_value & 0x80000000) == 0 {
             efuse_value = self.spi_read_register(registers::EFUSE_REG)?;
             self.delay.delay_ms(1000);
             tries -= 1;
@@ -165,8 +165,8 @@ where
     /// Disables crc if self.crc is false
     fn disable_crc(&mut self) -> Result<(), Error> {
         if !self.crc {
-            let mut cmd_buffer: [u8; 10] = [0; 10];
-            let command = spi::commands::CMD_INTERNAL_WRITE;
+            let mut cmd_buffer: [u8; 11] = [0; 11];
+            let command = spi::commands::CMD_SINGLE_WRITE;
             let address = registers::NMI_SPI_PROTOCOL_CONFIG;
             let data = 0x52; // Still unsure of this value
             cmd_buffer[8] = 0x5c; // CRC value for this write
@@ -207,16 +207,7 @@ where
         if self.cs.set_low().is_err() {
             return Err(Error::PinStateError);
         }
-        for word in words.iter_mut().take(command_len) {
-            if block!(self.spi.send(*word)).is_err() {
-                return Err(Error::SpiTransferError);
-            }
-            match block!(self.spi.read()) {
-                Ok(v) => *word = v,
-                Err(_) => return Err(Error::SpiTransferError),
-            }
-        }
-        for word in words.iter_mut().take(response_len) {
+        for word in words.iter_mut() {
             if block!(self.spi.send(*word)).is_err() {
                 return Err(Error::SpiTransferError);
             }
@@ -339,7 +330,7 @@ where
         // it here just in case
         let cmd: u8;
         let clockless: bool;
-        let mut cmd_buffer: [u8; 10] = [0; 10];
+        let mut cmd_buffer: [u8; 12] = [0; 12];
         if address <= 0xff {
             cmd = spi::commands::CMD_INTERNAL_READ;
             clockless = true;
@@ -348,7 +339,9 @@ where
             clockless = false;
         }
         self.spi_command(&mut cmd_buffer, cmd, address, 0, 0, clockless)?;
-        Ok(combine_bytes!(cmd_buffer[0..4]))
+        // TODO: The hardcoded indices here will
+        // not be the same if crc is on
+        Ok(combine_bytes_lsb!(cmd_buffer[7..11]))
     }
 
     fn spi_read_data(&mut self, address: u32) -> Result<(), Error> {
@@ -366,7 +359,7 @@ where
         // it here just in case
         let cmd: u8;
         let clockless: bool;
-        let mut cmd_buffer: [u8; 10] = [0; 10];
+        let mut cmd_buffer: [u8; 11] = [0; 11];
         if address <= 0x30 {
             cmd = spi::commands::CMD_INTERNAL_WRITE;
             clockless = true;
@@ -375,7 +368,9 @@ where
             clockless = false;
         }
         self.spi_command(&mut cmd_buffer, cmd, address, data, 0, clockless)?;
-        if cmd_buffer[0] != cmd || cmd_buffer[1] != 0 {
+        // TODO: The hardcoded indices here will
+        // not be the same if crc is on
+        if cmd_buffer[9] != cmd || cmd_buffer[10] != 0 {
             return Err(Error::SpiWriteRegisterError);
         }
         Ok(())
