@@ -184,8 +184,18 @@ where
     }
 
     /// Get chip firmware version and mac address
-    pub fn get_chip_info(&mut self) {
-        todo!()
+    pub fn get_chip_info(&mut self) -> Result<([u8; 8], [u8; 6], [u8; 40]), Error> {
+        let mut data: [u8; 8] = [0; 8];
+        let mut info: [u8; 40] = [0; 40];
+        let mut mac: [u8; 6] = [0; 6];
+        let mut count = data.len();
+        let val = self.spi_read_register(registers::rNMI_GP_REG_2)?;
+        self.spi_read_data(&mut data, val | 0x30000, count as u32)?;
+        count = info.len();
+        self.spi_read_data(&mut info, combine_bytes!(data[4..5]) | 0x30000, count as u32)?;
+        count = mac.len();
+        self.spi_read_data(&mut mac, combine_bytes!(data[2..3]) | 0x30000, count as u32)?;
+        Ok((data, mac, info))
     }
 }
 
@@ -331,10 +341,10 @@ where
     fn spi_read_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
         let cmd: u8 = spi::commands::CMD_DMA_EXT_READ;
         let mut cmd_buffer: [u8; 7] = [0; 7];
-        let mut transfer: [u8; 1] = [0; 1];
+        let mut transfer: [u8; 3] = [0; 3];
         self.spi_command(&mut cmd_buffer, cmd, address, 0, count, false)?;
         let mut tries = 10;
-        while tries > 0 && transfer[0] != 0 {
+        while tries > 0 && transfer[0] == 0 {
             self.spi_transfer(&mut transfer)?;
             tries -= 1;
         }
@@ -366,7 +376,7 @@ where
         self.spi_command(&mut cmd_buffer, cmd, address, data, 0, clockless)?;
         // TODO: The hardcoded indices here will
         // not be the same if crc is on
-        if cmd_buffer[9] != cmd || cmd_buffer[10] != 0 {
+        if cmd_buffer[8] != cmd || cmd_buffer[9] != 0 {
             return Err(Error::SpiWriteRegisterError);
         }
         Ok(())
