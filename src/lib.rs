@@ -213,10 +213,6 @@ where
         self.spi_write_register(GPIO_DIR_REG, value)
     }
 
-    pub fn get_gpio_direction(&mut self, gpio: u8) -> Result<u8, Error> {
-        todo!()
-    }
-
     pub fn set_gpio_value(&mut self, gpio: u8, value: u8) -> Result<(), Error> {
         const GPIO_VAL_REG: u32 = 0x20100;
         let mut response = self.spi_read_register(GPIO_VAL_REG)?;
@@ -228,10 +224,10 @@ where
         self.spi_write_register(GPIO_VAL_REG, response)
     }
 
-    pub fn get_gpio_value(&mut self, gpio: u8) -> Result<u8, Error> {
-        const GPIO_GET_VAL_REG: u32 = 0x20104;
-        match self.spi_read_register(GPIO_GET_VAL_REG) {
-            Ok(v) => Ok(((v >> gpio as u32) & 0x01) as u8),
+    pub fn get_gpio_direction(&mut self, gpio: u8) -> Result<u8, Error> {
+        const GPIO_GET_DIR_REG: u32 = 0x20104;
+        match self.spi_read_register(GPIO_GET_DIR_REG) {
+            Ok(v) => Ok(((v >> gpio) & 0x01) as u8),
             Err(e) => Err(e),
         }
     }
