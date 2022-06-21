@@ -20,8 +20,8 @@ use embedded_nal::TcpFullStack;
 extern crate nb;
 
 use error::Error;
+use spi::SpiBusWrapper;
 use traits::HifLayer;
-use traits::SpiLayer;
 
 pub struct TcpSocket {}
 
@@ -33,9 +33,8 @@ where
     O: OutputPin,
     I: InputPin,
 {
-    spi: SPI,
     delay: D,
-    cs: O,
+    spi_bus: SpiBusWrapper<SPI, O>,
     irq: I,
     reset: O,
     wake: O,
@@ -82,9 +81,8 @@ where
         crc: bool,
     ) -> Result<Self, Error> {
         let mut s = Self {
-            spi,
             delay,
-            cs,
+            spi_bus: SpiBusWrapper::new(spi, cs),
             irq,
             reset,
             wake,
@@ -112,31 +110,36 @@ where
         self.disable_crc()?;
         let mut efuse_value: u32 = 0;
         while tries > 0 && (efuse_value & 0x80000000) == 0 {
-            efuse_value = self.spi_read_register(registers::EFUSE_REG)?;
+            efuse_value = self.spi_bus.read_register(registers::EFUSE_REG)?;
             self.delay.delay_ms(1000);
             tries -= 1;
         }
-        let wait: u32 = self.spi_read_register(registers::M2M_WAIT_FOR_HOST_REG)?;
+        let wait: u32 = self
+            .spi_bus
+            .read_register(registers::M2M_WAIT_FOR_HOST_REG)?;
         if (wait & 1) == 0 {
             tries = 3;
             let mut bootrom: u32 = 0;
             while tries > 0 && bootrom != FINISH_BOOT_VAL {
-                bootrom = self.spi_read_register(registers::BOOTROM_REG)?;
+                bootrom = self.spi_bus.read_register(registers::BOOTROM_REG)?;
                 self.delay.delay_ms(1000);
                 tries -= 1;
             }
         }
-        self.spi_write_register(registers::NMI_STATE_REG, DRIVER_VER_INFO)?;
-        self.spi_write_register(registers::rNMI_GP_REG_1, CONF_VAL)?;
-        self.spi_write_register(registers::BOOTROM_REG, START_FIRMWARE)?;
+        self.spi_bus
+            .write_register(registers::NMI_STATE_REG, DRIVER_VER_INFO)?;
+        self.spi_bus
+            .write_register(registers::rNMI_GP_REG_1, CONF_VAL)?;
+        self.spi_bus
+            .write_register(registers::BOOTROM_REG, START_FIRMWARE)?;
         tries = 20;
         let mut state: u32 = 0;
         while tries > 0 && state != FINISH_INIT_VAL {
-            state = self.spi_read_register(registers::NMI_STATE_REG)?;
+            state = self.spi_bus.read_register(registers::NMI_STATE_REG)?;
             self.delay.delay_ms(1000);
             tries -= 1;
         }
-        self.spi_write_register(registers::NMI_STATE_REG, 0)?;
+        self.spi_bus.write_register(registers::NMI_STATE_REG, 0)?;
         self.enable_chip_interrupt()?;
         Ok(())
     }
@@ -145,9 +148,7 @@ where
     /// Then pulses (low/high) the reset pin with
     /// a delay
     fn init_pins(&mut self) -> Result<(), Error> {
-        if self.cs.set_high().is_err() {
-            return Err(Error::PinStateError);
-        }
+        self.spi_bus.init_cs()?;
         if self.wake.set_high().is_err() {
             return Err(Error::PinStateError);
         }
@@ -170,16 +171,19 @@ where
             let address = registers::NMI_SPI_PROTOCOL_CONFIG;
             let data = 0x52; // Still unsure of this value
             cmd_buffer[8] = 0x5c; // CRC value for this write
-            self.spi_command(&mut cmd_buffer, command, address, data, 0, false)?;
+            self.spi_bus
+                .command(&mut cmd_buffer, command, address, data, 0, false)?;
         }
         Ok(())
     }
 
     fn enable_chip_interrupt(&mut self) -> Result<(), Error> {
-        let mux: u32 = self.spi_read_register(registers::NMI_PIN_MUX_0)?;
-        self.spi_write_register(registers::NMI_PIN_MUX_0, mux | 0x100)?;
-        let base: u32 = self.spi_read_register(registers::NMI_INTR_REG_BASE)?;
-        self.spi_write_register(registers::NMI_INTR_REG_BASE, base | 0x10000)?;
+        let mux: u32 = self.spi_bus.read_register(registers::NMI_PIN_MUX_0)?;
+        self.spi_bus
+            .write_register(registers::NMI_PIN_MUX_0, mux | 0x100)?;
+        let base: u32 = self.spi_bus.read_register(registers::NMI_INTR_REG_BASE)?;
+        self.spi_bus
+            .write_register(registers::NMI_INTR_REG_BASE, base | 0x10000)?;
         Ok(())
     }
 
@@ -189,235 +193,49 @@ where
         let mut info: [u8; 40] = [0; 40];
         let mut mac: [u8; 6] = [0; 6];
         let mut count = data.len();
-        let val = self.spi_read_register(registers::rNMI_GP_REG_2)?;
-        self.spi_read_data(&mut data, val | 0x30000, count as u32)?;
+        let val = self.spi_bus.read_register(registers::rNMI_GP_REG_2)?;
+        self.spi_bus
+            .read_data(&mut data, val | 0x30000, count as u32)?;
         count = info.len();
-        self.spi_read_data(
+        self.spi_bus.read_data(
             &mut info,
             combine_bytes!(data[4..6]) | 0x30000,
             count as u32,
         )?;
         count = mac.len();
-        self.spi_read_data(&mut mac, combine_bytes!(data[2..4]) | 0x30000, count as u32)?;
+        self.spi_bus
+            .read_data(&mut mac, combine_bytes!(data[2..4]) | 0x30000, count as u32)?;
         Ok((data, mac, info))
     }
 
     pub fn set_gpio_direction(&mut self, gpio: u8, direction: u8) -> Result<(), Error> {
         const GPIO_DIR_REG: u32 = 0x20108;
-        let mut value = self.spi_read_register(GPIO_DIR_REG)?;
+        let mut value = self.spi_bus.read_register(GPIO_DIR_REG)?;
         if direction == 0 {
             value |= 1 << gpio;
         } else {
             value &= !(1 << gpio);
         }
-        self.spi_write_register(GPIO_DIR_REG, value)
+        self.spi_bus.write_register(GPIO_DIR_REG, value)
     }
 
     pub fn set_gpio_value(&mut self, gpio: u8, value: u8) -> Result<(), Error> {
         const GPIO_VAL_REG: u32 = 0x20100;
-        let mut response = self.spi_read_register(GPIO_VAL_REG)?;
+        let mut response = self.spi_bus.read_register(GPIO_VAL_REG)?;
         if value == 0 {
             response |= 1 << gpio;
         } else {
             response &= !(1 << gpio);
         }
-        self.spi_write_register(GPIO_VAL_REG, response)
+        self.spi_bus.write_register(GPIO_VAL_REG, response)
     }
 
     pub fn get_gpio_direction(&mut self, gpio: u8) -> Result<u8, Error> {
         const GPIO_GET_DIR_REG: u32 = 0x20104;
-        match self.spi_read_register(GPIO_GET_DIR_REG) {
+        match self.spi_bus.read_register(GPIO_GET_DIR_REG) {
             Ok(v) => Ok(((v >> gpio) & 0x01) as u8),
             Err(e) => Err(e),
         }
-    }
-}
-
-impl<SPI, D, O, I> SpiLayer for Atwinc1500<SPI, D, O, I>
-where
-    SPI: FullDuplex<u8>,
-    D: DelayMs<u32>,
-    O: OutputPin,
-    I: InputPin,
-{
-    /// Sends some data then receives some data on the spi bus
-    fn spi_transfer(&mut self, words: &'_ mut [u8]) -> Result<(), Error> {
-        if self.cs.set_low().is_err() {
-            return Err(Error::PinStateError);
-        }
-        for word in words.iter_mut() {
-            if block!(self.spi.send(*word)).is_err() {
-                return Err(Error::SpiTransferError);
-            }
-            match block!(self.spi.read()) {
-                Ok(v) => *word = v,
-                Err(_) => return Err(Error::SpiTransferError),
-            }
-        }
-        if self.cs.set_high().is_err() {
-            return Err(Error::PinStateError);
-        }
-        Ok(())
-    }
-
-    /// Matches the command argument and formats
-    /// the address, data, and size arguments
-    /// into the cmd_buffer as described in the
-    /// software design guide then sends the command
-    fn spi_command(
-        &mut self,
-        cmd_buffer: &'_ mut [u8],
-        command: u8,
-        address: u32,
-        data: u32,
-        size: u32,
-        clockless: bool,
-    ) -> Result<(), Error> {
-        cmd_buffer[0] = command;
-        match command {
-            spi::commands::CMD_DMA_WRITE => {}
-            spi::commands::CMD_DMA_READ => {
-                cmd_buffer[1] = (address >> 16) as u8;
-                cmd_buffer[2] = (address >> 8) as u8;
-                cmd_buffer[3] = address as u8;
-                cmd_buffer[4] = (size >> 8) as u8;
-                cmd_buffer[5] = size as u8;
-            }
-            spi::commands::CMD_INTERNAL_WRITE => {
-                cmd_buffer[1] = (address >> 8) as u8;
-                if clockless {
-                    cmd_buffer[1] |= 1 << 7;
-                }
-                cmd_buffer[2] = address as u8;
-                cmd_buffer[3] = (data >> 24) as u8;
-                cmd_buffer[4] = (data >> 16) as u8;
-                cmd_buffer[5] = (data >> 8) as u8;
-                cmd_buffer[6] = data as u8;
-            }
-            spi::commands::CMD_INTERNAL_READ => {
-                cmd_buffer[1] = (address >> 8) as u8;
-                if clockless {
-                    cmd_buffer[1] |= 1 << 7;
-                }
-                cmd_buffer[2] = address as u8;
-                cmd_buffer[3] = 0;
-            }
-            spi::commands::CMD_TERMINATE => {
-                cmd_buffer[1] = 0x0;
-                cmd_buffer[2] = 0x0;
-                cmd_buffer[3] = 0x0;
-            }
-            spi::commands::CMD_REPEAT => {
-                cmd_buffer[1] = 0x0;
-                cmd_buffer[2] = 0x0;
-                cmd_buffer[3] = 0x0;
-            }
-            spi::commands::CMD_DMA_EXT_WRITE => {}
-            spi::commands::CMD_DMA_EXT_READ => {
-                cmd_buffer[1] = (address >> 16) as u8;
-                cmd_buffer[2] = (address >> 8) as u8;
-                cmd_buffer[3] = address as u8;
-                cmd_buffer[4] = (size >> 16) as u8;
-                cmd_buffer[5] = (size >> 8) as u8;
-                cmd_buffer[6] = size as u8;
-            }
-            spi::commands::CMD_SINGLE_WRITE => {
-                cmd_buffer[1] = (address >> 16) as u8;
-                cmd_buffer[2] = (address >> 8) as u8;
-                cmd_buffer[3] = address as u8;
-                cmd_buffer[4] = (data >> 24) as u8;
-                cmd_buffer[5] = (data >> 16) as u8;
-                cmd_buffer[6] = (data >> 8) as u8;
-                cmd_buffer[7] = data as u8;
-            }
-            spi::commands::CMD_SINGLE_READ => {
-                cmd_buffer[1] = (address >> 16) as u8;
-                cmd_buffer[2] = (address >> 8) as u8;
-                cmd_buffer[3] = address as u8;
-            }
-            spi::commands::CMD_RESET => {
-                cmd_buffer[1] = 0xff;
-                cmd_buffer[2] = 0xff;
-                cmd_buffer[3] = 0xff;
-            }
-            _ => {
-                return Err(Error::InvalidSpiCommandError);
-            }
-        }
-        self.spi_transfer(cmd_buffer)?;
-        Ok(())
-    }
-
-    /// Reads a value from a register at address
-    /// then writes it to cmd_buffer
-    fn spi_read_register(&mut self, address: u32) -> Result<u32, Error> {
-        // The Atmel driver does a clockless read
-        // if address is less than 0xff (0b11111111).
-        // I did not spot any addresses less than 0xff.
-        // To me this is a magic number, I leave
-        // it here just in case
-        let cmd: u8;
-        let clockless: bool;
-        let mut cmd_buffer: [u8; 12] = [0; 12];
-        if address <= 0xff {
-            cmd = spi::commands::CMD_INTERNAL_READ;
-            clockless = true;
-        } else {
-            cmd = spi::commands::CMD_SINGLE_READ;
-            clockless = false;
-        }
-        self.spi_command(&mut cmd_buffer, cmd, address, 0, 0, clockless)?;
-        // TODO: The hardcoded indices here will
-        // not be the same if crc is on
-        Ok(combine_bytes_lsb!(cmd_buffer[7..11]))
-    }
-
-    fn spi_read_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
-        let cmd: u8 = spi::commands::CMD_DMA_EXT_READ;
-        let mut cmd_buffer: [u8; 7] = [0; 7];
-        let mut transfer: [u8; 3] = [0; 3];
-        self.spi_command(&mut cmd_buffer, cmd, address, 0, count, false)?;
-        let mut tries = 10;
-        while tries > 0 && transfer[0] == 0 {
-            self.spi_transfer(&mut transfer)?;
-            tries -= 1;
-        }
-        if transfer[0] == cmd {
-            self.spi_transfer(data)?;
-        }
-        Ok(())
-    }
-
-    /// Writes a value to a register at
-    /// address and writes the response
-    /// to cmd_buffer
-    fn spi_write_register(&mut self, address: u32, data: u32) -> Result<(), Error> {
-        // The Atmel driver does a clockless write
-        // if address is less than 0x30 (0b00110000).
-        // I did not spot any addresses less than 0x30.
-        // To me this is a magic number, I leave
-        // it here just in case
-        let cmd: u8;
-        let clockless: bool;
-        let mut cmd_buffer: [u8; 11] = [0; 11];
-        if address <= 0x30 {
-            cmd = spi::commands::CMD_INTERNAL_WRITE;
-            clockless = true;
-        } else {
-            cmd = spi::commands::CMD_SINGLE_WRITE;
-            clockless = false;
-        }
-        self.spi_command(&mut cmd_buffer, cmd, address, data, 0, clockless)?;
-        // TODO: The hardcoded indices here will
-        // not be the same if crc is on
-        if cmd_buffer[8] != cmd || cmd_buffer[9] != 0 {
-            return Err(Error::SpiWriteRegisterError);
-        }
-        Ok(())
-    }
-
-    fn spi_write_data(&mut self, address: u32, data: u32) -> Result<(), Error> {
-        todo!()
     }
 }
 
