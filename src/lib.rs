@@ -8,7 +8,6 @@ mod hif;
 mod macros;
 mod registers;
 mod spi;
-mod traits;
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::digital::v2::{InputPin, OutputPin};
@@ -21,7 +20,7 @@ extern crate nb;
 
 use error::Error;
 use spi::SpiBusWrapper;
-use traits::HifLayer;
+use hif::HostInterface;
 
 pub struct TcpSocket {}
 
@@ -35,6 +34,7 @@ where
 {
     delay: D,
     spi_bus: SpiBusWrapper<SPI, O>,
+    hif: HostInterface,
     irq: I,
     reset: O,
     wake: O,
@@ -83,6 +83,7 @@ where
         let mut s = Self {
             delay,
             spi_bus: SpiBusWrapper::new(spi, cs),
+            hif: HostInterface {},
             irq,
             reset,
             wake,
@@ -236,54 +237,6 @@ where
             Ok(v) => Ok(((v >> gpio) & 0x01) as u8),
             Err(e) => Err(e),
         }
-    }
-}
-
-impl<SPI, D, O, I> HifLayer for Atwinc1500<SPI, D, O, I>
-where
-    SPI: FullDuplex<u8>,
-    D: DelayMs<u32>,
-    O: OutputPin,
-    I: InputPin,
-{
-    /// This method wakes the chip from sleep mode using clockless register access
-    fn hif_chip_wake(&mut self) -> Result<(), Error> {
-        todo!()
-    }
-
-    /// This method enables sleep mode for the chip
-    fn hif_chip_sleep(&mut self) -> Result<(), Error> {
-        todo!()
-    }
-
-    /// This method sets the callback function for different events
-    fn hif_register_cb(&mut self) -> Result<(), Error> {
-        todo!()
-    }
-
-    /// This method is the host interface interrupt service
-    fn hif_isr(&mut self) -> Result<(), Error> {
-        todo!()
-    }
-
-    /// This method receives data read from the chip
-    fn hif_receive(&mut self) -> Result<(), Error> {
-        todo!()
-    }
-
-    /// This method sends data to the chip
-    fn hif_send(&mut self) -> Result<(), Error> {
-        todo!()
-    }
-
-    /// This method sets the chip sleep mode
-    fn hif_set_sleep_mode(&mut self) -> Result<(), Error> {
-        todo!()
-    }
-
-    /// This method returns the chip sleep mode
-    fn hif_get_sleep_mode(&mut self) -> Result<(), Error> {
-        todo!()
     }
 }
 
