@@ -237,10 +237,10 @@ where
         self.spi_bus.write_register(GPIO_VAL_REG, response)
     }
 
-    pub fn get_gpio_direction(&mut self, gpio: u8) -> Result<u8, Error> {
+    pub fn get_gpio_direction(&mut self, gpio: AtwincGpio) -> Result<u8, Error> {
         const GPIO_GET_DIR_REG: u32 = 0x20104;
         match self.spi_bus.read_register(GPIO_GET_DIR_REG) {
-            Ok(v) => Ok(((v >> gpio) & 0x01) as u8),
+            Ok(v) => Ok(((v >> gpio as u8) & 0x01) as u8),
             Err(e) => Err(e),
         }
     }
