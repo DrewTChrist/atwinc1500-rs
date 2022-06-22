@@ -1,7 +1,10 @@
 use core::fmt;
-use defmt::Format;
 
-#[derive(Debug, Format)]
+/// Derives defmt::Format if building for bare metal
+/// otherwise it does not derive defmt::Format
+/// Unit tests get a linker error if this isn't done
+#[cfg_attr(target_os = "none", derive(PartialEq, Debug, defmt::Format))]
+#[cfg_attr(not(target_os = "none"), derive(PartialEq, Debug))]
 pub enum Error {
     InvalidSpiCommandError,
     PinStateError,

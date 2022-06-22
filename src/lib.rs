@@ -8,7 +8,8 @@ mod hif;
 mod macros;
 pub mod gpio;
 mod registers;
-mod spi;
+#[doc(hidden)]
+pub mod spi;
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::digital::v2::{InputPin, OutputPin};

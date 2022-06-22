@@ -16,11 +16,10 @@ impl From<u8> for GpioDirection {
         match val {
             1 => GpioDirection::Input,
             0 => GpioDirection::Output,
-            _ => todo!()
+            _ => todo!(),
         }
     }
 }
-
 
 #[derive(PartialEq)]
 pub enum GpioValue {
