@@ -11,6 +11,17 @@ pub enum GpioDirection {
     Output,
 }
 
+impl From<u8> for GpioDirection {
+    fn from(val: u8) -> Self {
+        match val {
+            1 => GpioDirection::Input,
+            0 => GpioDirection::Output,
+            _ => todo!()
+        }
+    }
+}
+
+
 #[derive(PartialEq)]
 pub enum GpioValue {
     Low,
