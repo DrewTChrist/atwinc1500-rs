@@ -1,3 +1,14 @@
+//! This is a driver for the atwinc1500 wifi module written in Rust. The
+//! primary targets for this driver are the [Adafruit Feather M0 Wifi](https://adafruit.com/product/3010)
+//! and the [Adafruit Atwinc1500 Breakout](https://adafruit.com/product/2999).
+//! This may put some features outside the scope of this project, but they
+//! are still welcomed additions. This code has been heavily influenced by
+//! [WiFi101](https://github.com/arduino-libraries/wifi101) and [winc_wifi](https://github.com/jbentham/winc_wifi).
+//!
+//! ## Examples
+//! Examples can be found at
+//! [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
+//!
 #![no_std]
 #![allow(dead_code)]
 #![allow(unused_variables)]
@@ -59,6 +70,8 @@ where
     ///
     /// * `spi` - An spi struct implementing traits from embedded-hal
     ///
+    /// * `delay` - A delay implementing Delay from embedded-hal
+    ///
     /// * `cs` - An OutputPin for the chip select
     ///
     /// * `irq` - An InputPin for interrupt requests
@@ -68,11 +81,6 @@ where
     /// * `wake` - An OutputPin for chip wake
     ///
     /// * `crc` - Turn on CRC in transactions
-    ///
-    /// # Examples
-    ///
-    /// Examples can be found at
-    /// [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
     ///
     pub fn new(
         spi: SPI,
