@@ -190,6 +190,7 @@ where
         Ok(combine_bytes_lsb!(cmd_buffer[7..11]))
     }
 
+    /// Reads a block of data
     pub fn read_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
         let cmd: u8 = commands::CMD_DMA_EXT_READ;
         let mut cmd_buffer: [u8; 7] = [0; 7];
@@ -234,7 +235,24 @@ where
         Ok(())
     }
 
-    pub fn write_data(&mut self, address: u32, data: u32) -> Result<(), Error> {
-        todo!()
+    /// Writes a block of data
+    pub fn write_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
+        let cmd: u8 = commands::CMD_DMA_EXT_WRITE;
+        let mut cmd_buffer: [u8; 7] = [0; 7];
+        let mut response: [u8; 2] = [0; 2];
+        let data_mark: u8 = 0xf3;
+        self.command(&mut cmd_buffer, cmd, address, 0, count, false)?;
+        self.transfer(&mut response)?;
+        if response[0] == cmd {
+            self.transfer(&mut [data_mark])?;
+            self.transfer(data)?;
+            response[0] = 0;
+            let mut tries: u8 = 10;
+            while tries > 0 && response[0] != 0xc3 {
+                self.transfer(&mut response[0..1])?;
+                tries -= 1;
+            }
+        }
+        Ok(())
     }
 }
