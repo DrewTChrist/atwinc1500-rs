@@ -1,7 +1,7 @@
-use embedded_hal::digital::v2::OutputPin;
-use embedded_hal::spi::FullDuplex;
 use crate::error::Error;
 use crate::spi::SpiBusWrapper;
+use embedded_hal::digital::v2::OutputPin;
+use embedded_hal::spi::FullDuplex;
 
 pub mod group_ids {
     const MAIN: u8 = 0;
@@ -47,7 +47,7 @@ pub struct HostInterface;
 
 impl HostInterface {
     /// This method wakes the chip from sleep mode using clockless register access
-    pub fn chip_wake<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error> 
+    pub fn chip_wake<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: FullDuplex<u8>,
         O: OutputPin,
@@ -56,7 +56,7 @@ impl HostInterface {
     }
 
     /// This method enables sleep mode for the chip
-    pub fn chip_sleep<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error> 
+    pub fn chip_sleep<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: FullDuplex<u8>,
         O: OutputPin,
@@ -65,7 +65,7 @@ impl HostInterface {
     }
 
     /// This method sets the callback function for different events
-    pub fn register_cb<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error> 
+    pub fn register_cb<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: FullDuplex<u8>,
         O: OutputPin,
@@ -74,7 +74,7 @@ impl HostInterface {
     }
 
     /// This method is the host interface interrupt service
-    pub fn isr<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error> 
+    pub fn isr<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: FullDuplex<u8>,
         O: OutputPin,
@@ -83,7 +83,7 @@ impl HostInterface {
     }
 
     /// This method receives data read from the chip
-    pub fn receive<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error> 
+    pub fn receive<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: FullDuplex<u8>,
         O: OutputPin,
@@ -92,7 +92,7 @@ impl HostInterface {
     }
 
     /// This method sends data to the chip
-    pub fn send<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error> 
+    pub fn send<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: FullDuplex<u8>,
         O: OutputPin,
@@ -101,7 +101,10 @@ impl HostInterface {
     }
 
     /// This method sets the chip sleep mode
-    pub fn set_sleep_mode<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error> 
+    pub fn set_sleep_mode<SPI, O>(
+        &mut self,
+        spi_bus: &mut SpiBusWrapper<SPI, O>,
+    ) -> Result<(), Error>
     where
         SPI: FullDuplex<u8>,
         O: OutputPin,
@@ -110,7 +113,10 @@ impl HostInterface {
     }
 
     /// This method returns the chip sleep mode
-    pub fn get_sleep_mode<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error> 
+    pub fn get_sleep_mode<SPI, O>(
+        &mut self,
+        spi_bus: &mut SpiBusWrapper<SPI, O>,
+    ) -> Result<(), Error>
     where
         SPI: FullDuplex<u8>,
         O: OutputPin,

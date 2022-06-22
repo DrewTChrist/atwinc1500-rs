@@ -6,6 +6,7 @@ pub mod error;
 mod hif;
 #[macro_use]
 mod macros;
+pub mod gpio;
 mod registers;
 mod spi;
 
@@ -19,8 +20,9 @@ use embedded_nal::TcpFullStack;
 extern crate nb;
 
 use error::Error;
-use spi::SpiBusWrapper;
+use gpio::{AtwincGpio, GpioDirection, GpioValue};
 use hif::HostInterface;
+use spi::SpiBusWrapper;
 
 pub struct TcpSocket {}
 
@@ -209,24 +211,28 @@ where
         Ok((data, mac, info))
     }
 
-    pub fn set_gpio_direction(&mut self, gpio: u8, direction: u8) -> Result<(), Error> {
+    pub fn set_gpio_direction(
+        &mut self,
+        gpio: AtwincGpio,
+        direction: GpioDirection,
+    ) -> Result<(), Error> {
         const GPIO_DIR_REG: u32 = 0x20108;
         let mut value = self.spi_bus.read_register(GPIO_DIR_REG)?;
-        if direction == 0 {
-            value |= 1 << gpio;
+        if direction == GpioDirection::Output {
+            value |= 1 << gpio as u8;
         } else {
-            value &= !(1 << gpio);
+            value &= !(1 << gpio as u8);
         }
         self.spi_bus.write_register(GPIO_DIR_REG, value)
     }
 
-    pub fn set_gpio_value(&mut self, gpio: u8, value: u8) -> Result<(), Error> {
+    pub fn set_gpio_value(&mut self, gpio: AtwincGpio, value: GpioValue) -> Result<(), Error> {
         const GPIO_VAL_REG: u32 = 0x20100;
         let mut response = self.spi_bus.read_register(GPIO_VAL_REG)?;
-        if value == 0 {
-            response |= 1 << gpio;
+        if value == GpioValue::Low {
+            response |= 1 << gpio as u8;
         } else {
-            response &= !(1 << gpio);
+            response &= !(1 << gpio as u8);
         }
         self.spi_bus.write_register(GPIO_VAL_REG, response)
     }
