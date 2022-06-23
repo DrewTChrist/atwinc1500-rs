@@ -19,3 +19,7 @@ pub const NMI_INTR_REG_BASE: u32 = 0x1a00;
 pub const NMI_SPI_PROTOCOL_CONFIG: u32 = 0xe824;
 pub const BOOTROM_REG: u32 = 0xc000c;
 pub const M2M_WAIT_FOR_HOST_REG: u32 = 0x207bc;
+pub const CORT_HOST_COMM: u32 = 0x10;
+pub const HOST_CORT_COMM: u32 = 0x0b;
+pub const WAKE_CLK_REG: u32 = 0x1;
+pub const CLOCKS_EN_REG: u32 = 0xf;

@@ -1,4 +1,5 @@
 use crate::error::Error;
+use crate::registers;
 use crate::spi::SpiBusWrapper;
 use embedded_hal::digital::v2::OutputPin;
 use embedded_hal::spi::FullDuplex;
@@ -46,7 +47,7 @@ pub mod commands {
 pub struct HifHeader {
     gid: u8,
     op: u8,
-    length: u16
+    length: u16,
 }
 
 pub struct HostInterface;
@@ -58,7 +59,33 @@ impl HostInterface {
         SPI: FullDuplex<u8>,
         O: OutputPin,
     {
-        todo!()
+        let mut trials: u32 = 0;
+        let mut register_val: u32;
+        let mut clock_status_val: u32;
+        const WAKEUP_TRIALS_TIMEOUT: u8 = 4;
+        register_val = spi_bus.read_register(registers::HOST_CORT_COMM)?;
+        if (register_val & 0x1) == 0 {
+            // USE bit 0 to indicate host wakeup
+            spi_bus.write_register(registers::HOST_CORT_COMM, register_val | 0x1)?;
+        }
+        register_val = spi_bus.read_register(registers::WAKE_CLK_REG)?;
+        // Set bit 1
+        if (register_val & 0x2) == 0 {
+            spi_bus.write_register(registers::WAKE_CLK_REG, register_val | 0x2)?;
+        }
+        loop {
+            clock_status_val = spi_bus.read_register(registers::CLOCKS_EN_REG)?;
+            if (clock_status_val & 0x2) != 0 {
+                break;
+            }
+            // sleep here?
+            trials += 1;
+            if trials > WAKEUP_TRIALS_TIMEOUT as u32 {
+                // error waking chip
+                break;
+            }
+        }
+        Ok(())
     }
 
     /// This method enables sleep mode for the chip
@@ -67,7 +94,25 @@ impl HostInterface {
         SPI: FullDuplex<u8>,
         O: OutputPin,
     {
-        todo!()
+        let mut register_val: u32;
+        loop {
+            register_val = spi_bus.read_register(registers::CORT_HOST_COMM)?;
+            if (register_val & 0x1) == 0 {
+                break;
+            }
+        }
+        // Clear bit 1
+        register_val = spi_bus.read_register(registers::WAKE_CLK_REG)?;
+        if (register_val & 0x2) != 0 {
+            register_val &= !0x2;
+            spi_bus.write_register(registers::WAKE_CLK_REG, register_val)?;
+        }
+        register_val = spi_bus.read_register(registers::HOST_CORT_COMM)?;
+        if (register_val & 0x1) != 0 {
+            register_val &= !0x1;
+            spi_bus.write_register(registers::HOST_CORT_COMM, register_val)?;
+        }
+        Ok(())
     }
 
     /// This method sets the callback function for different events
@@ -98,7 +143,11 @@ impl HostInterface {
     }
 
     /// This method sends data to the chip
-    pub fn send<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>, header: HifHeader) -> Result<(), Error>
+    pub fn send<SPI, O>(
+        &mut self,
+        spi_bus: &mut SpiBusWrapper<SPI, O>,
+        header: HifHeader,
+    ) -> Result<(), Error>
     where
         SPI: FullDuplex<u8>,
         O: OutputPin,

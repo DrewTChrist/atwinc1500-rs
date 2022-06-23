@@ -1,12 +1,12 @@
 #[cfg(test)]
 mod spi_unit_tests {
     use atwinc1500::spi::SpiBusWrapper;
-    use std::io::ErrorKind;
     use embedded_hal_mock::pin::{
         Mock as PinMock, State as PinState, Transaction as PinTransaction,
     };
     use embedded_hal_mock::spi::{Mock as SpiMock, Transaction as SpiTransaction};
     use embedded_hal_mock::MockError;
+    use std::io::ErrorKind;
 
     /// Returns an SpiBusWrapper with
     /// mocked spi and mocked chip select
