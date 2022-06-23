@@ -43,6 +43,12 @@ pub mod commands {
     pub mod hif {}
 }
 
+pub struct HifHeader {
+    gid: u8,
+    op: u8,
+    length: u16
+}
+
 pub struct HostInterface;
 
 impl HostInterface {
@@ -92,7 +98,7 @@ impl HostInterface {
     }
 
     /// This method sends data to the chip
-    pub fn send<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
+    pub fn send<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>, header: HifHeader) -> Result<(), Error>
     where
         SPI: FullDuplex<u8>,
         O: OutputPin,
