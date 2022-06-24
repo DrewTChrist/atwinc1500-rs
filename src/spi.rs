@@ -185,6 +185,9 @@ where
             clockless = false;
         }
         self.command(&mut cmd_buffer, cmd, address, 0, 0, clockless)?;
+        if cmd_buffer[4] != cmd || cmd_buffer[6] & 0xf0 != 0xf0 {
+            return Err(Error::SpiReadRegisterError);
+        }
         // TODO: The hardcoded indices here will
         // not be the same if crc is on
         Ok(combine_bytes_lsb!(cmd_buffer[7..11]))

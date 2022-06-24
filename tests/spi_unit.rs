@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod spi_unit_tests {
+    use atwinc1500::error::Error;
     use atwinc1500::registers;
     use atwinc1500::spi;
     use embedded_hal_mock::pin::{
@@ -84,6 +85,58 @@ mod spi_unit_tests {
         match spi_bus.read_register(registers::BOOTROM_REG) {
             Ok(v) => assert_eq!(v, FINISH_BOOT_VAL),
             Err(_) => assert!(false),
+        }
+    }
+
+    #[test]
+    fn test_read_register_error() {
+        // Simulates a register read
+        // in which the Atwinc1500 returns
+        // an error
+        const FINISH_BOOT_VAL: u32 = 0x10add09e;
+        let address: u32 = registers::BOOTROM_REG;
+        let spi_expect = [
+            // Send command
+            SpiTransaction::send(spi::commands::CMD_SINGLE_READ),
+            SpiTransaction::read(0x0),
+            SpiTransaction::send((address >> 16) as u8),
+            SpiTransaction::read(0x0),
+            SpiTransaction::send((address >> 8) as u8),
+            SpiTransaction::read(0x0),
+            SpiTransaction::send(address as u8),
+            SpiTransaction::read(0x0),
+            // Receive response
+            SpiTransaction::send(0x0),
+            SpiTransaction::read(spi::commands::CMD_SINGLE_READ),
+            SpiTransaction::send(0x0),
+            SpiTransaction::read(0x0),
+            SpiTransaction::send(0x0),
+            // The read below causes the error
+            // a good response is 0xf3
+            SpiTransaction::read(0xee),
+            SpiTransaction::send(0x0),
+            SpiTransaction::read((FINISH_BOOT_VAL & 0xff) as u8),
+            SpiTransaction::send(0x0),
+            SpiTransaction::read(((FINISH_BOOT_VAL >> 8) & 0xff) as u8),
+            SpiTransaction::send(0x0),
+            SpiTransaction::read(((FINISH_BOOT_VAL >> 16) & 0xff) as u8),
+            SpiTransaction::send(0x0),
+            SpiTransaction::read(((FINISH_BOOT_VAL >> 24) & 0xff) as u8),
+            SpiTransaction::send(0x0),
+            SpiTransaction::read(0x0),
+        ];
+        let pin_expect = [
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ];
+        let mut spi_bus = get_fixture(&spi_expect, &pin_expect);
+        if spi_bus.init_cs().is_err() {
+            assert!(false);
+        }
+        match spi_bus.read_register(registers::BOOTROM_REG) {
+            Ok(_) => assert!(false),
+            Err(e) => assert_eq!(e, Error::SpiReadRegisterError),
         }
     }
 }
