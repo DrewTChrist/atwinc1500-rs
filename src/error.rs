@@ -8,10 +8,17 @@ use core::fmt;
 #[cfg_attr(not(target_os = "none"), derive(PartialEq, Debug))]
 /// Atwinc1500 error types
 pub enum Error {
+    /// Attempted to parse an invalid spi command
     InvalidSpiCommandError,
+    /// Error changing the state of a pin
     PinStateError,
+    /// Error transferring data over the spi bus
     SpiTransferError,
+    /// Error received from the atwinc1500
+    /// while trying to write to register
     SpiWriteRegisterError,
+    /// Error received from the atwinc1500
+    /// while trying to read from register
     SpiReadRegisterError,
 }
 
