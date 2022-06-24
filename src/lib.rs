@@ -18,7 +18,8 @@ mod hif;
 #[macro_use]
 mod macros;
 pub mod gpio;
-mod registers;
+#[doc(hidden)]
+pub mod registers;
 #[doc(hidden)]
 pub mod spi;
 
