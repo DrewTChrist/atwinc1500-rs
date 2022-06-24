@@ -46,32 +46,38 @@ mod spi_unit_tests {
         const FINISH_BOOT_VAL: u32 = 0x10add09e;
         let address: u32 = registers::BOOTROM_REG;
         let spi_expect = [
-            // Send command
-            SpiTransaction::send(spi::commands::CMD_SINGLE_READ),
-            SpiTransaction::read(0x0),
-            SpiTransaction::send((address >> 16) as u8),
-            SpiTransaction::read(0x0),
-            SpiTransaction::send((address >> 8) as u8),
-            SpiTransaction::read(0x0),
-            SpiTransaction::send(address as u8),
-            SpiTransaction::read(0x0),
-            // Receive response
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(spi::commands::CMD_SINGLE_READ),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(0x0),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(0xf3),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read((FINISH_BOOT_VAL & 0xff) as u8),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(((FINISH_BOOT_VAL >> 8) & 0xff) as u8),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(((FINISH_BOOT_VAL >> 16) & 0xff) as u8),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(((FINISH_BOOT_VAL >> 24) & 0xff) as u8),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(0x0),
+            // Send
+            SpiTransaction::transfer(
+                vec![
+                    spi::commands::CMD_SINGLE_READ,
+                    (address >> 16) as u8,
+                    (address >> 8) as u8,
+                    address as u8,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                ],
+                // Receive
+                vec![
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    spi::commands::CMD_SINGLE_READ,
+                    0x0,
+                    0xf3,
+                    (FINISH_BOOT_VAL & 0xff) as u8,
+                    ((FINISH_BOOT_VAL >> 8) & 0xff) as u8,
+                    ((FINISH_BOOT_VAL >> 16) & 0xff) as u8,
+                    ((FINISH_BOOT_VAL >> 24) & 0xff) as u8,
+                    0x0,
+                ],
+            ),
         ];
         let pin_expect = [
             PinTransaction::set(PinState::High),
@@ -97,33 +103,36 @@ mod spi_unit_tests {
         let address: u32 = registers::BOOTROM_REG;
         let spi_expect = [
             // Send command
-            SpiTransaction::send(spi::commands::CMD_SINGLE_READ),
-            SpiTransaction::read(0x0),
-            SpiTransaction::send((address >> 16) as u8),
-            SpiTransaction::read(0x0),
-            SpiTransaction::send((address >> 8) as u8),
-            SpiTransaction::read(0x0),
-            SpiTransaction::send(address as u8),
-            SpiTransaction::read(0x0),
-            // Receive response
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(spi::commands::CMD_SINGLE_READ),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(0x0),
-            SpiTransaction::send(0x0),
-            // The read below causes the error
-            // a good response is 0xf3
-            SpiTransaction::read(0xee),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read((FINISH_BOOT_VAL & 0xff) as u8),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(((FINISH_BOOT_VAL >> 8) & 0xff) as u8),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(((FINISH_BOOT_VAL >> 16) & 0xff) as u8),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(((FINISH_BOOT_VAL >> 24) & 0xff) as u8),
-            SpiTransaction::send(0x0),
-            SpiTransaction::read(0x0),
+            SpiTransaction::transfer(
+                vec![
+                    spi::commands::CMD_SINGLE_READ,
+                    (address >> 16) as u8,
+                    (address >> 8) as u8,
+                    address as u8,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                ],
+                vec![
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    spi::commands::CMD_SINGLE_READ,
+                    0x0,
+                    0xee, // error caused here expects 0xf-
+                    (FINISH_BOOT_VAL & 0xff) as u8,
+                    ((FINISH_BOOT_VAL >> 8) & 0xff) as u8,
+                    ((FINISH_BOOT_VAL >> 16) & 0xff) as u8,
+                    ((FINISH_BOOT_VAL >> 24) & 0xff) as u8,
+                    0x0,
+                ],
+            ),
         ];
         let pin_expect = [
             PinTransaction::set(PinState::High),

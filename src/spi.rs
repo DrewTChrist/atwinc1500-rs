@@ -1,6 +1,6 @@
 use crate::error::Error;
+use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
-use embedded_hal::spi::FullDuplex;
 
 pub mod commands {
     // Command start + Command Type
@@ -33,7 +33,7 @@ mod sizes {
 /// happen over the FullDuplex spi bus
 pub struct SpiBusWrapper<SPI, O>
 where
-    SPI: FullDuplex<u8>,
+    SPI: Transfer<u8>,
     O: OutputPin,
 {
     spi: SPI,
@@ -42,7 +42,7 @@ where
 
 impl<SPI, O> SpiBusWrapper<SPI, O>
 where
-    SPI: FullDuplex<u8>,
+    SPI: Transfer<u8>,
     O: OutputPin,
 {
     pub fn new(spi: SPI, cs: O) -> Self {
@@ -63,14 +63,8 @@ where
         if self.cs.set_low().is_err() {
             return Err(Error::PinStateError);
         }
-        for word in words.iter_mut() {
-            if block!(self.spi.send(*word)).is_err() {
-                return Err(Error::SpiTransferError);
-            }
-            match block!(self.spi.read()) {
-                Ok(v) => *word = v,
-                Err(_) => return Err(Error::SpiTransferError),
-            }
+        if self.spi.transfer(words).is_err() {
+            return Err(Error::SpiTransferError);
         }
         if self.cs.set_high().is_err() {
             return Err(Error::PinStateError);
