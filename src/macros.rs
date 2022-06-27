@@ -29,3 +29,13 @@ macro_rules! combine_bytes_lsb {
         value
     }};
 }
+
+macro_rules! retry_while {
+    ($condition:expr, $num_retries:expr, $expression:expr) => {
+        let mut r = $num_retries;
+        while $condition && r > 0 {
+            $expression;
+            r -= 1;
+        }
+    };
+}

@@ -193,11 +193,10 @@ where
         let mut cmd_buffer: [u8; 7] = [0; 7];
         let mut transfer: [u8; 3] = [0; 3];
         self.command(&mut cmd_buffer, cmd, address, 0, count, false)?;
-        let mut tries = 10;
-        while tries > 0 && transfer[0] == 0 {
+        let num_tries = 10;
+        retry_while!(transfer[0] == 0, num_tries, {
             self.transfer(&mut transfer)?;
-            tries -= 1;
-        }
+        });
         if transfer[0] == cmd {
             self.transfer(data)?;
         }
@@ -244,11 +243,10 @@ where
             self.transfer(&mut [data_mark])?;
             self.transfer(data)?;
             response[0] = 0;
-            let mut tries: u8 = 10;
-            while tries > 0 && response[0] != 0xc3 {
+            let num_tries: u8 = 10;
+            retry_while!(response[0] != 0xc3, num_tries, {
                 self.transfer(&mut response[0..1])?;
-                tries -= 1;
-            }
+            });
         }
         Ok(())
     }

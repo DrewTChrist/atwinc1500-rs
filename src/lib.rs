@@ -116,26 +116,24 @@ where
         const CONF_VAL: u32 = 0x102;
         const START_FIRMWARE: u32 = 0xef522f61;
         const FINISH_INIT_VAL: u32 = 0x02532636;
-        let mut tries: u8 = 10;
+        let mut num_tries: u8 = 10;
         self.init_pins()?;
         self.disable_crc()?;
         let mut efuse_value: u32 = 0;
-        while tries > 0 && (efuse_value & 0x80000000) == 0 {
+        retry_while!((efuse_value & 0x80000000) == 0, num_tries, {
             efuse_value = self.spi_bus.read_register(registers::EFUSE_REG)?;
             self.delay.delay_ms(1000);
-            tries -= 1;
-        }
+        });
         let wait: u32 = self
             .spi_bus
             .read_register(registers::M2M_WAIT_FOR_HOST_REG)?;
         if (wait & 1) == 0 {
-            tries = 3;
+            num_tries = 3;
             let mut bootrom: u32 = 0;
-            while tries > 0 && bootrom != FINISH_BOOT_VAL {
+            retry_while!(bootrom != FINISH_BOOT_VAL, num_tries, {
                 bootrom = self.spi_bus.read_register(registers::BOOTROM_REG)?;
                 self.delay.delay_ms(1000);
-                tries -= 1;
-            }
+            });
         }
         self.spi_bus
             .write_register(registers::NMI_STATE_REG, DRIVER_VER_INFO)?;
@@ -143,13 +141,12 @@ where
             .write_register(registers::rNMI_GP_REG_1, CONF_VAL)?;
         self.spi_bus
             .write_register(registers::BOOTROM_REG, START_FIRMWARE)?;
-        tries = 20;
+        num_tries = 20;
         let mut state: u32 = 0;
-        while tries > 0 && state != FINISH_INIT_VAL {
+        retry_while!(state != FINISH_INIT_VAL, num_tries, {
             state = self.spi_bus.read_register(registers::NMI_STATE_REG)?;
             self.delay.delay_ms(1000);
-            tries -= 1;
-        }
+        });
         self.spi_bus.write_register(registers::NMI_STATE_REG, 0)?;
         self.enable_chip_interrupt()?;
         Ok(())
