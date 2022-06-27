@@ -148,4 +148,97 @@ mod spi_unit_tests {
             Err(e) => assert_eq!(e, Error::SpiReadRegisterError),
         }
     }
+
+    #[test]
+    fn test_write_register_bootrom() {
+        let address: u32 = registers::BOOTROM_REG;
+        const START_FIRMWARE: u32 = 0xef522f61;
+        let spi_expect = [SpiTransaction::transfer(
+            vec![
+                spi::commands::CMD_SINGLE_WRITE,
+                (address >> 16) as u8,
+                (address >> 8) as u8,
+                address as u8,
+                (START_FIRMWARE >> 24) as u8,
+                (START_FIRMWARE >> 16) as u8,
+                (START_FIRMWARE >> 8) as u8,
+                START_FIRMWARE as u8,
+                0x0,
+                0x0,
+                0x0,
+            ],
+            vec![
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                spi::commands::CMD_SINGLE_WRITE,
+                0x0,
+                0x0,
+            ],
+        )];
+        let pin_expect = [
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ];
+        let mut spi_bus = get_fixture(&spi_expect, &pin_expect);
+        if spi_bus.init_cs().is_err() {
+            assert!(false);
+        }
+        assert!(spi_bus
+            .write_register(registers::BOOTROM_REG, START_FIRMWARE)
+            .is_ok());
+    }
+
+    #[test]
+    fn test_write_register_error() {
+        let address: u32 = registers::BOOTROM_REG;
+        const START_FIRMWARE: u32 = 0xef522f61;
+        let spi_expect = [SpiTransaction::transfer(
+            vec![
+                spi::commands::CMD_SINGLE_WRITE,
+                (address >> 16) as u8,
+                (address >> 8) as u8,
+                address as u8,
+                (START_FIRMWARE >> 24) as u8,
+                (START_FIRMWARE >> 16) as u8,
+                (START_FIRMWARE >> 8) as u8,
+                START_FIRMWARE as u8,
+                0x0,
+                0x0,
+                0x0,
+            ],
+            vec![
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                spi::commands::CMD_SINGLE_WRITE,
+                0xff, // error caused here
+                0x0,
+            ],
+        )];
+        let pin_expect = [
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ];
+        let mut spi_bus = get_fixture(&spi_expect, &pin_expect);
+        if spi_bus.init_cs().is_err() {
+            assert!(false);
+        }
+        match spi_bus.write_register(registers::BOOTROM_REG, START_FIRMWARE) {
+            Ok(_) => assert!(false),
+            Err(e) => assert_eq!(e, Error::SpiWriteRegisterError),
+        }
+    }
 }
