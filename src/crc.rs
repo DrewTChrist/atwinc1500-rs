@@ -1,4 +1,4 @@
-const _CRC7_SYNDROME_TABLE: [u8; 256] = [
+const CRC7_SYNDROME_TABLE: [u8; 256] = [
 	0x00, 0x09, 0x12, 0x1b, 0x24, 0x2d, 0x36, 0x3f,
 	0x48, 0x41, 0x5a, 0x53, 0x6c, 0x65, 0x7e, 0x77,
 	0x19, 0x10, 0x0b, 0x02, 0x3d, 0x34, 0x2f, 0x26,
@@ -34,16 +34,14 @@ const _CRC7_SYNDROME_TABLE: [u8; 256] = [
 ];
 
 
-fn _crc7_byte(crc: u8, data: u8) -> u8 {
-	_CRC7_SYNDROME_TABLE[((crc << 1) ^ data) as usize]
+fn crc7_byte(crc: u8, data: u8) -> u8 {
+	CRC7_SYNDROME_TABLE[((crc << 1) ^ data) as usize]
 }
 
-fn _crc7(mut crc: u8, buffer: &[u8]) -> u8 {
+fn crc7(mut crc: u8, buffer: &[u8]) -> u8 {
     let len: usize = buffer.len() as usize;
     for i in 0..len {
-        println!("{}", i);
-        println!("{:#X}", crc << 1);
-		crc = _crc7_byte(crc, buffer[i]);
+		crc = crc7_byte(crc, buffer[i]);
     }
 	return crc;
 }
