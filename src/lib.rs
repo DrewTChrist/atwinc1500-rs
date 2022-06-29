@@ -35,6 +35,9 @@ use gpio::{AtwincGpio, GpioDirection, GpioValue};
 use hif::HostInterface;
 use spi::SpiBusWrapper;
 
+type FirmwareVersion = [u8; 3];
+type MacAddress = [u8; 6];
+
 pub struct TcpSocket {}
 
 /// Atwin1500 driver struct
@@ -195,25 +198,41 @@ where
         Ok(())
     }
 
-    /// Get chip firmware version and mac address
-    pub fn get_chip_info(&mut self) -> Result<([u8; 8], [u8; 6], [u8; 40]), Error> {
-        let mut data: [u8; 8] = [0; 8];
-        let mut info: [u8; 40] = [0; 40];
-        let mut mac: [u8; 6] = [0; 6];
-        let mut count = data.len();
-        let val = self.spi_bus.read_register(registers::rNMI_GP_REG_2)?;
+    /// Get the version of the firmware on
+    /// the Atwinc1500
+    pub fn get_firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
+        let mut reg_value = self.spi_bus.read_register(registers::NMI_REV_REG)?;
+        if reg_value == registers::M2M_ATE_FW_IS_UP_VALUE {
+            reg_value = self.spi_bus.read_register(registers::NMI_REV_REG_ATE)?;
+        }
+        Ok([
+            ((reg_value >> 8) & 0xff) as u8, // major
+            ((reg_value >> 4) & 0x0f) as u8, // minor
+            ((reg_value >> 0) & 0x0f) as u8, // patch
+        ])
+    }
+
+    pub fn get_otp_mac_address(&mut self) -> Result<MacAddress, Error> {
+        todo!()
+    }
+
+    /// Get the working mac address
+    /// on the Atwinc1500
+    pub fn get_mac_address(&mut self) -> Result<MacAddress, Error> {
+        const MAC_SIZE: usize = 6;
+        const DATA_SIZE: usize = 8;
+        let mut mac: MacAddress = [0; MAC_SIZE];
+        let mut data: [u8; DATA_SIZE] = [0; DATA_SIZE];
+        let mut reg_value = self.spi_bus.read_register(registers::rNMI_GP_REG_2)?;
+        reg_value |= 0x30000;
         self.spi_bus
-            .read_data(&mut data, val | 0x30000, count as u32)?;
-        count = info.len();
-        self.spi_bus.read_data(
-            &mut info,
-            combine_bytes!(data[4..6]) | 0x30000,
-            count as u32,
-        )?;
-        count = mac.len();
+            .read_data(&mut data, reg_value, DATA_SIZE as u32)?;
+        reg_value = combine_bytes!(data[0..4]);
+        reg_value &= 0x0000ffff;
+        reg_value |= 0x30000;
         self.spi_bus
-            .read_data(&mut mac, combine_bytes!(data[2..4]) | 0x30000, count as u32)?;
-        Ok((data, mac, info))
+            .read_data(&mut mac, reg_value, MAC_SIZE as u32)?;
+        Ok(mac)
     }
 
     pub fn set_gpio_direction(
