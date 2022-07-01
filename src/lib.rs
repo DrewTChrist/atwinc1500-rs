@@ -2,8 +2,9 @@
 //! primary targets for this driver are the [Adafruit Feather M0 Wifi](https://adafruit.com/product/3010)
 //! and the [Adafruit Atwinc1500 Breakout](https://adafruit.com/product/2999).
 //! This may put some features outside the scope of this project, but they
-//! are still welcomed additions. This code has been heavily influenced by
-//! [WiFi101](https://github.com/arduino-libraries/wifi101) and [winc_wifi](https://github.com/jbentham/winc_wifi).
+//! are still welcomed additions. Parts of this code have been adapted from code found in
+//! these two repositories [WiFi101](https://github.com/arduino-libraries/wifi101) 
+//! and [winc_wifi](https://github.com/jbentham/winc_wifi).
 //!
 //! ## Examples
 //! Examples can be found at
@@ -198,7 +199,7 @@ where
         Ok(())
     }
 
-    /// Get the version of the firmware on
+    /// Gets the version of the firmware on
     /// the Atwinc1500
     pub fn get_firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
         let mut reg_value = self.spi_bus.read_register(registers::NMI_REV_REG)?;
@@ -216,7 +217,7 @@ where
         todo!()
     }
 
-    /// Get the working mac address
+    /// Gets the working mac address
     /// on the Atwinc1500
     pub fn get_mac_address(&mut self) -> Result<MacAddress, Error> {
         const MAC_SIZE: usize = 6;
@@ -235,6 +236,8 @@ where
         Ok(mac)
     }
 
+    /// Sets the direction of a gpio pin
+    /// to either Output or Input
     pub fn set_gpio_direction(
         &mut self,
         gpio: AtwincGpio,
@@ -250,6 +253,8 @@ where
         self.spi_bus.write_register(GPIO_DIR_REG, value)
     }
 
+    /// Sets the value of a gpio
+    /// pin as either High or Low
     pub fn set_gpio_value(&mut self, gpio: AtwincGpio, value: GpioValue) -> Result<(), Error> {
         const GPIO_VAL_REG: u32 = 0x20100;
         let mut response = self.spi_bus.read_register(GPIO_VAL_REG)?;
@@ -261,6 +266,8 @@ where
         self.spi_bus.write_register(GPIO_VAL_REG, response)
     }
 
+    /// Gets the direction of a gpio pin
+    /// as either Ouput or Input
     pub fn get_gpio_direction(&mut self, gpio: AtwincGpio) -> Result<GpioDirection, Error> {
         const GPIO_GET_DIR_REG: u32 = 0x20104;
         match self.spi_bus.read_register(GPIO_GET_DIR_REG) {
