@@ -3,7 +3,7 @@
 //! and the [Adafruit Atwinc1500 Breakout](https://adafruit.com/product/2999).
 //! This may put some features outside the scope of this project, but they
 //! are still welcomed additions. Parts of this code have been adapted from code found in
-//! these two repositories [WiFi101](https://github.com/arduino-libraries/wifi101) 
+//! these two repositories [WiFi101](https://github.com/arduino-libraries/wifi101)
 //! and [winc_wifi](https://github.com/jbentham/winc_wifi).
 //!
 //! ## Examples
