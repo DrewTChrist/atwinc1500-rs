@@ -15,22 +15,26 @@ are still welcomed additions. This code has been heavily influenced by
 4. [License](#license)
 
 # Roadmap
+- [ ] Chip
+    - [x] Gpio control
+    - [x] Read mac address
+    - [x] Read firmware version
 - [ ] Wifi
-    * Scan
-    * Connect/Disconnect
-    * RSSI
-    * Ap Mode
+    - [ ] Scan
+    - [ ] Connect/Disconnect
+    - [ ] RSSI
+    - [ ] Ap Mode
 - [ ] TcpFullStack
-    * bind
-    * listen
-    * accept
+    - [ ] bind
+    - [ ] listen
+    - [ ] accept
 - [ ] TcpClientStack
-    * socket
-    * connect
-    * is_connected
-    * send
-    * receive
-    * close
+    - [ ] socket
+    - [ ] connect
+    - [ ] is_connected
+    - [ ] send
+    - [ ] receive
+    - [ ] close
 - [ ] Crypto
 - [ ] SSL
 - [ ] OTA
