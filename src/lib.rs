@@ -228,7 +228,7 @@ where
         reg_value |= 0x30000;
         self.spi_bus
             .read_data(&mut data, reg_value, DATA_SIZE as u32)?;
-        reg_value = combine_bytes!(data[0..4]);
+        reg_value = combine_bytes_lsb!(data[0..4]);
         reg_value &= 0x0000ffff;
         reg_value |= 0x30000;
         self.spi_bus
