@@ -1,7 +1,12 @@
 [package]
 name = "atwinc1500"
 version = "0.1.0"
+authors = ["Andrew Christiansen <andrewtaylorchristiansen@gmail.com>"]
 edition = "2021"
+description = "A Rust driver for the Atwinc1500"
+readme = "README.md"
+repository = "https://github.com/drewtchrist/atwinc1500-rs"
+categories = ["no-std", "embedded"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
