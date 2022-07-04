@@ -209,7 +209,7 @@ where
         Ok([
             ((reg_value >> 8) & 0xff) as u8, // major
             ((reg_value >> 4) & 0x0f) as u8, // minor
-            ((reg_value >> 0) & 0x0f) as u8, // patch
+            (reg_value & 0x0f) as u8, // patch
         ])
     }
 
