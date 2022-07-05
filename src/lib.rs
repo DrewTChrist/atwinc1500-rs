@@ -23,6 +23,7 @@ pub mod gpio;
 pub mod registers;
 #[doc(hidden)]
 pub mod spi;
+pub mod types;
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
@@ -35,11 +36,9 @@ use error::Error;
 use gpio::{AtwincGpio, GpioDirection, GpioValue};
 use hif::HostInterface;
 use spi::SpiBusWrapper;
-
-type FirmwareVersion = [u8; 3];
-type MacAddress = [u8; 6];
-
-pub struct TcpSocket {}
+use types::FirmwareVersion;
+use types::MacAddress;
+use types::TcpSocket;
 
 /// Atwin1500 driver struct
 pub struct Atwinc1500<SPI, D, O, I>
@@ -206,11 +205,11 @@ where
         if reg_value == registers::M2M_ATE_FW_IS_UP_VALUE {
             reg_value = self.spi_bus.read_register(registers::NMI_REV_REG_ATE)?;
         }
-        Ok([
+        Ok(FirmwareVersion([
             ((reg_value >> 8) & 0xff) as u8, // major
             ((reg_value >> 4) & 0x0f) as u8, // minor
             (reg_value & 0x0f) as u8,        // patch
-        ])
+        ]))
     }
 
     pub fn get_otp_mac_address(&mut self) -> Result<MacAddress, Error> {
@@ -222,7 +221,7 @@ where
     pub fn get_mac_address(&mut self) -> Result<MacAddress, Error> {
         const MAC_SIZE: usize = 6;
         const DATA_SIZE: usize = 8;
-        let mut mac: MacAddress = [0; MAC_SIZE];
+        let mut mac: MacAddress = MacAddress([0; MAC_SIZE]);
         let mut data: [u8; DATA_SIZE] = [0; DATA_SIZE];
         let mut reg_value = self.spi_bus.read_register(registers::rNMI_GP_REG_2)?;
         reg_value |= 0x30000;
@@ -232,7 +231,7 @@ where
         reg_value &= 0x0000ffff;
         reg_value |= 0x30000;
         self.spi_bus
-            .read_data(&mut mac, reg_value, MAC_SIZE as u32)?;
+            .read_data(&mut mac.0, reg_value, MAC_SIZE as u32)?;
         Ok(mac)
     }
 
