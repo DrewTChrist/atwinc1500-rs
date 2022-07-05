@@ -31,7 +31,7 @@ macro_rules! combine_bytes_lsb {
 }
 
 macro_rules! retry_while {
-    ($condition:expr, $num_retries:expr, $expression:expr) => {
+    ($condition:expr, retries=$num_retries:literal, $expression:expr) => {
         let mut r = $num_retries;
         while $condition && r > 0 {
             $expression;
