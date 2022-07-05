@@ -44,6 +44,8 @@ pub mod commands {
     pub mod hif {}
 }
 
+const HIF_HEADER_SIZE: usize = 8;
+
 pub struct HifHeader {
     gid: u8,
     op: u8,
@@ -147,12 +149,56 @@ impl HostInterface {
         &mut self,
         spi_bus: &mut SpiBusWrapper<SPI, O>,
         header: HifHeader,
+        data_buffer: &mut [u8],
+        ctrl_buffer: &mut [u8],
+        offset: u32,
     ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
     {
-        todo!()
+        let address: u32;
+        let mut data_length = HIF_HEADER_SIZE;
+        let ctrl_buf_len = ctrl_buffer.len() as u32;
+        let data_buf_len = data_buffer.len() as u32;
+        if data_buf_len != 0 {
+            data_length += offset as usize + data_buf_len as usize;
+        } else {
+            data_length += ctrl_buf_len as usize;
+        }
+        let mut header_buf: [u8; HIF_HEADER_SIZE] = [
+            header.gid,
+            header.op & 0x7f,
+            data_length as u8,
+            (data_length >> 8) as u8,
+            0,
+            0,
+            0,
+            0,
+        ];
+        let hif: [u8; 4] = [
+            (data_length >> 8) as u8,
+            data_length as u8,
+            header.op,
+            header.gid,
+        ];
+
+        spi_bus.write_register(registers::NMI_STATE_REG, combine_bytes_lsb!(hif))?;
+        spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_2, 2)?;
+        let mut reg_value = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_2)?;
+        retry_while!(reg_value & 2 != 0, retries = 100, {
+            reg_value = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_2)?;
+            // may need a delay here
+        });
+
+        address = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_4)?;
+        spi_bus.write_data(&mut header_buf, address, HIF_HEADER_SIZE as u32)?;
+        spi_bus.write_data(ctrl_buffer, address + HIF_HEADER_SIZE as u32, ctrl_buf_len)?;
+        if data_buf_len > 0 {
+            spi_bus.write_data(data_buffer, address + offset, data_buf_len)?;
+        }
+        spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_3, (address << 2) | 2)?;
+        Ok(())
     }
 
     /// This method sets the chip sleep mode

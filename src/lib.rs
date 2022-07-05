@@ -14,11 +14,12 @@
 #![allow(dead_code)]
 #![allow(unused_variables)]
 
-pub mod error;
-mod hif;
 #[macro_use]
 mod macros;
+
+pub mod error;
 pub mod gpio;
+mod hif;
 #[doc(hidden)]
 pub mod registers;
 #[doc(hidden)]
