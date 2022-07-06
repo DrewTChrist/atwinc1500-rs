@@ -157,7 +157,6 @@ impl HostInterface {
         SPI: Transfer<u8>,
         O: OutputPin,
     {
-        let address: u32;
         let mut data_length = HIF_HEADER_SIZE;
         let ctrl_buf_len = ctrl_buffer.len() as u32;
         let data_buf_len = data_buffer.len() as u32;
@@ -191,7 +190,7 @@ impl HostInterface {
             // may need a delay here
         });
 
-        address = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_4)?;
+        let address: u32 = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_4)?;
         spi_bus.write_data(&mut header_buf, address, HIF_HEADER_SIZE as u32)?;
         spi_bus.write_data(ctrl_buffer, address + HIF_HEADER_SIZE as u32, ctrl_buf_len)?;
         if data_buf_len > 0 {
