@@ -16,7 +16,6 @@
 
 #[macro_use]
 mod macros;
-
 pub mod error;
 pub mod gpio;
 mod hif;
@@ -25,6 +24,7 @@ pub mod registers;
 #[doc(hidden)]
 pub mod spi;
 pub mod types;
+pub mod wifi;
 
 use embedded_hal::blocking::delay::DelayMs;
 use embedded_hal::blocking::spi::Transfer;
@@ -37,10 +37,10 @@ use error::Error;
 use gpio::{AtwincGpio, GpioDirection, GpioValue};
 use hif::HostInterface;
 use spi::SpiBusWrapper;
-use types::ConnectionParameters;
 use types::FirmwareVersion;
 use types::MacAddress;
-use types::TcpSocket;
+use wifi::ConnectionParameters;
+use wifi::TcpSocket;
 
 /// Atwin1500 driver struct
 pub struct Atwinc1500<SPI, D, O, I>
