@@ -46,9 +46,7 @@ impl fmt::Display for MacAddress {
     }
 }
 
-enum SecurityType {
-    /// Invalid security type
-    Invalid = 0,
+pub enum SecurityType {
     /// Wi-Fi network is not secured
     Open = 1,
     /// Wi-Fi network is secured with WPA/WPA2 personal(PSK)
@@ -59,7 +57,7 @@ enum SecurityType {
     Sec8021x = 4,
 }
 
-enum Channel {
+pub enum Channel {
     Ch1 = 1,
     Ch2 = 2,
     Ch3 = 3,
@@ -77,6 +75,119 @@ enum Channel {
     Ch15 = 15,
     Ch16 = 16,
     ChAll = 255,
+}
+
+const MAX_SSID_LEN: usize = 33;
+const MAX_PSK_LEN: usize = 65;
+const MIN_PSK_LEN: usize = 9;
+const USER_NAME_MAX: usize = 21;
+const PASSWORD_MAX: usize = 41;
+const WEP_40_KEY_STRING_SIZE: usize = 10;
+const WEP_104_KEY_STRING_SIZE: usize = 26;
+const WEP_KEY_MAX_INDEX: usize = 4;
+
+struct WepSecurity {
+    key_index: u8,
+    key_size: u8,
+    key: [u8; WEP_104_KEY_STRING_SIZE + 1],
+}
+
+struct WpaEnterpriseSecurity {
+    username: [u8; USER_NAME_MAX],
+    password: [u8; PASSWORD_MAX],
+}
+
+pub struct SecurityParameters {
+    sec_type: SecurityType,
+    wep: Option<WepSecurity>,
+    wpa_psk: Option<[u8; MAX_PSK_LEN]>,
+    wpa_enterprise: Option<WpaEnterpriseSecurity>,
+}
+
+impl SecurityParameters {
+    fn new(
+        sec_type: SecurityType,
+        username: Option<&[u8]>,
+        password: Option<&[u8]>,
+        key_index: Option<u8>,
+        key_size: Option<u8>,
+        key: Option<&[u8]>,
+    ) -> Self {
+        let mut s = Self {
+            sec_type,
+            wep: None,
+            wpa_psk: None,
+            wpa_enterprise: None,
+        };
+        match s.sec_type {
+            SecurityType::Open => {}
+            SecurityType::WpaPsk => {
+                s.wpa_psk = Some([0; MAX_PSK_LEN]);
+                if let Some(pword) = password {
+                    if let Some(mut psk) = s.wpa_psk {
+                        psk[..pword.len()].copy_from_slice(pword);
+                    }
+                }
+            }
+            SecurityType::Wep => {
+                let mut wep = WepSecurity {
+                    key_index: 0,
+                    key_size: 0,
+                    key: [0; WEP_104_KEY_STRING_SIZE + 1],
+                };
+                if let Some(k_index) = key_index {
+                    wep.key_index = k_index;
+                }
+                if let Some(k_size) = key_size {
+                    wep.key_size = k_size;
+                }
+                if let Some(k) = key {
+                    wep.key[..k.len()].copy_from_slice(k);
+                }
+                s.wep = Some(wep)
+            }
+            SecurityType::Sec8021x => {
+                s.wpa_enterprise = Some(WpaEnterpriseSecurity {
+                    username: [0; USER_NAME_MAX],
+                    password: [0; PASSWORD_MAX],
+                });
+                if let Some(user) = username {
+                    if let Some(ref mut wpa) = s.wpa_enterprise {
+                        wpa.username[..user.len()].copy_from_slice(user);
+                    }
+                }
+                if let Some(pword) = password {
+                    if let Some(ref mut wpa) = s.wpa_enterprise {
+                        wpa.password[..pword.len()].copy_from_slice(pword);
+                    }
+                }
+            }
+        }
+        s
+    }
+}
+
+pub struct ConnectionParameters {
+    security: SecurityParameters,
+    channel: Channel,
+    ssid: [u8; MAX_SSID_LEN],
+    save_creds: u8,
+}
+
+impl ConnectionParameters {
+    fn new(
+        security: SecurityParameters,
+        channel: Channel,
+        ssid: [u8; MAX_SSID_LEN],
+        save_creds: u8,
+    ) -> Self {
+        Self {
+            security,
+            channel,
+            ssid,
+            save_creds,
+        }
+    }
 }
 
 pub struct TcpSocket {}

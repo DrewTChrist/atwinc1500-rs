@@ -37,6 +37,7 @@ use error::Error;
 use gpio::{AtwincGpio, GpioDirection, GpioValue};
 use hif::HostInterface;
 use spi::SpiBusWrapper;
+use types::ConnectionParameters;
 use types::FirmwareVersion;
 use types::MacAddress;
 use types::TcpSocket;
@@ -271,6 +272,10 @@ where
             Ok(v) => Ok(GpioDirection::from(((v >> gpio as u8) & 0x01) as u8)),
             Err(e) => Err(e),
         }
+    }
+
+    pub fn connect_network(connection: ConnectionParameters) -> Result<(), Error> {
+        Ok(())
     }
 }
 
