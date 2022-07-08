@@ -274,7 +274,7 @@ where
         }
     }
 
-    pub fn connect_network(connection: ConnectionParameters) -> Result<(), Error> {
+    pub fn connect_network(&mut self, connection: ConnectionParameters) -> Result<(), Error> {
         Ok(())
     }
 }

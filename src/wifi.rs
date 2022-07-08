@@ -9,6 +9,7 @@ pub enum SecurityType {
     Sec8021x = 4,
 }
 
+#[derive(Default)]
 pub enum Channel {
     Ch1 = 1,
     Ch2 = 2,
@@ -26,7 +27,8 @@ pub enum Channel {
     Ch14 = 14,
     Ch15 = 15,
     Ch16 = 16,
-    ChAll = 255,
+    #[default]
+    Any = 255,
 }
 
 const MAX_SSID_LEN: usize = 33;
@@ -57,7 +59,7 @@ pub struct SecurityParameters {
 }
 
 impl SecurityParameters {
-    fn new(
+    pub fn new(
         sec_type: SecurityType,
         username: Option<&[u8]>,
         password: Option<&[u8]>,
@@ -127,18 +129,20 @@ pub struct ConnectionParameters {
 }
 
 impl ConnectionParameters {
-    fn new(
+    pub fn new(
         security: SecurityParameters,
         channel: Channel,
-        ssid: [u8; MAX_SSID_LEN],
+        ssid: &[u8],
         save_creds: u8,
     ) -> Self {
-        Self {
+        let mut s = Self {
             security,
             channel,
-            ssid,
+            ssid: [0; MAX_SSID_LEN],
             save_creds,
-        }
+        };
+        s.ssid[..ssid.len()].copy_from_slice(ssid);
+        s
     }
 }
 
