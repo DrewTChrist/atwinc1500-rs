@@ -5,40 +5,40 @@ use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
 
 pub mod group_ids {
-    const MAIN: u8 = 0;
-    const WIFI: u8 = 1;
-    const IP: u8 = 2;
-    const HIF: u8 = 3;
+    pub const MAIN: u8 = 0;
+    pub const WIFI: u8 = 1;
+    pub const IP: u8 = 2;
+    pub const HIF: u8 = 3;
 }
 
 pub mod commands {
     pub mod main {}
     pub mod wifi {
-        const REQ_CONNECT: u8 = 40;
-        const REQ_DEFAULT_CONNECT: u8 = 41;
-        const RESP_CONNECT: u8 = 42;
-        const REQ_DISCONNECT: u8 = 43;
-        const RESP_CON_STATE_CHANGED: u8 = 44;
-        const REQ_SLEEP: u8 = 45;
-        const REQ_WPS_SCAN: u8 = 46;
-        const REQ_WPS: u8 = 47;
-        const REQ_DISABLE_WPS: u8 = 49;
-        const REQ_DHCP_CONF: u8 = 50;
-        const REQ_ENABLE_MONITORING: u8 = 53;
-        const REQ_DISABLE_MONITORING: u8 = 54;
-        const RESP_WIFI_RX_PACKET: u8 = 55;
-        const REQ_SEND_WIFI_PACKET: u8 = 56;
-        const REQ_LSN_INT: u8 = 57;
-        const REQ_DOZE: u8 = 58;
-        const BIND: u8 = 65;
-        const LISTEN: u8 = 66;
-        const ACCEPT: u8 = 67;
-        const CONNECT: u8 = 68;
-        const SEND: u8 = 69;
-        const RECV: u8 = 70;
-        const SENDTO: u8 = 71;
-        const RECVFROM: u8 = 72;
-        const CLOSE: u8 = 73;
+        pub const REQ_CONNECT: u8 = 40;
+        pub const REQ_DEFAULT_CONNECT: u8 = 41;
+        pub const RESP_CONNECT: u8 = 42;
+        pub const REQ_DISCONNECT: u8 = 43;
+        pub const RESP_CON_STATE_CHANGED: u8 = 44;
+        pub const REQ_SLEEP: u8 = 45;
+        pub const REQ_WPS_SCAN: u8 = 46;
+        pub const REQ_WPS: u8 = 47;
+        pub const REQ_DISABLE_WPS: u8 = 49;
+        pub const REQ_DHCP_CONF: u8 = 50;
+        pub const REQ_ENABLE_MONITORING: u8 = 53;
+        pub const REQ_DISABLE_MONITORING: u8 = 54;
+        pub const RESP_WIFI_RX_PACKET: u8 = 55;
+        pub const REQ_SEND_WIFI_PACKET: u8 = 56;
+        pub const REQ_LSN_INT: u8 = 57;
+        pub const REQ_DOZE: u8 = 58;
+        pub const BIND: u8 = 65;
+        pub const LISTEN: u8 = 66;
+        pub const ACCEPT: u8 = 67;
+        pub const CONNECT: u8 = 68;
+        pub const SEND: u8 = 69;
+        pub const RECV: u8 = 70;
+        pub const SENDTO: u8 = 71;
+        pub const RECVFROM: u8 = 72;
+        pub const CLOSE: u8 = 73;
     }
     pub mod ip {}
     pub mod hif {}
@@ -47,9 +47,9 @@ pub mod commands {
 const HIF_HEADER_SIZE: usize = 8;
 
 pub struct HifHeader {
-    gid: u8,
-    op: u8,
-    length: u16,
+    pub gid: u8,
+    pub op: u8,
+    pub length: u16,
 }
 
 pub struct HostInterface;
@@ -158,16 +158,17 @@ impl HostInterface {
         O: OutputPin,
     {
         let mut data_length = HIF_HEADER_SIZE;
-        let ctrl_buf_len = ctrl_buffer.len() as u32;
         let data_buf_len = data_buffer.len() as u32;
-        if data_buf_len != 0 {
-            data_length += offset as usize + data_buf_len as usize;
+        let ctrl_buf_len = ctrl_buffer.len() as u32;
+        if ctrl_buf_len != 0 {
+            // offset is length of data buffer
+            data_length += offset as usize + ctrl_buf_len as usize;
         } else {
-            data_length += ctrl_buf_len as usize;
+            data_length += data_buf_len as usize;
         }
         let mut header_buf: [u8; HIF_HEADER_SIZE] = [
             header.gid,
-            header.op & 0x7f,
+            header.op,
             data_length as u8,
             (data_length >> 8) as u8,
             0,
@@ -182,7 +183,7 @@ impl HostInterface {
             header.gid,
         ];
 
-        spi_bus.write_register(registers::NMI_STATE_REG, combine_bytes_lsb!(hif))?;
+        spi_bus.write_register(registers::NMI_STATE_REG, combine_bytes!(hif))?;
         spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_2, 2)?;
         let mut reg_value = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_2)?;
         retry_while!(reg_value & 2 != 0, retries = 100, {
@@ -192,9 +193,13 @@ impl HostInterface {
 
         let address: u32 = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_4)?;
         spi_bus.write_data(&mut header_buf, address, HIF_HEADER_SIZE as u32)?;
-        spi_bus.write_data(ctrl_buffer, address + HIF_HEADER_SIZE as u32, ctrl_buf_len)?;
-        if data_buf_len > 0 {
-            spi_bus.write_data(data_buffer, address + offset, data_buf_len)?;
+        spi_bus.write_data(data_buffer, address + HIF_HEADER_SIZE as u32, data_buf_len)?;
+        if ctrl_buf_len > 0 {
+            spi_bus.write_data(
+                ctrl_buffer,
+                address + HIF_HEADER_SIZE as u32 + offset,
+                ctrl_buf_len,
+            )?;
         }
         spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_3, (address << 2) | 2)?;
         Ok(())
