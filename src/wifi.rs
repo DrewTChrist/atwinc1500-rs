@@ -40,22 +40,22 @@ const WEP_40_KEY_STRING_SIZE: usize = 10;
 const WEP_104_KEY_STRING_SIZE: usize = 26;
 const WEP_KEY_MAX_INDEX: usize = 4;
 
-struct WepSecurity {
+pub struct WepSecurity {
     key_index: u8,
     key_size: u8,
     key: [u8; WEP_104_KEY_STRING_SIZE + 1],
 }
 
-struct WpaEnterpriseSecurity {
+pub struct WpaEnterpriseSecurity {
     username: [u8; USER_NAME_MAX],
     password: [u8; PASSWORD_MAX],
 }
 
 pub struct SecurityParameters {
-    sec_type: SecurityType,
-    wep: Option<WepSecurity>,
-    wpa_psk: Option<[u8; MAX_PSK_LEN]>,
-    wpa_enterprise: Option<WpaEnterpriseSecurity>,
+    pub sec_type: SecurityType,
+    pub wep: Option<WepSecurity>,
+    pub wpa_psk: Option<[u8; MAX_PSK_LEN]>,
+    pub wpa_enterprise: Option<WpaEnterpriseSecurity>,
 }
 
 impl SecurityParameters {
@@ -76,12 +76,11 @@ impl SecurityParameters {
         match s.sec_type {
             SecurityType::Open => {}
             SecurityType::WpaPsk => {
-                s.wpa_psk = Some([0; MAX_PSK_LEN]);
+                let mut psk: [u8; MAX_PSK_LEN] = [0; MAX_PSK_LEN];
                 if let Some(pword) = password {
-                    if let Some(mut psk) = s.wpa_psk {
-                        psk[..pword.len()].copy_from_slice(pword);
-                    }
+                    psk[..pword.len()].copy_from_slice(&pword);
                 }
+                s.wpa_psk = Some(psk);
             }
             SecurityType::Wep => {
                 let mut wep = WepSecurity {
@@ -122,10 +121,10 @@ impl SecurityParameters {
 }
 
 pub struct ConnectionParameters {
-    security: SecurityParameters,
-    channel: Channel,
-    ssid: [u8; MAX_SSID_LEN],
-    save_creds: u8,
+    pub security: SecurityParameters,
+    pub channel: Channel,
+    pub ssid: [u8; MAX_SSID_LEN],
+    pub save_creds: u8,
 }
 
 impl ConnectionParameters {
