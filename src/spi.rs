@@ -124,7 +124,14 @@ where
                 cmd_buffer[2] = 0x0;
                 cmd_buffer[3] = 0x0;
             }
-            commands::CMD_DMA_EXT_WRITE => {}
+            commands::CMD_DMA_EXT_WRITE => {
+                cmd_buffer[1] = (address >> 16) as u8;
+                cmd_buffer[2] = (address >> 8) as u8;
+                cmd_buffer[3] = address as u8;
+                cmd_buffer[4] = (size >> 16) as u8;
+                cmd_buffer[5] = (size >> 8) as u8;
+                cmd_buffer[6] = size as u8;
+            }
             commands::CMD_DMA_EXT_READ => {
                 cmd_buffer[1] = (address >> 16) as u8;
                 cmd_buffer[2] = (address >> 8) as u8;

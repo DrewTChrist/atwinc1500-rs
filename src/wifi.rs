@@ -78,7 +78,7 @@ impl SecurityParameters {
             SecurityType::WpaPsk => {
                 let mut psk: [u8; MAX_PSK_LEN] = [0; MAX_PSK_LEN];
                 if let Some(pword) = password {
-                    psk[..pword.len()].copy_from_slice(&pword);
+                    psk[..pword.len()].copy_from_slice(pword);
                 }
                 s.wpa_psk = Some(psk);
             }
