@@ -1,3 +1,17 @@
+//! Wifi connection items
+
+// constants
+const MAX_SSID_LEN: usize = 33;
+const MAX_PSK_LEN: usize = 65;
+const MIN_PSK_LEN: usize = 9;
+const USER_NAME_MAX: usize = 21;
+const PASSWORD_MAX: usize = 41;
+const WEP_40_KEY_STRING_SIZE: usize = 10;
+const WEP_104_KEY_STRING_SIZE: usize = 26;
+const WEP_KEY_MAX_INDEX: usize = 4;
+
+/// This represents the type
+/// of security a network uses
 pub enum SecurityType {
     /// Wi-Fi network is not secured
     Open = 1,
@@ -9,6 +23,9 @@ pub enum SecurityType {
     Sec8021x = 4,
 }
 
+/// Wireless channels
+///
+/// The default channel is any
 #[derive(Default)]
 pub enum Channel {
     Ch1 = 1,
@@ -31,26 +48,23 @@ pub enum Channel {
     Any = 255,
 }
 
-const MAX_SSID_LEN: usize = 33;
-const MAX_PSK_LEN: usize = 65;
-const MIN_PSK_LEN: usize = 9;
-const USER_NAME_MAX: usize = 21;
-const PASSWORD_MAX: usize = 41;
-const WEP_40_KEY_STRING_SIZE: usize = 10;
-const WEP_104_KEY_STRING_SIZE: usize = 26;
-const WEP_KEY_MAX_INDEX: usize = 4;
-
+/// Security parameters for connecting
+/// to a WEP protected network
 pub struct WepSecurity {
     key_index: u8,
     key_size: u8,
     key: [u8; WEP_104_KEY_STRING_SIZE + 1],
 }
 
+/// Security parameters for connecting
+/// to an enterprise Wpa network
 pub struct WpaEnterpriseSecurity {
     username: [u8; USER_NAME_MAX],
     password: [u8; PASSWORD_MAX],
 }
 
+/// Security parameters for connecting
+/// to a wifi network
 pub struct SecurityParameters {
     pub sec_type: SecurityType,
     pub wep: Option<WepSecurity>,
@@ -120,6 +134,8 @@ impl SecurityParameters {
     }
 }
 
+/// These are the parameters used
+/// to connect to a wifi network
 pub struct ConnectionParameters {
     pub security: SecurityParameters,
     pub channel: Channel,
