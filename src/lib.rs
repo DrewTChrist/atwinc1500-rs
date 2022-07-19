@@ -282,8 +282,8 @@ where
         con_header[65] = connection.security.sec_type as u8;
         con_header[66] = 0;
         con_header[67] = 0;
-        con_header[68] = 0;
-        con_header[69] = connection.channel as u8;
+        con_header[68] = connection.channel as u8;
+        con_header[69] = 0;
         con_header[70..103].copy_from_slice(&connection.ssid);
         con_header[103] = connection.save_creds;
         con_header[104] = 0;
