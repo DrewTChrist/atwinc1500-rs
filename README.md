@@ -21,7 +21,8 @@ are still welcomed additions. This code has been heavily influenced by
     - [x] Read firmware version
 - [ ] Wifi
     - [ ] Scan
-    - [ ] Connect/Disconnect
+    - [ ] Connect
+    - [ ] Disconnect
     - [ ] RSSI
     - [ ] Ap Mode
 - [ ] TcpFullStack

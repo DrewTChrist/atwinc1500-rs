@@ -274,6 +274,8 @@ where
         }
     }
 
+    /// Connects to a wireless network
+    /// given a ConnectionParameters struct
     pub fn connect_network(&mut self, connection: ConnectionParameters) -> Result<(), Error> {
         let mut con_header: [u8; 106] = [0; 106];
         if let Some(psk) = connection.security.wpa_psk {
@@ -295,6 +297,18 @@ where
         };
         self.hif
             .send(&mut self.spi_bus, hif_header, &mut con_header, &mut [], 0)?;
+        Ok(())
+    }
+
+    /// Disconnects from a wireless network
+    pub fn disconnect_network(&mut self) -> Result<(), Error> {
+        let hif_header = HifHeader {
+            gid: group_ids::WIFI,
+            op: commands::wifi::REQ_DISCONNECT,
+            length: 0,
+        };
+        self.hif
+            .send(&mut self.spi_bus, hif_header, &mut [], &mut [], 0)?;
         Ok(())
     }
 }
