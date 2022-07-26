@@ -21,6 +21,7 @@ pub mod gpio;
 mod hif;
 #[doc(hidden)]
 pub mod registers;
+pub mod socket;
 #[doc(hidden)]
 pub mod spi;
 pub mod types;
@@ -36,11 +37,11 @@ use embedded_nal::TcpFullStack;
 use error::Error;
 use gpio::{AtwincGpio, GpioDirection, GpioValue};
 use hif::{commands, group_ids, HifHeader, HostInterface};
+use socket::TcpSocket;
 use spi::SpiBusWrapper;
 use types::FirmwareVersion;
 use types::MacAddress;
 use wifi::ConnectionParameters;
-use wifi::TcpSocket;
 
 /// Atwin1500 driver struct
 pub struct Atwinc1500<SPI, D, O, I>

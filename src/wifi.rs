@@ -160,5 +160,3 @@ impl ConnectionParameters {
         s
     }
 }
-
-pub struct TcpSocket {}

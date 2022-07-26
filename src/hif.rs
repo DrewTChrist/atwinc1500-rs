@@ -14,6 +14,7 @@ pub mod group_ids {
 pub mod commands {
     pub mod main {}
     pub mod wifi {
+        // station mode commands
         pub const REQ_CONNECT: u8 = 40;
         pub const REQ_DEFAULT_CONNECT: u8 = 41;
         pub const RESP_CONNECT: u8 = 42;
@@ -30,18 +31,52 @@ pub mod commands {
         pub const REQ_SEND_WIFI_PACKET: u8 = 56;
         pub const REQ_LSN_INT: u8 = 57;
         pub const REQ_DOZE: u8 = 58;
-        pub const BIND: u8 = 65;
-        pub const LISTEN: u8 = 66;
-        pub const ACCEPT: u8 = 67;
-        pub const CONNECT: u8 = 68;
-        pub const SEND: u8 = 69;
-        pub const RECV: u8 = 70;
-        pub const SENDTO: u8 = 71;
-        pub const RECVFROM: u8 = 72;
-        pub const CLOSE: u8 = 73;
+
+        // configuration commands
+        pub const REQ_RESTART: u8 = 1;
+        pub const REQ_SET_MAC_ADDRESS: u8 = 2;
+        pub const REQ_CURRENT_RSSI: u8 = 3;
+        pub const REQ_GET_CONN_INFO: u8 = 5;
+        pub const REQ_SET_DEVICE_NAME: u8 = 7;
+        pub const REQ_START_PROVISION_MODE: u8 = 8;
+        pub const REQ_STOP_PROVISION_MODE: u8 = 10;
+        pub const REQ_SET_SYS_TIME: u8 = 11;
+        pub const REQ_ENABLE_SNTP_CLIENT: u8 = 12;
+        pub const REQ_DISABLE_SNTP_CLIENT: u8 = 13;
+        pub const REQ_CUST_INFO_ELEMENT: u8 = 15;
+        pub const REQ_SCAN: u8 = 16;
+        pub const REQ_SCAN_RESULT: u8 = 18;
+        pub const REQ_SET_SCAN_OPTION: u8 = 20;
+        pub const REQ_SET_SCAN_REGION: u8 = 21;
+        pub const REQ_SET_POWER_PROFILE: u8 = 22;
+        pub const REQ_SET_TX_POWER: u8 = 23;
+        pub const REQ_SET_BATTERY_VOLTAGE: u8 = 24;
+        pub const REQ_SET_ENABLE_LOGS: u8 = 25;
+        pub const REQ_GET_SYS_TIME: u8 = 26;
+        pub const REQ_SEND_ETHERNET_PACKET: u8 = 28;
+        pub const REQ_SET_MAC_MCAST: u8 = 30;
+        pub const REQ_GET_PRNG: u8 = 31;
+        pub const REQ_SCAN_SSID_LIST: u8 = 33;
+        pub const REQ_SET_GAINS: u8 = 34;
+        pub const REQ_PASSIVE_SCAN: u8 = 35;
+        pub const MAX_CONFIG_AL: u8 = 36;
     }
     pub mod ip {}
     pub mod hif {}
+}
+
+mod responses {
+    mod wifi {
+        const RESP_CURRENT_RSSI: u8 = 4;
+        const RESP_CONN_INFO: u8 = 6;
+        const RESP_PROVISION_INFO: u8 = 9;
+        const RESP_MEMORY_RECOVER: u8 = 14;
+        const RESP_SCAN_DONE: u8 = 17;
+        const RESP_SCAN_RESULT: u8 = 19;
+        const RESP_GET_SYS_TIME: u8 = 27;
+        const RESP_ETHERNET_RX_PACKET: u8 = 29;
+        const RESP_GET_PRNG: u8 = 32;
+    }
 }
 
 const HIF_HEADER_SIZE: usize = 8;
