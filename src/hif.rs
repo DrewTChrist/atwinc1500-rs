@@ -294,4 +294,32 @@ impl HostInterface {
     {
         todo!()
     }
+
+    pub fn wifi_callback<SPI, O>(
+        &mut self,
+        spi_bus: &mut SpiBusWrapper<SPI, O>,
+        opcode: u8,
+        data_size: u16,
+        address: u32,
+    ) -> Result<(), Error>
+    where
+        SPI: Transfer<u8>,
+        O: OutputPin,
+    {
+        todo!()
+    }
+
+    pub fn ip_callback<SPI, O>(
+        &mut self,
+        spi_bus: &mut SpiBusWrapper<SPI, O>,
+        opcode: u8,
+        data_size: u16,
+        address: u32,
+    ) -> Result<(), Error>
+    where
+        SPI: Transfer<u8>,
+        O: OutputPin,
+    {
+        todo!()
+    }
 }
