@@ -161,13 +161,44 @@ impl HostInterface {
         todo!()
     }
 
-    /// This method is the host interface interrupt service
+    /// This method is the host interface interrupt service routine
     pub fn isr<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
     {
-        todo!()
+        let mut reg_value = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_0)?;
+        if reg_value & 0x1 != 0 {
+            reg_value &= !0x00000001;
+            spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_0, reg_value)?;
+            let size: u16 = ((reg_value >> 2) & 0xfff) as u16;
+            if size > 0 {
+                let address: u32 = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_1)?;
+                let mut header_buf: [u8; HIF_HEADER_SIZE] = [0; HIF_HEADER_SIZE];
+                spi_bus.read_data(&mut header_buf, address, HIF_HEADER_SIZE as u32)?;
+                let header = HifHeader {
+                    gid: header_buf[0],
+                    op: header_buf[1],
+                    length: ((header_buf[3] as u16) << 8) | header_buf[4] as u16,
+                };
+                match header.gid {
+                    group_ids::WIFI => self.wifi_callback(
+                        spi_bus,
+                        header.op,
+                        header.length - HIF_HEADER_SIZE as u16,
+                        address + HIF_HEADER_SIZE as u32,
+                    )?,
+                    group_ids::IP => self.ip_callback(
+                        spi_bus,
+                        header.op,
+                        header.length - HIF_HEADER_SIZE as u16,
+                        address + HIF_HEADER_SIZE as u32,
+                    )?,
+                    _ => { /* Invalid group id */ }
+                }
+            }
+        }
+        Ok(())
     }
 
     /// This method receives data read from the chip
