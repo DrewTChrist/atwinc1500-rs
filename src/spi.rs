@@ -27,13 +27,13 @@ mod sizes {
     pub const DATA: usize = 4;
     // Command size without crc bit
     pub const TYPE_A: usize = 4;
-    pub const TYPE_B: usize = 6;
+    pub const _TYPE_B: usize = 6;
     pub const TYPE_C: usize = 7;
     pub const TYPE_D: usize = 8;
     // Full command packet size with crc bit
     pub const TYPE_A_CRC: usize = TYPE_A + CRC_BIT;
-    pub const TYPE_B_CRC: usize = TYPE_B + CRC_BIT;
-    pub const TYPE_C_CRC: usize = TYPE_C + CRC_BIT;
+    pub const _TYPE_B_CRC: usize = _TYPE_B + CRC_BIT;
+    pub const _TYPE_C_CRC: usize = TYPE_C + CRC_BIT;
     pub const TYPE_D_CRC: usize = TYPE_D + CRC_BIT;
 }
 
@@ -208,7 +208,8 @@ where
     pub fn read_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
         let cmd: u8 = commands::CMD_DMA_EXT_READ;
         let mut cmd_buffer: [u8; sizes::TYPE_C] = [0; sizes::TYPE_C];
-        let mut response: [u8; sizes::RESPONSE + sizes::DATA_START] = [0; sizes::RESPONSE + sizes::DATA_START];
+        let mut response: [u8; sizes::RESPONSE + sizes::DATA_START] =
+            [0; sizes::RESPONSE + sizes::DATA_START];
         self.command(&mut cmd_buffer, cmd, address, 0, count, false)?;
         retry_while!(response[0] == 0, retries = 10, {
             self.transfer(&mut response)?;

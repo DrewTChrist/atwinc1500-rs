@@ -5,10 +5,10 @@ use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
 
 pub mod group_ids {
-    pub const MAIN: u8 = 0;
+    pub const _MAIN: u8 = 0;
     pub const WIFI: u8 = 1;
-    pub const IP: u8 = 2;
-    pub const HIF: u8 = 3;
+    pub const _IP: u8 = 2;
+    pub const _HIF: u8 = 3;
 }
 
 pub mod commands {
@@ -16,50 +16,50 @@ pub mod commands {
     pub mod wifi {
         // station mode commands
         pub const REQ_CONNECT: u8 = 40;
-        pub const REQ_DEFAULT_CONNECT: u8 = 41;
-        pub const RESP_CONNECT: u8 = 42;
+        pub const _REQ_DEFAULT_CONNECT: u8 = 41;
+        pub const _RESP_CONNECT: u8 = 42;
         pub const REQ_DISCONNECT: u8 = 43;
-        pub const RESP_CON_STATE_CHANGED: u8 = 44;
-        pub const REQ_SLEEP: u8 = 45;
-        pub const REQ_WPS_SCAN: u8 = 46;
-        pub const REQ_WPS: u8 = 47;
-        pub const REQ_DISABLE_WPS: u8 = 49;
-        pub const REQ_DHCP_CONF: u8 = 50;
-        pub const REQ_ENABLE_MONITORING: u8 = 53;
-        pub const REQ_DISABLE_MONITORING: u8 = 54;
-        pub const RESP_WIFI_RX_PACKET: u8 = 55;
-        pub const REQ_SEND_WIFI_PACKET: u8 = 56;
-        pub const REQ_LSN_INT: u8 = 57;
-        pub const REQ_DOZE: u8 = 58;
+        pub const _RESP_CON_STATE_CHANGED: u8 = 44;
+        pub const _REQ_SLEEP: u8 = 45;
+        pub const _REQ_WPS_SCAN: u8 = 46;
+        pub const _REQ_WPS: u8 = 47;
+        pub const _REQ_DISABLE_WPS: u8 = 49;
+        pub const _REQ_DHCP_CONF: u8 = 50;
+        pub const _REQ_ENABLE_MONITORING: u8 = 53;
+        pub const _REQ_DISABLE_MONITORING: u8 = 54;
+        pub const _RESP_WIFI_RX_PACKET: u8 = 55;
+        pub const _REQ_SEND_WIFI_PACKET: u8 = 56;
+        pub const _REQ_LSN_INT: u8 = 57;
+        pub const _REQ_DOZE: u8 = 58;
 
         // configuration commands
-        pub const REQ_RESTART: u8 = 1;
-        pub const REQ_SET_MAC_ADDRESS: u8 = 2;
-        pub const REQ_CURRENT_RSSI: u8 = 3;
-        pub const REQ_GET_CONN_INFO: u8 = 5;
-        pub const REQ_SET_DEVICE_NAME: u8 = 7;
-        pub const REQ_START_PROVISION_MODE: u8 = 8;
-        pub const REQ_STOP_PROVISION_MODE: u8 = 10;
-        pub const REQ_SET_SYS_TIME: u8 = 11;
-        pub const REQ_ENABLE_SNTP_CLIENT: u8 = 12;
-        pub const REQ_DISABLE_SNTP_CLIENT: u8 = 13;
-        pub const REQ_CUST_INFO_ELEMENT: u8 = 15;
-        pub const REQ_SCAN: u8 = 16;
-        pub const REQ_SCAN_RESULT: u8 = 18;
-        pub const REQ_SET_SCAN_OPTION: u8 = 20;
-        pub const REQ_SET_SCAN_REGION: u8 = 21;
-        pub const REQ_SET_POWER_PROFILE: u8 = 22;
-        pub const REQ_SET_TX_POWER: u8 = 23;
-        pub const REQ_SET_BATTERY_VOLTAGE: u8 = 24;
-        pub const REQ_SET_ENABLE_LOGS: u8 = 25;
-        pub const REQ_GET_SYS_TIME: u8 = 26;
-        pub const REQ_SEND_ETHERNET_PACKET: u8 = 28;
-        pub const REQ_SET_MAC_MCAST: u8 = 30;
-        pub const REQ_GET_PRNG: u8 = 31;
-        pub const REQ_SCAN_SSID_LIST: u8 = 33;
-        pub const REQ_SET_GAINS: u8 = 34;
-        pub const REQ_PASSIVE_SCAN: u8 = 35;
-        pub const MAX_CONFIG_AL: u8 = 36;
+        pub const _REQ_RESTART: u8 = 1;
+        pub const _REQ_SET_MAC_ADDRESS: u8 = 2;
+        pub const _REQ_CURRENT_RSSI: u8 = 3;
+        pub const _REQ_GET_CONN_INFO: u8 = 5;
+        pub const _REQ_SET_DEVICE_NAME: u8 = 7;
+        pub const _REQ_START_PROVISION_MODE: u8 = 8;
+        pub const _REQ_STOP_PROVISION_MODE: u8 = 10;
+        pub const _REQ_SET_SYS_TIME: u8 = 11;
+        pub const _REQ_ENABLE_SNTP_CLIENT: u8 = 12;
+        pub const _REQ_DISABLE_SNTP_CLIENT: u8 = 13;
+        pub const _REQ_CUST_INFO_ELEMENT: u8 = 15;
+        pub const _REQ_SCAN: u8 = 16;
+        pub const _REQ_SCAN_RESULT: u8 = 18;
+        pub const _REQ_SET_SCAN_OPTION: u8 = 20;
+        pub const _REQ_SET_SCAN_REGION: u8 = 21;
+        pub const _REQ_SET_POWER_PROFILE: u8 = 22;
+        pub const _REQ_SET_TX_POWER: u8 = 23;
+        pub const _REQ_SET_BATTERY_VOLTAGE: u8 = 24;
+        pub const _REQ_SET_ENABLE_LOGS: u8 = 25;
+        pub const _REQ_GET_SYS_TIME: u8 = 26;
+        pub const _REQ_SEND_ETHERNET_PACKET: u8 = 28;
+        pub const _REQ_SET_MAC_MCAST: u8 = 30;
+        pub const _REQ_GET_PRNG: u8 = 31;
+        pub const _REQ_SCAN_SSID_LIST: u8 = 33;
+        pub const _REQ_SET_GAINS: u8 = 34;
+        pub const _REQ_PASSIVE_SCAN: u8 = 35;
+        pub const _MAX_CONFIG_AL: u8 = 36;
     }
     pub mod ip {}
     pub mod hif {}
@@ -67,15 +67,15 @@ pub mod commands {
 
 mod responses {
     mod wifi {
-        const RESP_CURRENT_RSSI: u8 = 4;
-        const RESP_CONN_INFO: u8 = 6;
-        const RESP_PROVISION_INFO: u8 = 9;
-        const RESP_MEMORY_RECOVER: u8 = 14;
-        const RESP_SCAN_DONE: u8 = 17;
-        const RESP_SCAN_RESULT: u8 = 19;
-        const RESP_GET_SYS_TIME: u8 = 27;
-        const RESP_ETHERNET_RX_PACKET: u8 = 29;
-        const RESP_GET_PRNG: u8 = 32;
+        const _RESP_CURRENT_RSSI: u8 = 4;
+        const _RESP_CONN_INFO: u8 = 6;
+        const _RESP_PROVISION_INFO: u8 = 9;
+        const _RESP_MEMORY_RECOVER: u8 = 14;
+        const _RESP_SCAN_DONE: u8 = 17;
+        const _RESP_SCAN_RESULT: u8 = 19;
+        const _RESP_GET_SYS_TIME: u8 = 27;
+        const _RESP_ETHERNET_RX_PACKET: u8 = 29;
+        const _RESP_GET_PRNG: u8 = 32;
     }
 }
 
@@ -91,7 +91,7 @@ pub struct HostInterface;
 
 impl HostInterface {
     /// This method wakes the chip from sleep mode using clockless register access
-    pub fn chip_wake<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
+    pub fn _chip_wake<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
@@ -99,7 +99,7 @@ impl HostInterface {
         let mut trials: u32 = 0;
         let mut register_val: u32;
         let mut clock_status_val: u32;
-        const WAKEUP_TRIALS_TIMEOUT: u8 = 4;
+        const _WAKEUP_TRIALS_TIMEOUT: u8 = 4;
         register_val = spi_bus.read_register(registers::HOST_CORT_COMM)?;
         if (register_val & 0x1) == 0 {
             // USE bit 0 to indicate host wakeup
@@ -117,7 +117,7 @@ impl HostInterface {
             }
             // sleep here?
             trials += 1;
-            if trials > WAKEUP_TRIALS_TIMEOUT as u32 {
+            if trials > _WAKEUP_TRIALS_TIMEOUT as u32 {
                 // error waking chip
                 break;
             }
@@ -126,7 +126,7 @@ impl HostInterface {
     }
 
     /// This method enables sleep mode for the chip
-    pub fn chip_sleep<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
+    pub fn _chip_sleep<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
@@ -153,7 +153,10 @@ impl HostInterface {
     }
 
     /// This method sets the callback function for different events
-    pub fn register_cb<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
+    pub fn _register_cb<SPI, O>(
+        &mut self,
+        _spi_bus: &mut SpiBusWrapper<SPI, O>,
+    ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
@@ -162,7 +165,7 @@ impl HostInterface {
     }
 
     /// This method is the host interface interrupt service routine
-    pub fn isr<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
+    pub fn _isr<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
@@ -182,13 +185,13 @@ impl HostInterface {
                     length: ((header_buf[3] as u16) << 8) | header_buf[4] as u16,
                 };
                 match header.gid {
-                    group_ids::WIFI => self.wifi_callback(
+                    group_ids::WIFI => self._wifi_callback(
                         spi_bus,
                         header.op,
                         header.length - HIF_HEADER_SIZE as u16,
                         address + HIF_HEADER_SIZE as u32,
                     )?,
-                    group_ids::IP => self.ip_callback(
+                    group_ids::_IP => self._ip_callback(
                         spi_bus,
                         header.op,
                         header.length - HIF_HEADER_SIZE as u16,
@@ -202,7 +205,7 @@ impl HostInterface {
     }
 
     /// This method receives data read from the chip
-    pub fn receive<SPI, O>(&mut self, spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
+    pub fn _receive<SPI, O>(&mut self, _spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
@@ -272,9 +275,9 @@ impl HostInterface {
     }
 
     /// This method sets the chip sleep mode
-    pub fn set_sleep_mode<SPI, O>(
+    pub fn _set_sleep_mode<SPI, O>(
         &mut self,
-        spi_bus: &mut SpiBusWrapper<SPI, O>,
+        _spi_bus: &mut SpiBusWrapper<SPI, O>,
     ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
@@ -284,9 +287,9 @@ impl HostInterface {
     }
 
     /// This method returns the chip sleep mode
-    pub fn get_sleep_mode<SPI, O>(
+    pub fn _get_sleep_mode<SPI, O>(
         &mut self,
-        spi_bus: &mut SpiBusWrapper<SPI, O>,
+        _spi_bus: &mut SpiBusWrapper<SPI, O>,
     ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
@@ -295,12 +298,12 @@ impl HostInterface {
         todo!()
     }
 
-    pub fn wifi_callback<SPI, O>(
+    pub fn _wifi_callback<SPI, O>(
         &mut self,
-        spi_bus: &mut SpiBusWrapper<SPI, O>,
-        opcode: u8,
-        data_size: u16,
-        address: u32,
+        _spi_bus: &mut SpiBusWrapper<SPI, O>,
+        _opcode: u8,
+        _data_size: u16,
+        _address: u32,
     ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
@@ -309,12 +312,12 @@ impl HostInterface {
         todo!()
     }
 
-    pub fn ip_callback<SPI, O>(
+    pub fn _ip_callback<SPI, O>(
         &mut self,
-        spi_bus: &mut SpiBusWrapper<SPI, O>,
-        opcode: u8,
-        data_size: u16,
-        address: u32,
+        _spi_bus: &mut SpiBusWrapper<SPI, O>,
+        _opcode: u8,
+        _data_size: u16,
+        _address: u32,
     ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,

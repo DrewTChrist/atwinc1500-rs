@@ -3,12 +3,12 @@
 // constants
 const MAX_SSID_LEN: usize = 33;
 const MAX_PSK_LEN: usize = 65;
-const MIN_PSK_LEN: usize = 9;
+const _MIN_PSK_LEN: usize = 9;
 const USER_NAME_MAX: usize = 21;
 const PASSWORD_MAX: usize = 41;
-const WEP_40_KEY_STRING_SIZE: usize = 10;
+const _WEP_40_KEY_STRING_SIZE: usize = 10;
 const WEP_104_KEY_STRING_SIZE: usize = 26;
-const WEP_KEY_MAX_INDEX: usize = 4;
+const _WEP_KEY_MAX_INDEX: usize = 4;
 
 /// This represents the type
 /// of security a network uses

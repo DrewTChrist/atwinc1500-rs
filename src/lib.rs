@@ -11,8 +11,6 @@
 //! [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
 //!
 #![no_std]
-#![allow(dead_code)]
-#![allow(unused_variables)]
 
 #[macro_use]
 mod macros;
@@ -54,7 +52,7 @@ where
     delay: D,
     spi_bus: SpiBusWrapper<SPI, O>,
     hif: HostInterface,
-    irq: I,
+    _irq: I,
     reset: O,
     wake: O,
     crc: bool,
@@ -91,7 +89,7 @@ where
         spi: SPI,
         delay: D,
         cs: O,
-        irq: I,
+        _irq: I,
         reset: O,
         wake: O,
         crc: bool,
@@ -100,7 +98,7 @@ where
             delay,
             spi_bus: SpiBusWrapper::new(spi, cs),
             hif: HostInterface {},
-            irq,
+            _irq,
             reset,
             wake,
             crc,
@@ -330,33 +328,33 @@ where
 
     fn connect(
         &mut self,
-        socket: &mut TcpSocket,
-        address: SocketAddr,
+        _socket: &mut TcpSocket,
+        _address: SocketAddr,
     ) -> Result<(), embedded_nal::nb::Error<Error>> {
         todo!()
     }
 
-    fn is_connected(&mut self, socket: &TcpSocket) -> Result<bool, Error> {
+    fn is_connected(&mut self, _socket: &TcpSocket) -> Result<bool, Error> {
         todo!()
     }
 
     fn send(
         &mut self,
-        socket: &mut TcpSocket,
-        data: &[u8],
+        _socket: &mut TcpSocket,
+        _data: &[u8],
     ) -> Result<usize, embedded_nal::nb::Error<Error>> {
         todo!()
     }
 
     fn receive(
         &mut self,
-        socket: &mut TcpSocket,
-        data: &mut [u8],
+        _socket: &mut TcpSocket,
+        _data: &mut [u8],
     ) -> Result<usize, embedded_nal::nb::Error<Error>> {
         todo!()
     }
 
-    fn close(&mut self, socket: TcpSocket) -> Result<(), Error> {
+    fn close(&mut self, _socket: TcpSocket) -> Result<(), Error> {
         todo!()
     }
 }
@@ -368,17 +366,17 @@ where
     O: OutputPin,
     I: InputPin,
 {
-    fn bind(&mut self, socket: &mut TcpSocket, port: u16) -> Result<(), Error> {
+    fn bind(&mut self, _socket: &mut TcpSocket, _port: u16) -> Result<(), Error> {
         todo!()
     }
 
-    fn listen(&mut self, socket: &mut TcpSocket) -> Result<(), Error> {
+    fn listen(&mut self, _socket: &mut TcpSocket) -> Result<(), Error> {
         todo!()
     }
 
     fn accept(
         &mut self,
-        socket: &mut TcpSocket,
+        _socket: &mut TcpSocket,
     ) -> Result<(TcpSocket, SocketAddr), embedded_nal::nb::Error<Error>> {
         todo!()
     }
