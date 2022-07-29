@@ -7,25 +7,34 @@ pub mod commands {
     // Command start = 0b1100
     // Example: 0b1100 | 0b0001 into one byte
     // CMD_DMA_WRITE = 0b11000001
-    pub const CMD_DMA_WRITE: u8 = 0xc1;
-    pub const CMD_DMA_READ: u8 = 0xc2;
-    pub const CMD_INTERNAL_WRITE: u8 = 0xc3;
-    pub const CMD_INTERNAL_READ: u8 = 0xc4;
-    pub const CMD_TERMINATE: u8 = 0xc5;
-    pub const CMD_REPEAT: u8 = 0xc6;
-    pub const CMD_DMA_EXT_WRITE: u8 = 0xc7;
-    pub const CMD_DMA_EXT_READ: u8 = 0xc8;
-    pub const CMD_SINGLE_WRITE: u8 = 0xc9;
-    pub const CMD_SINGLE_READ: u8 = 0xca;
-    pub const CMD_RESET: u8 = 0xcf;
+    pub const CMD_DMA_WRITE: u8 = 0xc1; // type B
+    pub const CMD_DMA_READ: u8 = 0xc2; // type B
+    pub const CMD_INTERNAL_WRITE: u8 = 0xc3; // type C
+    pub const CMD_INTERNAL_READ: u8 = 0xc4; // type A
+    pub const CMD_TERMINATE: u8 = 0xc5; // type A
+    pub const CMD_REPEAT: u8 = 0xc6; // type A
+    pub const CMD_DMA_EXT_WRITE: u8 = 0xc7; // type C
+    pub const CMD_DMA_EXT_READ: u8 = 0xc8; // type C
+    pub const CMD_SINGLE_WRITE: u8 = 0xc9; // type D
+    pub const CMD_SINGLE_READ: u8 = 0xca; // type A
+    pub const CMD_RESET: u8 = 0xcf; // type A
 }
 
 mod sizes {
+    pub const CRC_BIT: usize = 1;
+    pub const RESPONSE: usize = 2;
+    pub const DATA_START: usize = 1;
+    pub const DATA: usize = 4;
+    // Command size without crc bit
+    pub const TYPE_A: usize = 4;
+    pub const TYPE_B: usize = 6;
+    pub const TYPE_C: usize = 7;
+    pub const TYPE_D: usize = 8;
     // Full command packet size with crc bit
-    const TYPE_A: usize = 5;
-    const TYPE_B: usize = 7;
-    const TYPE_C: usize = 8;
-    const TYPE_D: usize = 9;
+    pub const TYPE_A_CRC: usize = TYPE_A + CRC_BIT;
+    pub const TYPE_B_CRC: usize = TYPE_B + CRC_BIT;
+    pub const TYPE_C_CRC: usize = TYPE_C + CRC_BIT;
+    pub const TYPE_D_CRC: usize = TYPE_D + CRC_BIT;
 }
 
 /// The SpiBusWrapper struct
@@ -177,7 +186,8 @@ where
         // it here just in case
         let cmd: u8;
         let clockless: bool;
-        let mut cmd_buffer: [u8; 12] = [0; 12];
+        const SIZE: usize = sizes::TYPE_A_CRC + sizes::RESPONSE + sizes::DATA_START + sizes::DATA;
+        let mut cmd_buffer: [u8; SIZE] = [0; SIZE];
         if address <= 0xff {
             cmd = commands::CMD_INTERNAL_READ;
             clockless = true;
@@ -197,13 +207,13 @@ where
     /// Reads a block of data
     pub fn read_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
         let cmd: u8 = commands::CMD_DMA_EXT_READ;
-        let mut cmd_buffer: [u8; 7] = [0; 7];
-        let mut transfer: [u8; 3] = [0; 3];
+        let mut cmd_buffer: [u8; sizes::TYPE_C] = [0; sizes::TYPE_C];
+        let mut response: [u8; sizes::RESPONSE + sizes::DATA_START] = [0; sizes::RESPONSE + sizes::DATA_START];
         self.command(&mut cmd_buffer, cmd, address, 0, count, false)?;
-        retry_while!(transfer[0] == 0, retries = 10, {
-            self.transfer(&mut transfer)?;
+        retry_while!(response[0] == 0, retries = 10, {
+            self.transfer(&mut response)?;
         });
-        if transfer[0] == cmd {
+        if response[0] == cmd {
             self.transfer(data)?;
         }
         Ok(())
@@ -220,7 +230,8 @@ where
         // it here just in case
         let cmd: u8;
         let clockless: bool;
-        let mut cmd_buffer: [u8; 11] = [0; 11];
+        const SIZE: usize = sizes::TYPE_D_CRC + sizes::RESPONSE;
+        let mut cmd_buffer: [u8; SIZE] = [0; SIZE];
         if address <= 0x30 {
             cmd = commands::CMD_INTERNAL_WRITE;
             clockless = true;
@@ -240,8 +251,8 @@ where
     /// Writes a block of data
     pub fn write_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
         let cmd: u8 = commands::CMD_DMA_EXT_WRITE;
-        let mut cmd_buffer: [u8; 7] = [0; 7];
-        let mut response: [u8; 2] = [0; 2];
+        let mut cmd_buffer: [u8; sizes::TYPE_C] = [0; sizes::TYPE_C];
+        let mut response: [u8; sizes::RESPONSE] = [0; sizes::RESPONSE];
         let data_mark: u8 = 0xf3;
         self.command(&mut cmd_buffer, cmd, address, 0, count, false)?;
         self.transfer(&mut response)?;
