@@ -14,6 +14,7 @@
 
 #[macro_use]
 mod macros;
+mod crc;
 pub mod error;
 pub mod gpio;
 mod hif;
@@ -96,7 +97,7 @@ where
     ) -> Result<Self, Error> {
         let mut s = Self {
             delay,
-            spi_bus: SpiBusWrapper::new(spi, cs),
+            spi_bus: SpiBusWrapper::new(spi, cs, crc),
             hif: HostInterface {},
             _irq,
             reset,
@@ -175,13 +176,9 @@ where
     /// Disables crc if self.crc is false
     fn disable_crc(&mut self) -> Result<(), Error> {
         if !self.crc {
-            let mut cmd_buffer: [u8; 11] = [0; 11];
-            let command = spi::commands::CMD_SINGLE_WRITE;
-            let address = registers::NMI_SPI_PROTOCOL_CONFIG;
-            let data = 0x52; // Still unsure of this value
-            cmd_buffer[8] = 0x5c; // CRC value for this write
             self.spi_bus
-                .command(&mut cmd_buffer, command, address, data, 0, false)?;
+                .write_register(registers::NMI_SPI_PROTOCOL_CONFIG, 0x52)?;
+            self.spi_bus.crc_disabled()?;
         }
         Ok(())
     }

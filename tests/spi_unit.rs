@@ -18,7 +18,11 @@ mod spi_unit_tests {
     ) -> spi::SpiBusWrapper<SpiMock, PinMock> {
         let spi = SpiMock::new(spi_expect);
         let cs = PinMock::new(pin_expect);
-        spi::SpiBusWrapper::new(spi, cs)
+        let mut bus = spi::SpiBusWrapper::new(spi, cs, false);
+        if let Err(e) = bus.crc_disabled() {
+            panic!("{}", e);
+        }
+        bus
     }
 
     #[test]
@@ -60,7 +64,6 @@ mod spi_unit_tests {
                     0x0,
                     0x0,
                     0x0,
-                    0x0,
                 ],
                 // Receive
                 vec![
@@ -75,7 +78,6 @@ mod spi_unit_tests {
                     ((FINISH_BOOT_VAL >> 8) & 0xff) as u8,
                     ((FINISH_BOOT_VAL >> 16) & 0xff) as u8,
                     ((FINISH_BOOT_VAL >> 24) & 0xff) as u8,
-                    0x0,
                 ],
             ),
         ];
@@ -116,7 +118,6 @@ mod spi_unit_tests {
                     0x0,
                     0x0,
                     0x0,
-                    0x0,
                 ],
                 vec![
                     0x0,
@@ -130,7 +131,6 @@ mod spi_unit_tests {
                     ((FINISH_BOOT_VAL >> 8) & 0xff) as u8,
                     ((FINISH_BOOT_VAL >> 16) & 0xff) as u8,
                     ((FINISH_BOOT_VAL >> 24) & 0xff) as u8,
-                    0x0,
                 ],
             ),
         ];
@@ -165,7 +165,6 @@ mod spi_unit_tests {
                 START_FIRMWARE as u8,
                 0x0,
                 0x0,
-                0x0,
             ],
             vec![
                 0x0,
@@ -177,7 +176,6 @@ mod spi_unit_tests {
                 0x0,
                 0x0,
                 spi::commands::CMD_SINGLE_WRITE,
-                0x0,
                 0x0,
             ],
         )];
@@ -211,7 +209,6 @@ mod spi_unit_tests {
                 START_FIRMWARE as u8,
                 0x0,
                 0x0,
-                0x0,
             ],
             vec![
                 0x0,
@@ -224,7 +221,6 @@ mod spi_unit_tests {
                 0x0,
                 spi::commands::CMD_SINGLE_WRITE,
                 0xff, // error caused here
-                0x0,
             ],
         )];
         let pin_expect = [
