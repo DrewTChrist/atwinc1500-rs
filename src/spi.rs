@@ -198,14 +198,14 @@ where
             }
         }
         if self.crc || !self.crc_disabled {
-            cmd_buffer[crc_index - 1] = crc7(0x7f, cmd_buffer);
+            cmd_buffer[crc_index] = crc7(0x7f, &cmd_buffer[0..crc_index]);
         }
         self.transfer(cmd_buffer)?;
         Ok(())
     }
 
-    /// Reads a value from a register at address
-    /// then writes it to cmd_buffer
+    /// Reads a register by passing parameters to read_reg
+    /// based on whether crc is enabled or not
     pub fn read_register(&mut self, address: u32) -> Result<u32, Error> {
         match self.crc_disabled {
             true => {
@@ -227,6 +227,8 @@ where
         }
     }
 
+    /// Reads a value from a register at a given address
+    /// and returns it
     fn read_reg<const S: usize>(
         &mut self,
         address: u32,
@@ -269,15 +271,16 @@ where
         Ok(())
     }
 
-    /// Writes a value to a register at
-    /// address and writes the response
-    /// to cmd_buffer
+    /// Writes to a register by passing parameters to write_reg
+    /// based on whether crc is enabled or not
     pub fn write_register(&mut self, address: u32, data: u32) -> Result<(), Error> {
         match self.crc_disabled {
+            // response starts at index 8
             true => {
                 const SIZE: usize = sizes::TYPE_D + sizes::RESPONSE;
                 Ok(self.write_reg::<SIZE>(address, data, 8)?)
             }
+            // response starts at index 9
             false => {
                 const SIZE: usize = sizes::TYPE_D_CRC + sizes::RESPONSE;
                 Ok(self.write_reg::<SIZE>(address, data, 9)?)
@@ -285,6 +288,7 @@ where
         }
     }
 
+    /// Writes a value to a register at a given address
     fn write_reg<const S: usize>(
         &mut self,
         address: u32,
@@ -304,8 +308,6 @@ where
             clockless = false;
         }
         self.command(&mut cmd_buffer, cmd, address, data, 0, clockless)?;
-        // TODO: The hardcoded indices here will
-        // not be the same if crc is on
         if cmd_buffer[response_start] != cmd || cmd_buffer[response_start + 1] != 0 {
             return Err(Error::SpiWriteRegisterError);
         }

@@ -150,6 +150,61 @@ mod spi_unit_tests {
     }
 
     #[test]
+    fn test_read_register_crc() {
+        const FINISH_BOOT_VAL: u32 = 0x10add09e;
+        let address: u32 = registers::BOOTROM_REG;
+        let spi_expect = [
+            // Send
+            SpiTransaction::transfer(
+                vec![
+                    spi::commands::CMD_SINGLE_READ,
+                    (address >> 16) as u8,
+                    (address >> 8) as u8,
+                    address as u8,
+                    0x6f, // crc byte goes here
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                ],
+                // Receive
+                vec![
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    0x0,
+                    spi::commands::CMD_SINGLE_READ,
+                    0x0,
+                    0xf3,
+                    (FINISH_BOOT_VAL & 0xff) as u8,
+                    ((FINISH_BOOT_VAL >> 8) & 0xff) as u8,
+                    ((FINISH_BOOT_VAL >> 16) & 0xff) as u8,
+                    ((FINISH_BOOT_VAL >> 24) & 0xff) as u8,
+                ],
+            ),
+        ];
+        let pin_expect = [
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ];
+        let spi = SpiMock::new(&spi_expect);
+        let cs = PinMock::new(&pin_expect);
+        let mut spi_bus = spi::SpiBusWrapper::new(spi, cs, true);
+        if spi_bus.init_cs().is_err() {
+            assert!(false);
+        }
+        match spi_bus.read_register(registers::BOOTROM_REG) {
+            Ok(v) => assert_eq!(v, FINISH_BOOT_VAL),
+            Err(_) => assert!(false),
+        }
+    }
+
+    #[test]
     fn test_write_register_bootrom() {
         let address: u32 = registers::BOOTROM_REG;
         const START_FIRMWARE: u32 = 0xef522f61;
@@ -236,5 +291,53 @@ mod spi_unit_tests {
             Ok(_) => assert!(false),
             Err(e) => assert_eq!(e, Error::SpiWriteRegisterError),
         }
+    }
+
+    #[test]
+    fn test_write_register_crc() {
+        let address: u32 = registers::BOOTROM_REG;
+        const START_FIRMWARE: u32 = 0xef522f61;
+        let spi_expect = [SpiTransaction::transfer(
+            vec![
+                spi::commands::CMD_SINGLE_WRITE,
+                (address >> 16) as u8,
+                (address >> 8) as u8,
+                address as u8,
+                (START_FIRMWARE >> 24) as u8,
+                (START_FIRMWARE >> 16) as u8,
+                (START_FIRMWARE >> 8) as u8,
+                START_FIRMWARE as u8,
+                0x6c, // crc byte here
+                0x0,
+                0x0,
+            ],
+            vec![
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                0x0,
+                spi::commands::CMD_SINGLE_WRITE,
+                0x0,
+            ],
+        )];
+        let pin_expect = [
+            PinTransaction::set(PinState::High),
+            PinTransaction::set(PinState::Low),
+            PinTransaction::set(PinState::High),
+        ];
+        let spi = SpiMock::new(&spi_expect);
+        let cs = PinMock::new(&pin_expect);
+        let mut spi_bus = spi::SpiBusWrapper::new(spi, cs, true);
+        if spi_bus.init_cs().is_err() {
+            assert!(false);
+        }
+        assert!(spi_bus
+            .write_register(registers::BOOTROM_REG, START_FIRMWARE)
+            .is_ok());
     }
 }
