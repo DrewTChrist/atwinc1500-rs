@@ -26,7 +26,7 @@ mod spi_unit_tests {
     }
 
     #[test]
-    fn test_init_cs_error() {
+    fn init_cs_error() {
         let err = MockError::Io(ErrorKind::NotConnected);
         let spi_expect = [];
         let pin_expect = [PinTransaction::set(PinState::High).with_error(err.clone())];
@@ -35,7 +35,7 @@ mod spi_unit_tests {
     }
 
     #[test]
-    fn test_init_cs_ok() {
+    fn init_cs_ok() {
         let spi_expect = [];
         let pin_expect = [PinTransaction::set(PinState::High)];
         let mut spi_bus = get_fixture(&spi_expect, &pin_expect);
@@ -43,7 +43,7 @@ mod spi_unit_tests {
     }
 
     #[test]
-    fn test_read_register_bootrom() {
+    fn read_register_bootrom() {
         // Simulates a read from the BOOTROM_REG
         // register as performed in the
         // Atwinc1500 initialize method
@@ -97,7 +97,7 @@ mod spi_unit_tests {
     }
 
     #[test]
-    fn test_read_register_error() {
+    fn read_register_error() {
         // Simulates a register read
         // in which the Atwinc1500 returns
         // an error
@@ -150,7 +150,7 @@ mod spi_unit_tests {
     }
 
     #[test]
-    fn test_read_register_crc() {
+    fn read_register_crc() {
         const FINISH_BOOT_VAL: u32 = 0x10add09e;
         let address: u32 = registers::BOOTROM_REG;
         let spi_expect = [
@@ -161,7 +161,7 @@ mod spi_unit_tests {
                     (address >> 16) as u8,
                     (address >> 8) as u8,
                     address as u8,
-                    0x6f, // crc byte goes here
+                    0xde, // crc byte goes here
                     0x0,
                     0x0,
                     0x0,
@@ -205,7 +205,7 @@ mod spi_unit_tests {
     }
 
     #[test]
-    fn test_write_register_bootrom() {
+    fn write_register_bootrom() {
         let address: u32 = registers::BOOTROM_REG;
         const START_FIRMWARE: u32 = 0xef522f61;
         let spi_expect = [SpiTransaction::transfer(
@@ -249,7 +249,7 @@ mod spi_unit_tests {
     }
 
     #[test]
-    fn test_write_register_error() {
+    fn write_register_error() {
         let address: u32 = registers::BOOTROM_REG;
         const START_FIRMWARE: u32 = 0xef522f61;
         let spi_expect = [SpiTransaction::transfer(
@@ -294,7 +294,7 @@ mod spi_unit_tests {
     }
 
     #[test]
-    fn test_write_register_crc() {
+    fn write_register_crc() {
         let address: u32 = registers::BOOTROM_REG;
         const START_FIRMWARE: u32 = 0xef522f61;
         let spi_expect = [SpiTransaction::transfer(
@@ -307,7 +307,7 @@ mod spi_unit_tests {
                 (START_FIRMWARE >> 16) as u8,
                 (START_FIRMWARE >> 8) as u8,
                 START_FIRMWARE as u8,
-                0x6c, // crc byte here
+                0xd8, // crc byte here
                 0x0,
                 0x0,
             ],

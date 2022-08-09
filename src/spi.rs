@@ -198,7 +198,7 @@ where
             }
         }
         if self.crc || !self.crc_disabled {
-            cmd_buffer[crc_index] = crc7(0x7f, &cmd_buffer[0..crc_index]);
+            cmd_buffer[crc_index] = crc7(0x7f, &cmd_buffer[0..crc_index]) << 1;
         }
         self.transfer(cmd_buffer)?;
         Ok(())
