@@ -34,7 +34,7 @@ mod sizes {
     // Full command packet size with crc bit
     pub const TYPE_A_CRC: usize = TYPE_A + CRC_BIT;
     pub const _TYPE_B_CRC: usize = TYPE_B + CRC_BIT;
-    pub const _TYPE_C_CRC: usize = TYPE_C + CRC_BIT;
+    pub const TYPE_C_CRC: usize = TYPE_C + CRC_BIT;
     pub const TYPE_D_CRC: usize = TYPE_D + CRC_BIT;
 }
 
@@ -204,8 +204,8 @@ where
         Ok(())
     }
 
-    /// Reads a register by passing parameters to read_reg
-    /// based on whether crc is enabled or not
+    /// Wraps the read_reg method to pass it the size 
+    /// of the command buffer based on crc being enabled
     pub fn read_register(&mut self, address: u32) -> Result<u32, Error> {
         match self.crc_disabled {
             true => {
@@ -255,10 +255,25 @@ where
         Ok(combine_bytes_lsb!(cmd_buffer[beg..end]))
     }
 
-    /// Reads a block of data
+    /// Wraps the read method to change the command buffer size
+    /// depending on crc being enabled or not
     pub fn read_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
+        match self.crc_disabled {
+            true => {
+                const SIZE: usize = sizes::TYPE_C;
+                Ok(self.read::<SIZE>(data, address, count)?)
+            }
+            false => {
+                const SIZE: usize = sizes::TYPE_C_CRC;
+                Ok(self.read::<SIZE>(data, address, count)?)
+            }
+        }
+    }
+
+    /// Reads a block of data
+    fn read<const S: usize>(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
         let cmd: u8 = commands::CMD_DMA_EXT_READ;
-        let mut cmd_buffer: [u8; sizes::TYPE_C] = [0; sizes::TYPE_C];
+        let mut cmd_buffer: [u8; S] = [0; S];
         let mut response: [u8; sizes::RESPONSE + sizes::DATA_START] =
             [0; sizes::RESPONSE + sizes::DATA_START];
         self.command(&mut cmd_buffer, cmd, address, 0, count, false)?;
@@ -271,8 +286,8 @@ where
         Ok(())
     }
 
-    /// Writes to a register by passing parameters to write_reg
-    /// based on whether crc is enabled or not
+    /// Wraps the read_reg method to pass it the size 
+    /// of the command buffer based on crc being enabled
     pub fn write_register(&mut self, address: u32, data: u32) -> Result<(), Error> {
         match self.crc_disabled {
             // response starts at index 8
@@ -314,10 +329,25 @@ where
         Ok(())
     }
 
-    /// Writes a block of data
+    /// Wraps the write method to change the command buffer size
+    /// depending on crc being enabled or not
     pub fn write_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
+        match self.crc_disabled {
+            true => {
+                const SIZE: usize = sizes::TYPE_C;
+                Ok(self.write::<SIZE>(data, address, count)?)
+            }
+            false => {
+                const SIZE: usize = sizes::TYPE_C_CRC;
+                Ok(self.write::<SIZE>(data, address, count)?)
+            }
+        }
+    }
+
+    /// Writes a block of data to the atwinc1500
+    fn write<const S: usize>(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
         let cmd: u8 = commands::CMD_DMA_EXT_WRITE;
-        let mut cmd_buffer: [u8; sizes::TYPE_C] = [0; sizes::TYPE_C];
+        let mut cmd_buffer: [u8; S] = [0; S];
         let mut response: [u8; sizes::RESPONSE] = [0; sizes::RESPONSE];
         let data_mark: u8 = 0xf3;
         self.command(&mut cmd_buffer, cmd, address, 0, count, false)?;
