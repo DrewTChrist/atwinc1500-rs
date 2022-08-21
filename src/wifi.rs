@@ -4,11 +4,16 @@
 const MAX_SSID_LEN: usize = 33;
 const MAX_PSK_LEN: usize = 65;
 const _MIN_PSK_LEN: usize = 9;
-const USER_NAME_MAX: usize = 21;
-const PASSWORD_MAX: usize = 41;
+const _USER_NAME_MAX: usize = 21;
+const _PASSWORD_MAX: usize = 41;
 const _WEP_40_KEY_STRING_SIZE: usize = 10;
-const WEP_104_KEY_STRING_SIZE: usize = 26;
+const _WEP_104_KEY_STRING_SIZE: usize = 26;
 const _WEP_KEY_MAX_INDEX: usize = 4;
+
+/// Connection for older firmware
+pub type OldConnection = [u8; 106];
+/// Connection for newer firmware
+pub type NewConnection = ([u8; 48], [u8; 108]);
 
 /// This represents the type
 /// of security a network uses
@@ -48,115 +53,75 @@ pub enum Channel {
     Any = 255,
 }
 
-/// Security parameters for connecting
-/// to a WEP protected network
-pub struct WepSecurity {
-    key_index: u8,
-    key_size: u8,
-    key: [u8; WEP_104_KEY_STRING_SIZE + 1],
+pub struct ConnectionOptions {
+    sec_type: SecurityType,
+    save_creds: u8,
+    channel: Channel,
 }
 
-/// Security parameters for connecting
-/// to an enterprise Wpa network
-pub struct WpaEnterpriseSecurity {
-    username: [u8; USER_NAME_MAX],
-    password: [u8; PASSWORD_MAX],
-}
-
-/// Security parameters for connecting
-/// to a wifi network
-pub struct SecurityParameters {
-    pub sec_type: SecurityType,
-    pub wep: Option<WepSecurity>,
-    pub wpa_psk: Option<[u8; MAX_PSK_LEN]>,
-    pub wpa_enterprise: Option<WpaEnterpriseSecurity>,
-}
-
-impl SecurityParameters {
-    pub fn new(
-        sec_type: SecurityType,
-        username: Option<&[u8]>,
-        password: Option<&[u8]>,
-        key_index: Option<u8>,
-        key_size: Option<u8>,
-        key: Option<&[u8]>,
-    ) -> Self {
-        let mut s = Self {
-            sec_type,
-            wep: None,
-            wpa_psk: None,
-            wpa_enterprise: None,
-        };
-        match s.sec_type {
-            SecurityType::Open => {}
-            SecurityType::WpaPsk => {
-                let mut psk: [u8; MAX_PSK_LEN] = [0; MAX_PSK_LEN];
-                if let Some(pword) = password {
-                    psk[..pword.len()].copy_from_slice(pword);
-                }
-                s.wpa_psk = Some(psk);
-            }
-            SecurityType::Wep => {
-                let mut wep = WepSecurity {
-                    key_index: 0,
-                    key_size: 0,
-                    key: [0; WEP_104_KEY_STRING_SIZE + 1],
-                };
-                if let Some(k_index) = key_index {
-                    wep.key_index = k_index;
-                }
-                if let Some(k_size) = key_size {
-                    wep.key_size = k_size;
-                }
-                if let Some(k) = key {
-                    wep.key[..k.len()].copy_from_slice(k);
-                }
-                s.wep = Some(wep)
-            }
-            SecurityType::Sec8021x => {
-                s.wpa_enterprise = Some(WpaEnterpriseSecurity {
-                    username: [0; USER_NAME_MAX],
-                    password: [0; PASSWORD_MAX],
-                });
-                if let Some(user) = username {
-                    if let Some(ref mut wpa) = s.wpa_enterprise {
-                        wpa.username[..user.len()].copy_from_slice(user);
-                    }
-                }
-                if let Some(pword) = password {
-                    if let Some(ref mut wpa) = s.wpa_enterprise {
-                        wpa.password[..pword.len()].copy_from_slice(pword);
-                    }
-                }
-            }
-        }
-        s
-    }
-}
-
-/// These are the parameters used
-/// to connect to a wifi network
-pub struct ConnectionParameters {
-    pub security: SecurityParameters,
-    pub channel: Channel,
-    pub ssid: [u8; MAX_SSID_LEN],
-    pub save_creds: u8,
+pub enum ConnectionParameters {
+    _Wep(),
+    WpaPsk([u8; MAX_SSID_LEN], [u8; MAX_PSK_LEN], ConnectionOptions),
+    _WpaEnterprise(),
 }
 
 impl ConnectionParameters {
-    pub fn new(
-        security: SecurityParameters,
-        channel: Channel,
-        ssid: &[u8],
-        save_creds: u8,
-    ) -> Self {
-        let mut s = Self {
-            security,
-            channel,
-            ssid: [0; MAX_SSID_LEN],
+    pub fn _wep() -> Self {
+        todo!()
+    }
+
+    pub fn wpa_psk(ssid: &[u8], wpa_psk: &[u8], channel: Channel, save_creds: u8) -> Self {
+        let mut ssid_arr = [0; MAX_SSID_LEN];
+        let mut wpa_psk_arr = [0; MAX_PSK_LEN];
+        ssid_arr[..ssid.len()].copy_from_slice(ssid);
+        wpa_psk_arr[..wpa_psk.len()].copy_from_slice(wpa_psk);
+        let options = ConnectionOptions {
+            sec_type: SecurityType::WpaPsk,
             save_creds,
+            channel,
         };
-        s.ssid[..ssid.len()].copy_from_slice(ssid);
-        s
+        ConnectionParameters::WpaPsk(ssid_arr, wpa_psk_arr, options)
+    }
+
+    pub fn _wpa_enterprise() -> Self {
+        todo!()
+    }
+}
+
+impl From<ConnectionParameters> for OldConnection {
+    fn from(connection: ConnectionParameters) -> Self {
+        let mut conn_header: OldConnection = [0; 106];
+        match connection {
+            ConnectionParameters::WpaPsk(ssid, pass, opts) => {
+                conn_header[0..MAX_PSK_LEN].copy_from_slice(&pass);
+                conn_header[65] = opts.sec_type as u8;
+                conn_header[66] = 0;
+                conn_header[67] = 0;
+                conn_header[68] = opts.channel as u8;
+                conn_header[69] = 0;
+                conn_header[70..103].copy_from_slice(&ssid);
+                conn_header[103] = opts.save_creds;
+                conn_header[104] = 0;
+                conn_header[105] = 0;
+            }
+            ConnectionParameters::_Wep() => {}
+            ConnectionParameters::_WpaEnterprise() => {}
+        }
+        conn_header
+    }
+}
+
+impl From<ConnectionParameters> for NewConnection {
+    fn from(connection: ConnectionParameters) -> Self {
+        let mut _conn_header: NewConnection = ([0; 48], [0; 108]);
+        match connection {
+            ConnectionParameters::WpaPsk(_ssid, _pass, _opts) => {}
+            ConnectionParameters::_Wep() => {
+                /* This is an error, WEP was deprecated for
+                 * the new connection model */
+            }
+            ConnectionParameters::_WpaEnterprise() => {}
+        }
+        _conn_header
     }
 }

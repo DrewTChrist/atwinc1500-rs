@@ -204,7 +204,7 @@ where
         Ok(())
     }
 
-    /// Wraps the read_reg method to pass it the size 
+    /// Wraps the read_reg method to pass it the size
     /// of the command buffer based on crc being enabled
     pub fn read_register(&mut self, address: u32) -> Result<u32, Error> {
         match self.crc_disabled {
@@ -271,7 +271,12 @@ where
     }
 
     /// Reads a block of data
-    fn read<const S: usize>(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
+    fn read<const S: usize>(
+        &mut self,
+        data: &mut [u8],
+        address: u32,
+        count: u32,
+    ) -> Result<(), Error> {
         let cmd: u8 = commands::CMD_DMA_EXT_READ;
         let mut cmd_buffer: [u8; S] = [0; S];
         let mut response: [u8; sizes::RESPONSE + sizes::DATA_START] =
@@ -286,7 +291,7 @@ where
         Ok(())
     }
 
-    /// Wraps the read_reg method to pass it the size 
+    /// Wraps the read_reg method to pass it the size
     /// of the command buffer based on crc being enabled
     pub fn write_register(&mut self, address: u32, data: u32) -> Result<(), Error> {
         match self.crc_disabled {
@@ -345,7 +350,12 @@ where
     }
 
     /// Writes a block of data to the atwinc1500
-    fn write<const S: usize>(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
+    fn write<const S: usize>(
+        &mut self,
+        data: &mut [u8],
+        address: u32,
+        count: u32,
+    ) -> Result<(), Error> {
         let cmd: u8 = commands::CMD_DMA_EXT_WRITE;
         let mut cmd_buffer: [u8; S] = [0; S];
         let mut response: [u8; sizes::RESPONSE] = [0; sizes::RESPONSE];

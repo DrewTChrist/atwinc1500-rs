@@ -40,7 +40,7 @@ use socket::TcpSocket;
 use spi::SpiBusWrapper;
 use types::FirmwareVersion;
 use types::MacAddress;
-use wifi::ConnectionParameters;
+use wifi::{ConnectionParameters, OldConnection};
 
 /// Atwin1500 driver struct
 pub struct Atwinc1500<SPI, D, O, I>
@@ -273,26 +273,14 @@ where
     /// Connects to a wireless network
     /// given a ConnectionParameters struct
     pub fn connect_network(&mut self, connection: ConnectionParameters) -> Result<(), Error> {
-        let mut con_header: [u8; 106] = [0; 106];
-        if let Some(psk) = connection.security.wpa_psk {
-            con_header[0..65].copy_from_slice(&psk);
-        }
-        con_header[65] = connection.security.sec_type as u8;
-        con_header[66] = 0;
-        con_header[67] = 0;
-        con_header[68] = connection.channel as u8;
-        con_header[69] = 0;
-        con_header[70..103].copy_from_slice(&connection.ssid);
-        con_header[103] = connection.save_creds;
-        con_header[104] = 0;
-        con_header[105] = 0;
+        let mut conn_header: OldConnection = connection.into();
         let hif_header = HifHeader {
             gid: group_ids::WIFI,
             op: commands::wifi::REQ_CONNECT,
             length: 0,
         };
         self.hif
-            .send(&mut self.spi_bus, hif_header, &mut con_header, &mut [], 0)?;
+            .send(&mut self.spi_bus, hif_header, &mut conn_header, &mut [], 0)?;
         Ok(())
     }
 
