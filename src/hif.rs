@@ -16,7 +16,7 @@ pub mod commands {
     pub mod wifi {
         // station mode commands
         pub const REQ_CONNECT: u8 = 40;
-        pub const _REQ_DEFAULT_CONNECT: u8 = 41;
+        pub const REQ_DEFAULT_CONNECT: u8 = 41;
         pub const _RESP_CONNECT: u8 = 42;
         pub const REQ_DISCONNECT: u8 = 43;
         pub const _RESP_CON_STATE_CHANGED: u8 = 44;

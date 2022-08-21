@@ -295,6 +295,27 @@ where
             .send(&mut self.spi_bus, hif_header, &mut [], &mut [], 0)?;
         Ok(())
     }
+
+    /// Connects to the last remembered network
+    pub fn connect_default_network(&mut self) -> Result<(), Error> {
+        //let hif_header = HifHeader {
+        //    gid: group_ids::WIFI,
+        //    op: commands::wifi::REQ_DEFAULT_CONNECT,
+        //    length: 0,
+        //};
+        self.hif.send(
+            &mut self.spi_bus,
+            HifHeader {
+                gid: group_ids::WIFI,
+                op: commands::wifi::REQ_DEFAULT_CONNECT,
+                length: 0,
+            },
+            &mut [],
+            &mut [],
+            0,
+        )?;
+        Ok(())
+    }
 }
 
 impl<SPI, D, O, I> TcpClientStack for Atwinc1500<SPI, D, O, I>
