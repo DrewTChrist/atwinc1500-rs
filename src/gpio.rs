@@ -8,7 +8,7 @@ pub enum AtwincGpio {
     Gpio6 = 6,
 }
 
-#[derive(PartialEq)]
+#[derive(Eq, PartialEq)]
 /// Gpio pin directions
 pub enum GpioDirection {
     Input,
@@ -25,7 +25,7 @@ impl From<u8> for GpioDirection {
     }
 }
 
-#[derive(PartialEq)]
+#[derive(Eq, PartialEq)]
 /// Gpio pin values
 pub enum GpioValue {
     Low,

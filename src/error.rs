@@ -4,8 +4,8 @@ use core::fmt;
 // Derives defmt::Format if building for bare metal
 // otherwise it does not derive defmt::Format
 // Unit tests get a linker error if this isn't done
-#[cfg_attr(target_os = "none", derive(PartialEq, Debug, defmt::Format))]
-#[cfg_attr(not(target_os = "none"), derive(PartialEq, Debug))]
+#[cfg_attr(target_os = "none", derive(Eq, PartialEq, Debug, defmt::Format))]
+#[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
 /// Atwinc1500 error types
 pub enum Error {
     /// Attempted to parse an invalid spi command
