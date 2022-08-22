@@ -81,7 +81,7 @@ pub struct ConnectionOptions {
 /// Parameters used to connect to a wireless network
 pub enum ConnectionParameters {
     /// ConnectionParameters for an open network
-    _Open(),
+    Open([u8; MAX_SSID_LEN], ConnectionOptions),
     /// ConnectionParameters for a WEP protected network
     _Wep(),
     /// ConnectionParameters for a WPA PSK protected network
@@ -93,8 +93,15 @@ pub enum ConnectionParameters {
 impl ConnectionParameters {
     /// Creates connection parameters for
     /// connecting to an open wifi network
-    pub fn _open() -> Self {
-        todo!()
+    pub fn open(ssid: &[u8], channel: Channel, save_creds: u8) -> Self {
+        let mut ssid_arr = [0; MAX_SSID_LEN];
+        ssid_arr[..ssid.len()].copy_from_slice(ssid);
+        let options = ConnectionOptions {
+            sec_type: SecurityType::Open,
+            save_creds,
+            channel,
+        };
+        ConnectionParameters::Open(ssid_arr, options)
     }
 
     /// Creates WEP connection parameters
@@ -131,7 +138,17 @@ impl From<ConnectionParameters> for OldConnection {
     fn from(connection: ConnectionParameters) -> Self {
         let mut conn_header: OldConnection = [0; 106];
         match connection {
-            ConnectionParameters::_Open() => {}
+            ConnectionParameters::Open(ssid, opts) => {
+                conn_header[65] = opts.sec_type as u8;
+                conn_header[66] = 0;
+                conn_header[67] = 0;
+                conn_header[68] = opts.channel as u8;
+                conn_header[69] = 0;
+                conn_header[70..103].copy_from_slice(&ssid);
+                conn_header[103] = opts.save_creds;
+                conn_header[104] = 0;
+                conn_header[105] = 0;
+            }
             ConnectionParameters::WpaPsk(ssid, pass, opts) => {
                 conn_header[0..MAX_PSK_LEN].copy_from_slice(&pass);
                 conn_header[65] = opts.sec_type as u8;
@@ -157,7 +174,7 @@ impl From<ConnectionParameters> for NewConnection {
     fn from(connection: ConnectionParameters) -> Self {
         let mut _conn_header: NewConnection = ([0; 48], [0; 108]);
         match connection {
-            ConnectionParameters::_Open() => {}
+            ConnectionParameters::Open(_ssid, _opts) => {}
             ConnectionParameters::WpaPsk(_ssid, _pass, _opts) => {}
             ConnectionParameters::_Wep() => {
                 /* This is an error, WEP was deprecated for
