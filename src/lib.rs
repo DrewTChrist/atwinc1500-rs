@@ -11,6 +11,7 @@
 //! [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
 //!
 #![no_std]
+#![warn(missing_docs)]
 
 #[macro_use]
 mod macros;
@@ -207,6 +208,8 @@ where
         ]))
     }
 
+    /// Gets the mac address stored in
+    /// one time programmable memory
     pub fn get_otp_mac_address(&mut self) -> Result<MacAddress, Error> {
         todo!()
     }
