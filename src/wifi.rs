@@ -80,6 +80,8 @@ pub struct ConnectionOptions {
 
 /// Parameters used to connect to a wireless network
 pub enum ConnectionParameters {
+    /// ConnectionParameters for an open network
+    _Open(),
     /// ConnectionParameters for a WEP protected network
     _Wep(),
     /// ConnectionParameters for a WPA PSK protected network
@@ -89,6 +91,12 @@ pub enum ConnectionParameters {
 }
 
 impl ConnectionParameters {
+    /// Creates connection parameters for
+    /// connecting to an open wifi network
+    pub fn _open() -> Self {
+        todo!()
+    }
+
     /// Creates WEP connection parameters
     /// for connecting to a WEP protected wifi network
     pub fn _wep() -> Self {
@@ -123,6 +131,7 @@ impl From<ConnectionParameters> for OldConnection {
     fn from(connection: ConnectionParameters) -> Self {
         let mut conn_header: OldConnection = [0; 106];
         match connection {
+            ConnectionParameters::_Open() => {}
             ConnectionParameters::WpaPsk(ssid, pass, opts) => {
                 conn_header[0..MAX_PSK_LEN].copy_from_slice(&pass);
                 conn_header[65] = opts.sec_type as u8;
@@ -148,6 +157,7 @@ impl From<ConnectionParameters> for NewConnection {
     fn from(connection: ConnectionParameters) -> Self {
         let mut _conn_header: NewConnection = ([0; 48], [0; 108]);
         match connection {
+            ConnectionParameters::_Open() => {}
             ConnectionParameters::WpaPsk(_ssid, _pass, _opts) => {}
             ConnectionParameters::_Wep() => {
                 /* This is an error, WEP was deprecated for
