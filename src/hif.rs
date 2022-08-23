@@ -81,12 +81,70 @@ mod responses {
 
 const HIF_HEADER_SIZE: usize = 8;
 
+#[derive(Copy, Clone)]
 pub struct HifHeader {
     pub gid: u8,
     pub op: u8,
     pub length: u16,
 }
 
+impl HifHeader {
+    /// Creates a new HifHeader automatically adding
+    /// the length of itself
+    pub fn new(gid: u8, op: u8, length: u16) -> Self {
+        HifHeader {
+            gid,
+            op,
+            length: length + HIF_HEADER_SIZE as u16,
+        }
+    }
+}
+
+impl From<HifHeader> for [u8; HIF_HEADER_SIZE] {
+    /// Converts an HifHeader into an array to be sent
+    /// to the Atwinc1500
+    fn from(header: HifHeader) -> [u8; HIF_HEADER_SIZE] {
+        [
+            header.gid,
+            header.op,
+            header.length as u8,
+            (header.length >> 8) as u8,
+            0,
+            0,
+            0,
+            0,
+        ]
+    }
+}
+
+impl From<HifHeader> for u32 {
+    /// Converts an HifHeader to a u32
+    /// to be written to an Atwinc1500 register
+    fn from(header: HifHeader) -> u32 {
+        combine_bytes!([
+            (header.length >> 8) as u8,
+            header.length as u8,
+            header.op,
+            header.gid,
+        ])
+    }
+}
+
+impl From<[u8; 4]> for HifHeader {
+    /// Converts an array received from the Atwinc1500
+    /// into an HifHeader
+    fn from(array: [u8; 4]) -> Self {
+        HifHeader {
+            gid: array[0],
+            op: array[1],
+            length: ((array[2] as u16) << 8) | array[3] as u16,
+        }
+    }
+}
+
+/// Empty struct used to represent the Host Interface layer.
+/// The host interface layer abstracts away all the low level
+/// calls to the spi bus and provides a higher level api to work with.
 pub struct HostInterface;
 
 impl HostInterface {
@@ -177,13 +235,9 @@ impl HostInterface {
             let size: u16 = ((reg_value >> 2) & 0xfff) as u16;
             if size > 0 {
                 let address: u32 = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_1)?;
-                let mut header_buf: [u8; HIF_HEADER_SIZE] = [0; HIF_HEADER_SIZE];
+                let mut header_buf: [u8; 4] = [0; 4];
                 spi_bus.read_data(&mut header_buf, address, HIF_HEADER_SIZE as u32)?;
-                let header = HifHeader {
-                    gid: header_buf[0],
-                    op: header_buf[1],
-                    length: ((header_buf[3] as u16) << 8) | header_buf[4] as u16,
-                };
+                let header = HifHeader::from(header_buf);
                 match header.gid {
                     group_ids::WIFI => self._wifi_callback(
                         spi_bus,
@@ -220,54 +274,35 @@ impl HostInterface {
         header: HifHeader,
         data_buffer: &mut [u8],
         ctrl_buffer: &mut [u8],
-        offset: u32,
     ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
     {
-        let mut data_length = HIF_HEADER_SIZE;
-        let data_buf_len = data_buffer.len() as u32;
-        let ctrl_buf_len = ctrl_buffer.len() as u32;
-        if ctrl_buf_len != 0 {
-            // offset is length of data buffer
-            data_length += offset as usize + ctrl_buf_len as usize;
-        } else {
-            data_length += data_buf_len as usize;
-        }
-        let mut header_buf: [u8; HIF_HEADER_SIZE] = [
-            header.gid,
-            header.op,
-            data_length as u8,
-            (data_length >> 8) as u8,
-            0,
-            0,
-            0,
-            0,
-        ];
-        let hif: [u8; 4] = [
-            (data_length >> 8) as u8,
-            data_length as u8,
-            header.op,
-            header.gid,
-        ];
-
-        spi_bus.write_register(registers::NMI_STATE_REG, combine_bytes!(hif))?;
+        let offset: u32 = data_buffer.len() as u32;
+        let mut header_buf: [u8; HIF_HEADER_SIZE] = header.into();
+        let hif: u32 = header.into();
+        spi_bus.write_register(registers::NMI_STATE_REG, hif)?;
         spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_2, 2)?;
         let mut reg_value = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_2)?;
         retry_while!(reg_value & 2 != 0, retries = 100, {
             reg_value = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_2)?;
             // may need a delay here
         });
-
         let address: u32 = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_4)?;
         spi_bus.write_data(&mut header_buf, address, HIF_HEADER_SIZE as u32)?;
-        spi_bus.write_data(data_buffer, address + HIF_HEADER_SIZE as u32, data_buf_len)?;
-        if ctrl_buf_len > 0 {
+        if !data_buffer.is_empty() {
+            spi_bus.write_data(
+                data_buffer,
+                address + HIF_HEADER_SIZE as u32,
+                data_buffer.len() as u32,
+            )?;
+        }
+        if !ctrl_buffer.is_empty() {
             spi_bus.write_data(
                 ctrl_buffer,
                 address + HIF_HEADER_SIZE as u32 + offset,
-                ctrl_buf_len,
+                ctrl_buffer.len() as u32,
             )?;
         }
         spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_3, (address << 2) | 2)?;

@@ -277,37 +277,29 @@ where
     /// given a ConnectionParameters struct
     pub fn connect_network(&mut self, connection: ConnectionParameters) -> Result<(), Error> {
         let mut conn_header: OldConnection = connection.into();
-        let hif_header = HifHeader {
-            gid: group_ids::WIFI,
-            op: commands::wifi::REQ_CONNECT,
-            length: 0,
-        };
+        let hif_header = HifHeader::new(
+            group_ids::WIFI,
+            commands::wifi::REQ_CONNECT,
+            conn_header.len() as u16,
+        );
         self.hif
-            .send(&mut self.spi_bus, hif_header, &mut conn_header, &mut [], 0)?;
+            .send(&mut self.spi_bus, hif_header, &mut conn_header, &mut [])?;
         Ok(())
     }
 
     /// Disconnects from a wireless network
     pub fn disconnect_network(&mut self) -> Result<(), Error> {
-        let hif_header = HifHeader {
-            gid: group_ids::WIFI,
-            op: commands::wifi::REQ_DISCONNECT,
-            length: 0,
-        };
+        let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_DISCONNECT, 0);
         self.hif
-            .send(&mut self.spi_bus, hif_header, &mut [], &mut [], 0)?;
+            .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
         Ok(())
     }
 
     /// Connects to the last remembered network
     pub fn connect_default_network(&mut self) -> Result<(), Error> {
-        let hif_header = HifHeader {
-            gid: group_ids::WIFI,
-            op: commands::wifi::REQ_DEFAULT_CONNECT,
-            length: 0,
-        };
+        let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_DEFAULT_CONNECT, 0);
         self.hif
-            .send(&mut self.spi_bus, hif_header, &mut [], &mut [], 0)?;
+            .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
         Ok(())
     }
 }
