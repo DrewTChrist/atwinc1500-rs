@@ -25,6 +25,8 @@ pub mod commands {
         pub const _REQ_WPS: u8 = 47;
         pub const _REQ_DISABLE_WPS: u8 = 49;
         pub const _REQ_DHCP_CONF: u8 = 50;
+        pub const _RESP_IP_CONFIGURED: u8 = 51;
+        pub const _RESP_IP_CONFLICT: u8 = 52;
         pub const _REQ_ENABLE_MONITORING: u8 = 53;
         pub const _REQ_DISABLE_MONITORING: u8 = 54;
         pub const _RESP_WIFI_RX_PACKET: u8 = 55;
@@ -36,16 +38,21 @@ pub mod commands {
         pub const _REQ_RESTART: u8 = 1;
         pub const _REQ_SET_MAC_ADDRESS: u8 = 2;
         pub const _REQ_CURRENT_RSSI: u8 = 3;
+        pub const _RESP_CURRENT_RSSI: u8 = 4;
         pub const _REQ_GET_CONN_INFO: u8 = 5;
+        pub const _RESP_CONN_INFO: u8 = 6;
         pub const _REQ_SET_DEVICE_NAME: u8 = 7;
         pub const _REQ_START_PROVISION_MODE: u8 = 8;
+        pub const _RESP_PROVISION_INFO: u8 = 9;
         pub const _REQ_STOP_PROVISION_MODE: u8 = 10;
         pub const _REQ_SET_SYS_TIME: u8 = 11;
         pub const _REQ_ENABLE_SNTP_CLIENT: u8 = 12;
         pub const _REQ_DISABLE_SNTP_CLIENT: u8 = 13;
         pub const _REQ_CUST_INFO_ELEMENT: u8 = 15;
         pub const _REQ_SCAN: u8 = 16;
+        pub const _RESP_SCAN_DONE: u8 = 17;
         pub const _REQ_SCAN_RESULT: u8 = 18;
+        pub const _RESP_SCAN_RESULT: u8 = 19;
         pub const _REQ_SET_SCAN_OPTION: u8 = 20;
         pub const _REQ_SET_SCAN_REGION: u8 = 21;
         pub const _REQ_SET_POWER_PROFILE: u8 = 22;
@@ -53,9 +60,12 @@ pub mod commands {
         pub const _REQ_SET_BATTERY_VOLTAGE: u8 = 24;
         pub const _REQ_SET_ENABLE_LOGS: u8 = 25;
         pub const _REQ_GET_SYS_TIME: u8 = 26;
+        pub const _RESP_GET_SYS_TIME: u8 = 27;
         pub const _REQ_SEND_ETHERNET_PACKET: u8 = 28;
+        pub const _RESP_ETHERNET_RX_PACKET: u8 = 29;
         pub const _REQ_SET_MAC_MCAST: u8 = 30;
         pub const _REQ_GET_PRNG: u8 = 31;
+        pub const _RESP_GET_PRNG: u8 = 32;
         pub const _REQ_SCAN_SSID_LIST: u8 = 33;
         pub const _REQ_SET_GAINS: u8 = 34;
         pub const _REQ_PASSIVE_SCAN: u8 = 35;
@@ -63,20 +73,6 @@ pub mod commands {
     }
     pub mod ip {}
     pub mod hif {}
-}
-
-mod responses {
-    mod wifi {
-        const _RESP_CURRENT_RSSI: u8 = 4;
-        const _RESP_CONN_INFO: u8 = 6;
-        const _RESP_PROVISION_INFO: u8 = 9;
-        const _RESP_MEMORY_RECOVER: u8 = 14;
-        const _RESP_SCAN_DONE: u8 = 17;
-        const _RESP_SCAN_RESULT: u8 = 19;
-        const _RESP_GET_SYS_TIME: u8 = 27;
-        const _RESP_ETHERNET_RX_PACKET: u8 = 29;
-        const _RESP_GET_PRNG: u8 = 32;
-    }
 }
 
 const HIF_HEADER_SIZE: usize = 8;
@@ -356,7 +352,7 @@ impl HostInterface {
     pub fn _wifi_callback<SPI, O>(
         &mut self,
         _spi_bus: &mut SpiBusWrapper<SPI, O>,
-        _opcode: u8,
+        opcode: u8,
         _data_size: u16,
         _address: u32,
     ) -> Result<(), Error>
@@ -364,7 +360,19 @@ impl HostInterface {
         SPI: Transfer<u8>,
         O: OutputPin,
     {
-        todo!()
+        match opcode {
+            commands::wifi::_RESP_CON_STATE_CHANGED => {}
+            commands::wifi::_RESP_GET_SYS_TIME => {}
+            commands::wifi::_RESP_CONN_INFO => {}
+            commands::wifi::_REQ_DHCP_CONF => {}
+            commands::wifi::_REQ_WPS => {}
+            commands::wifi::_RESP_IP_CONFLICT => {}
+            commands::wifi::_RESP_SCAN_DONE => {}
+            commands::wifi::_RESP_SCAN_RESULT => {}
+            commands::wifi::_RESP_CURRENT_RSSI => {}
+            _ => {}
+        }
+        Ok(())
     }
 
     pub fn _ip_callback<SPI, O>(
