@@ -259,12 +259,32 @@ impl HostInterface {
     }
 
     /// This method receives data read from the chip
-    pub fn _receive<SPI, O>(&mut self, _spi_bus: &mut SpiBusWrapper<SPI, O>) -> Result<(), Error>
+    pub fn _receive<SPI, O>(
+        &mut self,
+        spi_bus: &mut SpiBusWrapper<SPI, O>,
+        address: u32,
+        buffer: &mut [u8],
+    ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
     {
-        todo!()
+        spi_bus.read_data(buffer, address, buffer.len() as u32)?;
+        Ok(())
+    }
+
+    /// Lets the atwinc1500 know we're done receiving data
+    fn _finish_reception<SPI, O>(
+        &mut self,
+        spi_bus: &mut SpiBusWrapper<SPI, O>,
+    ) -> Result<(), Error>
+    where
+        SPI: Transfer<u8>,
+        O: OutputPin,
+    {
+        let value: u32 = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_0)?;
+        spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_0, value | 2)?;
+        Ok(())
     }
 
     /// This method sends data to the chip
