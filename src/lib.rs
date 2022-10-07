@@ -27,20 +27,16 @@ pub mod spi;
 pub mod types;
 pub mod wifi;
 
-use embedded_hal::blocking::delay::DelayMs;
-use embedded_hal::blocking::spi::Transfer;
+use embedded_hal::blocking::{delay::DelayMs, spi::Transfer};
 use embedded_hal::digital::v2::{InputPin, OutputPin};
-use embedded_nal::SocketAddr;
-use embedded_nal::TcpClientStack;
-use embedded_nal::TcpFullStack;
+use embedded_nal::{SocketAddr, TcpClientStack, TcpFullStack};
 
 use error::Error;
 use gpio::{AtwincGpio, GpioDirection, GpioValue};
 use hif::{commands, group_ids, HifHeader, HostInterface};
 use socket::TcpSocket;
-use spi::SpiBusWrapper;
-use types::FirmwareVersion;
-use types::MacAddress;
+use spi::SpiBus;
+use types::{FirmwareVersion, MacAddress};
 use wifi::{ConnectionParameters, OldConnection};
 
 /// Atwin1500 driver struct
@@ -52,7 +48,7 @@ where
     I: InputPin,
 {
     delay: D,
-    spi_bus: SpiBusWrapper<SPI, O>,
+    spi_bus: SpiBus<SPI, O>,
     hif: HostInterface,
     _irq: I,
     reset: O,
@@ -98,7 +94,7 @@ where
     ) -> Result<Self, Error> {
         let mut s = Self {
             delay,
-            spi_bus: SpiBusWrapper::new(spi, cs, crc),
+            spi_bus: SpiBus::new(spi, cs, crc),
             hif: HostInterface {},
             _irq,
             reset,

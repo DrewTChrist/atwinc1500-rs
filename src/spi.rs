@@ -38,10 +38,10 @@ mod sizes {
     pub const TYPE_D_CRC: usize = TYPE_D + CRC_BIT;
 }
 
-/// The SpiBusWrapper struct
+/// The SpiBus struct
 /// handles all reads/writes that
 /// happen over the FullDuplex spi bus
-pub struct SpiBusWrapper<SPI, O>
+pub struct SpiBus<SPI, O>
 where
     SPI: Transfer<u8>,
     O: OutputPin,
@@ -52,7 +52,7 @@ where
     crc_disabled: bool,
 }
 
-impl<SPI, O> SpiBusWrapper<SPI, O>
+impl<SPI, O> SpiBus<SPI, O>
 where
     SPI: Transfer<u8>,
     O: OutputPin,
