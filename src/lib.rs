@@ -1,15 +1,4 @@
-//! This is a driver for the atwinc1500 wifi module written in Rust. The
-//! primary targets for this driver are the [Adafruit Feather M0 Wifi](https://adafruit.com/product/3010)
-//! and the [Adafruit Atwinc1500 Breakout](https://adafruit.com/product/2999).
-//! This may put some features outside the scope of this project, but they
-//! are still welcomed additions. Parts of this code have been adapted from code found in
-//! these two repositories [WiFi101](https://github.com/arduino-libraries/wifi101)
-//! and [winc_wifi](https://github.com/jbentham/winc_wifi).
-//!
-//! ## Examples
-//! Examples can be found at
-//! [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
-//!
+#![doc = include_str!("../README.md")]
 #![no_std]
 #![warn(missing_docs)]
 
