@@ -1,15 +1,4 @@
-//! This is a driver for the atwinc1500 wifi module written in Rust. The
-//! primary targets for this driver are the [Adafruit Feather M0 Wifi](https://adafruit.com/product/3010)
-//! and the [Adafruit Atwinc1500 Breakout](https://adafruit.com/product/2999).
-//! This may put some features outside the scope of this project, but they
-//! are still welcomed additions. Parts of this code have been adapted from code found in
-//! these two repositories [WiFi101](https://github.com/arduino-libraries/wifi101)
-//! and [winc_wifi](https://github.com/jbentham/winc_wifi).
-//!
-//! ## Examples
-//! Examples can be found at
-//! [github.com/DrewTChrist/atwin1500-rs-examples](https://github.com/drewtchrist/atwinc1500-rs-examples).
-//!
+#![doc = include_str!("../README.md")]
 #![no_std]
 #![warn(missing_docs)]
 
@@ -27,20 +16,16 @@ pub mod spi;
 pub mod types;
 pub mod wifi;
 
-use embedded_hal::blocking::delay::DelayMs;
-use embedded_hal::blocking::spi::Transfer;
+use embedded_hal::blocking::{delay::DelayMs, spi::Transfer};
 use embedded_hal::digital::v2::{InputPin, OutputPin};
-use embedded_nal::SocketAddr;
-use embedded_nal::TcpClientStack;
-use embedded_nal::TcpFullStack;
+use embedded_nal::{SocketAddr, TcpClientStack, TcpFullStack};
 
 use error::Error;
 use gpio::{AtwincGpio, GpioDirection, GpioValue};
 use hif::{commands, group_ids, HifHeader, HostInterface};
 use socket::TcpSocket;
-use spi::SpiBusWrapper;
-use types::FirmwareVersion;
-use types::MacAddress;
+use spi::SpiBus;
+use types::{FirmwareVersion, MacAddress};
 use wifi::{ConnectionParameters, OldConnection};
 
 /// Atwin1500 driver struct
@@ -52,7 +37,7 @@ where
     I: InputPin,
 {
     delay: D,
-    spi_bus: SpiBusWrapper<SPI, O>,
+    spi_bus: SpiBus<SPI, O>,
     hif: HostInterface,
     _irq: I,
     reset: O,
@@ -98,7 +83,7 @@ where
     ) -> Result<Self, Error> {
         let mut s = Self {
             delay,
-            spi_bus: SpiBusWrapper::new(spi, cs, crc),
+            spi_bus: SpiBus::new(spi, cs, crc),
             hif: HostInterface {},
             _irq,
             reset,
@@ -277,37 +262,29 @@ where
     /// given a ConnectionParameters struct
     pub fn connect_network(&mut self, connection: ConnectionParameters) -> Result<(), Error> {
         let mut conn_header: OldConnection = connection.into();
-        let hif_header = HifHeader {
-            gid: group_ids::WIFI,
-            op: commands::wifi::REQ_CONNECT,
-            length: 0,
-        };
+        let hif_header = HifHeader::new(
+            group_ids::WIFI,
+            commands::wifi::REQ_CONNECT,
+            conn_header.len() as u16,
+        );
         self.hif
-            .send(&mut self.spi_bus, hif_header, &mut conn_header, &mut [], 0)?;
+            .send(&mut self.spi_bus, hif_header, &mut conn_header, &mut [])?;
         Ok(())
     }
 
     /// Disconnects from a wireless network
     pub fn disconnect_network(&mut self) -> Result<(), Error> {
-        let hif_header = HifHeader {
-            gid: group_ids::WIFI,
-            op: commands::wifi::REQ_DISCONNECT,
-            length: 0,
-        };
+        let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_DISCONNECT, 0);
         self.hif
-            .send(&mut self.spi_bus, hif_header, &mut [], &mut [], 0)?;
+            .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
         Ok(())
     }
 
     /// Connects to the last remembered network
     pub fn connect_default_network(&mut self) -> Result<(), Error> {
-        let hif_header = HifHeader {
-            gid: group_ids::WIFI,
-            op: commands::wifi::REQ_DEFAULT_CONNECT,
-            length: 0,
-        };
+        let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_DEFAULT_CONNECT, 0);
         self.hif
-            .send(&mut self.spi_bus, hif_header, &mut [], &mut [], 0)?;
+            .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
         Ok(())
     }
 }

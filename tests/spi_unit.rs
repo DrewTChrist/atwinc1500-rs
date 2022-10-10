@@ -10,15 +10,15 @@ mod spi_unit_tests {
     use embedded_hal_mock::MockError;
     use std::io::ErrorKind;
 
-    /// Returns an SpiBusWrapper with
+    /// Returns an SpiBus with
     /// mocked spi and mocked chip select
     fn get_fixture(
         spi_expect: &[SpiTransaction],
         pin_expect: &[PinTransaction],
-    ) -> spi::SpiBusWrapper<SpiMock, PinMock> {
+    ) -> spi::SpiBus<SpiMock, PinMock> {
         let spi = SpiMock::new(spi_expect);
         let cs = PinMock::new(pin_expect);
-        let mut bus = spi::SpiBusWrapper::new(spi, cs, false);
+        let mut bus = spi::SpiBus::new(spi, cs, false);
         if let Err(e) = bus.crc_disabled() {
             panic!("{}", e);
         }
@@ -194,7 +194,7 @@ mod spi_unit_tests {
         ];
         let spi = SpiMock::new(&spi_expect);
         let cs = PinMock::new(&pin_expect);
-        let mut spi_bus = spi::SpiBusWrapper::new(spi, cs, true);
+        let mut spi_bus = spi::SpiBus::new(spi, cs, true);
         if spi_bus.init_cs().is_err() {
             assert!(false);
         }
@@ -332,7 +332,7 @@ mod spi_unit_tests {
         ];
         let spi = SpiMock::new(&spi_expect);
         let cs = PinMock::new(&pin_expect);
-        let mut spi_bus = spi::SpiBusWrapper::new(spi, cs, true);
+        let mut spi_bus = spi::SpiBus::new(spi, cs, true);
         if spi_bus.init_cs().is_err() {
             assert!(false);
         }
