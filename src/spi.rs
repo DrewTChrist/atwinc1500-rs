@@ -3,6 +3,8 @@ use crate::error::Error;
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
 
+/// This module contains the valid
+/// Spi commands for the Atwinc1500
 pub mod commands {
     // Command start + Command Type
     // Command start = 0b1100
@@ -21,6 +23,8 @@ pub mod commands {
     pub const CMD_RESET: u8 = 0xcf; // type A
 }
 
+/// This module contains the different
+/// sizes for each Spi command type
 mod sizes {
     pub const CRC_BIT: usize = 1;
     pub const RESPONSE: usize = 2;
@@ -36,6 +40,41 @@ mod sizes {
     pub const _TYPE_B_CRC: usize = TYPE_B + CRC_BIT;
     pub const TYPE_C_CRC: usize = TYPE_C + CRC_BIT;
     pub const TYPE_D_CRC: usize = TYPE_D + CRC_BIT;
+}
+
+/// These are the error values defined
+/// in the Atwinc data sheet. InvalidError is
+/// a catch all for error values greater than
+/// 5 that are not real errors. If InvalidError
+/// is caught, then the responses are no longer
+/// being read correctly. These errors should be
+/// handled with the error recovery mechanisms
+/// also defined in the data sheet.
+#[repr(u8)]
+pub enum SpiError {
+    NoError = 0,
+    UnsupportedCommand = 1,
+    UnexpectedDataReceived = 2,
+    Crc7Error = 3,
+    Crc16Error = 4,
+    InternalError = 5,
+    InvalidError,
+}
+
+impl From<u8> for SpiError {
+    /// For easily converting a response byte
+    /// to an SpiError type
+    fn from(other: u8) -> Self {
+        match other {
+            0 => SpiError::NoError,
+            1 => SpiError::UnsupportedCommand,
+            2 => SpiError::UnexpectedDataReceived,
+            3 => SpiError::Crc7Error,
+            4 => SpiError::Crc16Error,
+            5 => SpiError::InternalError,
+            _ => SpiError::InvalidError,
+        }
+    }
 }
 
 /// The SpiBus struct
@@ -57,6 +96,7 @@ where
     SPI: Transfer<u8>,
     O: OutputPin,
 {
+    /// Creates a new SpiBus struct
     pub fn new(spi: SPI, cs: O, crc: bool) -> Self {
         Self {
             spi,
