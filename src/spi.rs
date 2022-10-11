@@ -51,6 +51,7 @@ mod sizes {
 /// handled with the error recovery mechanisms
 /// also defined in the data sheet.
 #[repr(u8)]
+#[derive(PartialEq, PartialOrd)]
 pub enum SpiError {
     NoError = 0,
     UnsupportedCommand = 1,
@@ -75,6 +76,18 @@ impl From<u8> for SpiError {
             _ => SpiError::InvalidError,
         }
     }
+}
+
+/// These bytes are used to determine if
+/// there are more packets to be read when
+/// doing multi packet transfers. They also
+/// help with readability
+#[repr(u8)]
+enum SpiPacket {
+    _First = 0b11110001,
+    _Neither = 0b11110010,
+    Last = 0b11110011,
+    _Reserved = 0b11111111,
 }
 
 /// The SpiBus struct
@@ -399,7 +412,7 @@ where
         let cmd: u8 = commands::CMD_DMA_EXT_WRITE;
         let mut cmd_buffer: [u8; S] = [0; S];
         let mut response: [u8; sizes::RESPONSE] = [0; sizes::RESPONSE];
-        let data_mark: u8 = 0xf3;
+        let data_mark: u8 = SpiPacket::Last as u8;
         self.command(&mut cmd_buffer, cmd, address, 0, count, false)?;
         self.transfer(&mut response)?;
         if response[0] == cmd {
