@@ -51,7 +51,7 @@ mod sizes {
 /// handled with the error recovery mechanisms
 /// also defined in the data sheet.
 #[repr(u8)]
-#[derive(PartialEq, PartialOrd)]
+#[derive(Eq, PartialEq, PartialOrd)]
 pub enum SpiError {
     NoError = 0,
     UnsupportedCommand = 1,
