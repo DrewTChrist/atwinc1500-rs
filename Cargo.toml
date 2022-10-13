@@ -3,12 +3,13 @@ name = "atwinc1500"
 version = "0.1.0"
 authors = ["Andrew Christiansen <andrewtaylorchristiansen@gmail.com>"]
 edition = "2021"
-description = "A Rust driver for the Atwinc1500"
+description = "A pure Rust, host driver for the Atwinc1500"
 readme = "README.md"
 repository = "https://github.com/drewtchrist/atwinc1500-rs"
-categories = ["no-std", "embedded"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT OR Apache-2.0"
+keywords = ["atwinc1500"]
+categories = ["no-std", "embedded", "hardware-support"]
+exclude = ["/diagrams", "/tests"]
 
 [dependencies]
 embedded-hal = { version = "0.2", features=["unproven"] }
