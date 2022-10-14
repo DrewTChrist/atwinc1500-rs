@@ -9,7 +9,7 @@ repository = "https://github.com/drewtchrist/atwinc1500-rs"
 license = "MIT OR Apache-2.0"
 keywords = ["atwinc1500"]
 categories = ["no-std", "embedded", "hardware-support"]
-exclude = ["/diagrams", "/tests"]
+exclude = ["/diagrams", "/tests", "/.github", ".gitignore"]
 
 [dependencies]
 embedded-hal = { version = "0.2", features=["unproven"] }
