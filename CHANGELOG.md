@@ -5,8 +5,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## Added
+- Add Connection struct so pub types can be private
+
+## Changed
+- Change wifi::NewConnection and wifi::OldConnection to pub(crate)
+- Make wifi::SecurityType and wifi::ConnectionOptions private
+- Implement From<Connection> instead of From<ConnectionParameters> in wifi.rs
+
 ## Removed
-- Removed channels 15 & 16 from the Channel enum as those aren't even valid
+- Remove channels 15 & 16 from the Channel enum as those aren't even valid
+- Remove ConnectionParameters impl
 
 ## [0.1.0] - 2022-10-13
 ### Added

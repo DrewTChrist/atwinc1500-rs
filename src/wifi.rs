@@ -11,21 +11,21 @@ const _WEP_104_KEY_STRING_SIZE: usize = 26;
 const _WEP_KEY_MAX_INDEX: usize = 4;
 
 /// Connection format for older firmware
-pub type OldConnection = [u8; 106];
+pub(crate) type OldConnection = [u8; 106];
 /// Connection format for newer firmware
-pub type NewConnection = ([u8; 48], [u8; 108]);
+pub(crate) type NewConnection = ([u8; 48], [u8; 108]);
 
 /// This represents the type
 /// of security a network uses
-pub enum SecurityType {
+enum SecurityType {
     /// Wi-Fi network is not secured
     Open = 1,
     /// Wi-Fi network is secured with WPA/WPA2 personal(PSK)
     WpaPsk = 2,
     /// Security type WEP (40 or 104) OPEN OR SHARED
-    Wep = 3,
+    _Wep = 3,
     /// Wi-Fi network is secured with WPA/WPA2 Enterprise.IEEE802.1x user-name/password authentication
-    Sec8021x = 4,
+    _Sec8021x = 4,
 }
 
 /// Wireless RF channels
@@ -68,14 +68,14 @@ pub enum Channel {
 
 /// Configurable options used for connecting to
 /// a wireless nework
-pub struct ConnectionOptions {
+struct ConnectionOptions {
     sec_type: SecurityType,
     save_creds: u8,
     channel: Channel,
 }
 
 /// Parameters used to connect to a wireless network
-pub enum ConnectionParameters {
+enum ConnectionParameters {
     /// ConnectionParameters for an open network
     Open([u8; MAX_SSID_LEN], ConnectionOptions),
     /// ConnectionParameters for a WEP protected network
@@ -86,9 +86,16 @@ pub enum ConnectionParameters {
     _WpaEnterprise(),
 }
 
-impl ConnectionParameters {
-    /// Creates connection parameters for
-    /// connecting to an open wifi network
+/// The Connection struct is used to give
+/// the Atwinc the credentials of the station
+/// to connect to
+pub struct Connection {
+    parameters: ConnectionParameters,
+}
+
+impl Connection {
+    /// Creates a [Connection] to
+    /// connect to an open wifi network
     pub fn open(ssid: &[u8], channel: Channel, save_creds: u8) -> Self {
         let mut ssid_arr = [0; MAX_SSID_LEN];
         ssid_arr[..ssid.len()].copy_from_slice(ssid);
@@ -97,17 +104,19 @@ impl ConnectionParameters {
             save_creds,
             channel,
         };
-        ConnectionParameters::Open(ssid_arr, options)
+        Self {
+            parameters: ConnectionParameters::Open(ssid_arr, options),
+        }
     }
 
-    /// Creates WEP connection parameters
-    /// for connecting to a WEP protected wifi network
+    /// Creates a [Connection] to connect
+    /// to a WEP protected wifi network
     pub fn _wep() -> Self {
         todo!()
     }
 
-    /// Creates WPA PSK connection parameters
-    /// for connecting to a WPA PSK protected wifi network
+    /// Creates a [Connection] to connect
+    /// to a WPA PSK protected wifi network
     pub fn wpa_psk(ssid: &[u8], wpa_psk: &[u8], channel: Channel, save_creds: u8) -> Self {
         let mut ssid_arr = [0; MAX_SSID_LEN];
         let mut wpa_psk_arr = [0; MAX_PSK_LEN];
@@ -118,22 +127,24 @@ impl ConnectionParameters {
             save_creds,
             channel,
         };
-        ConnectionParameters::WpaPsk(ssid_arr, wpa_psk_arr, options)
+        Self {
+            parameters: ConnectionParameters::WpaPsk(ssid_arr, wpa_psk_arr, options),
+        }
     }
 
-    /// Creates WPA Enterprise connection parameters
-    /// for connecting to a WPA Enterprise protected wifi network
+    /// Creates a [Connection] to connect
+    /// to a WPA Enterprise protected wifi network
     pub fn _wpa_enterprise() -> Self {
         todo!()
     }
 }
 
-impl From<ConnectionParameters> for OldConnection {
-    /// Easily convert ConnectionParameters to the old
+impl From<Connection> for OldConnection {
+    /// Easily convert a [Connection] to the old
     /// wifi connection format
-    fn from(connection: ConnectionParameters) -> Self {
+    fn from(connection: Connection) -> Self {
         let mut conn_header: OldConnection = [0; 106];
-        match connection {
+        match connection.parameters {
             ConnectionParameters::Open(ssid, opts) => {
                 conn_header[65] = opts.sec_type as u8;
                 conn_header[66] = 0;
@@ -164,12 +175,12 @@ impl From<ConnectionParameters> for OldConnection {
     }
 }
 
-impl From<ConnectionParameters> for NewConnection {
-    /// Easily convert ConnectionParameters to the new
+impl From<Connection> for NewConnection {
+    /// Easily convert a [Connection] to the new
     /// wifi connection format
-    fn from(connection: ConnectionParameters) -> Self {
+    fn from(connection: Connection) -> Self {
         let mut _conn_header: NewConnection = ([0; 48], [0; 108]);
-        match connection {
+        match connection.parameters {
             ConnectionParameters::Open(_ssid, _opts) => {}
             ConnectionParameters::WpaPsk(_ssid, _pass, _opts) => {}
             ConnectionParameters::_Wep() => {

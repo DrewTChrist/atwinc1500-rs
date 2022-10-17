@@ -26,7 +26,7 @@ use hif::{commands, group_ids, HifHeader, HostInterface};
 use socket::TcpSocket;
 use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
-use wifi::{ConnectionParameters, OldConnection};
+use wifi::{Connection, OldConnection};
 
 /// Atwin1500 driver struct
 pub struct Atwinc1500<SPI, D, O, I>
@@ -259,8 +259,8 @@ where
     }
 
     /// Connects to a wireless network
-    /// given a ConnectionParameters struct
-    pub fn connect_network(&mut self, connection: ConnectionParameters) -> Result<(), Error> {
+    /// given a [Connection] struct
+    pub fn connect_network(&mut self, connection: Connection) -> Result<(), Error> {
         let mut conn_header: OldConnection = connection.into();
         let hif_header = HifHeader::new(
             group_ids::WIFI,
