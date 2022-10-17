@@ -1,5 +1,9 @@
 # atwinc1500-rs
 
+![](https://img.shields.io/github/workflow/status/drewtchrist/atwinc1500-rs/CI)
+![](https://img.shields.io/docsrs/atwinc1500)
+![](https://img.shields.io/crates/v/atwinc1500)
+
 ## Description
 This is a driver for the atwinc1500 network controller written in pure Rust. The
 primary targets for this driver are boards like the [Adafruit Feather M0 Wifi](https://adafruit.com/product/3010)
