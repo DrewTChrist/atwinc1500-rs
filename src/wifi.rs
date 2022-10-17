@@ -28,7 +28,7 @@ pub enum SecurityType {
     Sec8021x = 4,
 }
 
-/// Wireless channels
+/// Wireless RF channels
 ///
 /// The default channel is any
 #[derive(Default)]
@@ -61,10 +61,6 @@ pub enum Channel {
     Ch13 = 13,
     /// Channel 14
     Ch14 = 14,
-    /// Channel 15
-    Ch15 = 15,
-    /// Channel 16
-    Ch16 = 16,
     #[default]
     /// Any channel (default)
     Any = 255,
