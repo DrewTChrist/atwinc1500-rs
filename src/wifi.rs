@@ -4,16 +4,17 @@
 const MAX_SSID_LEN: usize = 33;
 const MAX_PSK_LEN: usize = 65;
 const _MIN_PSK_LEN: usize = 9;
-const _USER_NAME_MAX: usize = 21;
-const _PASSWORD_MAX: usize = 41;
+const USER_NAME_MAX: usize = 21;
+const PASSWORD_MAX: usize = 41;
 const _WEP_40_KEY_STRING_SIZE: usize = 10;
 const _WEP_104_KEY_STRING_SIZE: usize = 26;
 const _WEP_KEY_MAX_INDEX: usize = 4;
+const CONN_HEADER_LEN: usize = 108;
 
 /// Connection format for older firmware
-pub(crate) type OldConnection = [u8; 106];
+pub(crate) type OldConnection = [u8; CONN_HEADER_LEN];
 /// Connection format for newer firmware
-pub(crate) type NewConnection = ([u8; 48], [u8; 108]);
+pub(crate) type NewConnection = ([u8; 48], [u8; CONN_HEADER_LEN]);
 
 /// This represents the type
 /// of security a network uses
@@ -25,7 +26,7 @@ enum SecurityType {
     /// Security type WEP (40 or 104) OPEN OR SHARED
     _Wep = 3,
     /// Wi-Fi network is secured with WPA/WPA2 Enterprise.IEEE802.1x user-name/password authentication
-    _Sec8021x = 4,
+    Sec8021x = 4,
 }
 
 /// Wireless RF channels
@@ -83,7 +84,12 @@ enum ConnectionParameters {
     /// ConnectionParameters for a WPA PSK protected network
     WpaPsk([u8; MAX_SSID_LEN], [u8; MAX_PSK_LEN], ConnectionOptions),
     /// ConnectionParameters for a WPA Enterprise protected network
-    _WpaEnterprise(),
+    WpaEnterprise(
+        [u8; MAX_SSID_LEN],
+        [u8; USER_NAME_MAX],
+        [u8; PASSWORD_MAX],
+        ConnectionOptions,
+    ),
 }
 
 /// The Connection struct is used to give
@@ -134,8 +140,32 @@ impl Connection {
 
     /// Creates a [Connection] to connect
     /// to a WPA Enterprise protected wifi network
-    pub fn _wpa_enterprise() -> Self {
-        todo!()
+    pub fn wpa_enterprise(
+        ssid: &[u8],
+        user: &[u8],
+        password: &[u8],
+        channel: Channel,
+        save_creds: u8,
+    ) -> Self {
+        let mut ssid_arr = [0; MAX_SSID_LEN];
+        let mut user_arr = [0; USER_NAME_MAX];
+        let mut password_arr = [0; PASSWORD_MAX];
+        ssid_arr[..ssid.len()].copy_from_slice(ssid);
+        user_arr[..user.len()].copy_from_slice(user);
+        password_arr[..password.len()].copy_from_slice(password);
+        let options = ConnectionOptions {
+            sec_type: SecurityType::Sec8021x,
+            save_creds,
+            channel,
+        };
+        Self {
+            parameters: ConnectionParameters::WpaEnterprise(
+                ssid_arr,
+                user_arr,
+                password_arr,
+                options,
+            ),
+        }
     }
 }
 
@@ -143,33 +173,30 @@ impl From<Connection> for OldConnection {
     /// Easily convert a [Connection] to the old
     /// wifi connection format
     fn from(connection: Connection) -> Self {
-        let mut conn_header: OldConnection = [0; 106];
+        let mut conn_header: OldConnection = [0; CONN_HEADER_LEN];
         match connection.parameters {
             ConnectionParameters::Open(ssid, opts) => {
                 conn_header[65] = opts.sec_type as u8;
-                conn_header[66] = 0;
-                conn_header[67] = 0;
                 conn_header[68] = opts.channel as u8;
-                conn_header[69] = 0;
                 conn_header[70..103].copy_from_slice(&ssid);
                 conn_header[103] = opts.save_creds;
-                conn_header[104] = 0;
-                conn_header[105] = 0;
             }
             ConnectionParameters::WpaPsk(ssid, pass, opts) => {
                 conn_header[0..MAX_PSK_LEN].copy_from_slice(&pass);
                 conn_header[65] = opts.sec_type as u8;
-                conn_header[66] = 0;
-                conn_header[67] = 0;
                 conn_header[68] = opts.channel as u8;
-                conn_header[69] = 0;
                 conn_header[70..103].copy_from_slice(&ssid);
                 conn_header[103] = opts.save_creds;
-                conn_header[104] = 0;
-                conn_header[105] = 0;
             }
             ConnectionParameters::_Wep() => {}
-            ConnectionParameters::_WpaEnterprise() => {}
+            ConnectionParameters::WpaEnterprise(ssid, user, pass, opts) => {
+                conn_header[0..USER_NAME_MAX].copy_from_slice(&user);
+                conn_header[USER_NAME_MAX..USER_NAME_MAX + PASSWORD_MAX].copy_from_slice(&pass);
+                conn_header[65] = opts.sec_type as u8;
+                conn_header[68] = opts.channel as u8;
+                conn_header[70..103].copy_from_slice(&ssid);
+                conn_header[103] = opts.save_creds;
+            }
         }
         conn_header
     }
@@ -179,7 +206,7 @@ impl From<Connection> for NewConnection {
     /// Easily convert a [Connection] to the new
     /// wifi connection format
     fn from(connection: Connection) -> Self {
-        let mut _conn_header: NewConnection = ([0; 48], [0; 108]);
+        let mut _conn_header: NewConnection = ([0; 48], [0; CONN_HEADER_LEN]);
         match connection.parameters {
             ConnectionParameters::Open(_ssid, _opts) => {}
             ConnectionParameters::WpaPsk(_ssid, _pass, _opts) => {}
@@ -187,7 +214,7 @@ impl From<Connection> for NewConnection {
                 /* This is an error, WEP was deprecated for
                  * the new connection model */
             }
-            ConnectionParameters::_WpaEnterprise() => {}
+            ConnectionParameters::WpaEnterprise(_ssid, _user, _pass, _opts) => {}
         }
         _conn_header
     }
