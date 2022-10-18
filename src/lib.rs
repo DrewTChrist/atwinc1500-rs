@@ -289,6 +289,7 @@ where
     }
 }
 
+#[doc(hidden)]
 impl<SPI, D, O, I> TcpClientStack for Atwinc1500<SPI, D, O, I>
 where
     SPI: Transfer<u8>,
@@ -336,6 +337,7 @@ where
     }
 }
 
+#[doc(hidden)]
 impl<SPI, D, O, I> TcpFullStack for Atwinc1500<SPI, D, O, I>
 where
     SPI: Transfer<u8>,
