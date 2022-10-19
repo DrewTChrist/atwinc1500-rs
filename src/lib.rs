@@ -10,6 +10,7 @@ pub mod gpio;
 mod hif;
 #[doc(hidden)]
 pub mod registers;
+#[doc(hidden)]
 pub mod socket;
 #[doc(hidden)]
 pub mod spi;

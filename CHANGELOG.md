@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change wifi::NewConnection and wifi::OldConnection to pub(crate)
 - Make wifi::SecurityType and wifi::ConnectionOptions private
 - Implement From<Connection> instead of From<ConnectionParameters> in wifi.rs
+- Hide unimplemented method stubs and modules with from docs
+- Simplify gpio methods
 
 ## Removed
 - Remove channels 15 & 16 from the Channel enum as those aren't even valid
