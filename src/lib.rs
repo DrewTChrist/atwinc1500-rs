@@ -227,10 +227,9 @@ where
     ) -> Result<(), Error> {
         const GPIO_DIR_REG: u32 = 0x20108;
         let mut value = self.spi_bus.read_register(GPIO_DIR_REG)?;
-        if direction == GpioDirection::Output {
-            value |= 1 << gpio as u8;
-        } else {
-            value &= !(1 << gpio as u8);
+        match direction {
+            GpioDirection::Output => value |= 1 << gpio as u8,
+            GpioDirection::Input => value &= !(1 << gpio as u8),
         }
         self.spi_bus.write_register(GPIO_DIR_REG, value)
     }
@@ -240,10 +239,9 @@ where
     pub fn set_gpio_value(&mut self, gpio: AtwincGpio, value: GpioValue) -> Result<(), Error> {
         const GPIO_VAL_REG: u32 = 0x20100;
         let mut response = self.spi_bus.read_register(GPIO_VAL_REG)?;
-        if value == GpioValue::Low {
-            response |= 1 << gpio as u8;
-        } else {
-            response &= !(1 << gpio as u8);
+        match value {
+            GpioValue::Low => response |= 1 << gpio as u8,
+            GpioValue::High => response &= !(1 << gpio as u8),
         }
         self.spi_bus.write_register(GPIO_VAL_REG, response)
     }
