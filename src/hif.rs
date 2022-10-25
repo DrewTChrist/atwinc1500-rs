@@ -144,6 +144,11 @@ impl From<[u8; 4]> for HifHeader {
 pub struct HostInterface;
 
 impl HostInterface {
+    /// Creates a new HostInterface struct
+    pub fn new() -> Self {
+        Self {}
+    }
+
     /// This method wakes the chip from sleep mode using clockless register access
     pub fn _chip_wake<SPI, O>(&mut self, spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
     where

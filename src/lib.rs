@@ -85,7 +85,7 @@ where
         let mut s = Self {
             delay,
             spi_bus: SpiBus::new(spi, cs, crc),
-            hif: HostInterface {},
+            hif: HostInterface::new(),
             _irq,
             reset,
             wake,
