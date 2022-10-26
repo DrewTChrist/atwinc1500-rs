@@ -17,6 +17,8 @@ pub mod spi;
 pub mod types;
 pub mod wifi;
 
+use core::cell::RefCell;
+
 use embedded_hal::blocking::{delay::DelayMs, spi::Transfer};
 use embedded_hal::digital::v2::{InputPin, OutputPin};
 use embedded_nal::{SocketAddr, TcpClientStack, TcpFullStack};
@@ -29,8 +31,10 @@ use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
 use wifi::{Connection, OldConnection};
 
+pub(crate) struct State;
+
 /// Atwin1500 driver struct
-pub struct Atwinc1500<SPI, D, O, I>
+pub struct Atwinc1500<'a, SPI, D, O, I>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
@@ -39,16 +43,17 @@ where
 {
     delay: D,
     spi_bus: SpiBus<SPI, O>,
-    hif: HostInterface,
+    hif: HostInterface<'a>,
     _irq: I,
     reset: O,
     wake: O,
     crc: bool,
+    state: RefCell<State>,
 }
 
 /// Atwinc1500 struct implementation containing non embedded-nal
 /// public methods
-impl<SPI, D, O, I> Atwinc1500<SPI, D, O, I>
+impl<'a, SPI, D, O, I> Atwinc1500<'a, SPI, D, O, I>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
@@ -73,16 +78,8 @@ where
     ///
     /// * `crc` - Turn on CRC in transactions
     ///
-    pub fn new(
-        spi: SPI,
-        delay: D,
-        cs: O,
-        _irq: I,
-        reset: O,
-        wake: O,
-        crc: bool,
-    ) -> Result<Self, Error> {
-        let mut s = Self {
+    pub fn new(spi: SPI, delay: D, cs: O, _irq: I, reset: O, wake: O, crc: bool) -> Self {
+        Self {
             delay,
             spi_bus: SpiBus::new(spi, cs, crc),
             hif: HostInterface::new(),
@@ -90,9 +87,8 @@ where
             reset,
             wake,
             crc,
-        };
-        s.initialize()?;
-        Ok(s)
+            state: RefCell::new(State {}),
+        }
     }
 
     /// Initializes the driver by:
@@ -102,7 +98,7 @@ where
     /// * Waits for boot rom ready
     /// * Writes driver version and configuration
     /// * Enables chip interrupt
-    fn initialize(&mut self) -> Result<(), Error> {
+    pub fn initialize(&'a mut self) -> Result<(), Error> {
         const FINISH_BOOT_VAL: u32 = 0x10add09e;
         const DRIVER_VER_INFO: u32 = 0x13521330;
         const CONF_VAL: u32 = 0x102;
@@ -138,7 +134,14 @@ where
         });
         self.spi_bus.write_register(registers::NMI_STATE_REG, 0)?;
         self.enable_chip_interrupt()?;
+        self.set_state_reference();
         Ok(())
+    }
+
+    /// This method sets a shared mutable reference
+    /// to the driver State for the HostInterface struct
+    fn set_state_reference(&'a self) {
+        self.hif.set_state_reference(&self.state);
     }
 
     /// Pulls the chip select and wake pins high
@@ -289,7 +292,7 @@ where
 }
 
 #[doc(hidden)]
-impl<SPI, D, O, I> TcpClientStack for Atwinc1500<SPI, D, O, I>
+impl<'a, SPI, D, O, I> TcpClientStack for Atwinc1500<'a, SPI, D, O, I>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
@@ -337,7 +340,7 @@ where
 }
 
 #[doc(hidden)]
-impl<SPI, D, O, I> TcpFullStack for Atwinc1500<SPI, D, O, I>
+impl<'a, SPI, D, O, I> TcpFullStack for Atwinc1500<'a, SPI, D, O, I>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,

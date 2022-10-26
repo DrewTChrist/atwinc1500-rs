@@ -1,6 +1,8 @@
 use crate::error::Error;
 use crate::registers;
 use crate::spi::SpiBus;
+use crate::State;
+use core::cell::{Cell, RefCell, RefMut};
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
 
@@ -141,12 +143,22 @@ impl From<[u8; 4]> for HifHeader {
 /// Empty struct used to represent the Host Interface layer.
 /// The host interface layer abstracts away all the low level
 /// calls to the spi bus and provides a higher level api to work with.
-pub struct HostInterface;
+pub(crate) struct HostInterface<'a> {
+    atwinc_state: Cell<Option<&'a RefCell<State>>>,
+}
 
-impl HostInterface {
+impl<'a> HostInterface<'a> {
     /// Creates a new HostInterface struct
     pub fn new() -> Self {
-        Self {}
+        Self {
+            atwinc_state: Cell::new(None),
+        }
+    }
+
+    /// This method sets a shared mutable reference
+    /// to the driver State for the HostInterface struct
+    pub fn set_state_reference(&self, state_ref: &'a RefCell<State>) {
+        self.atwinc_state.set(Some(state_ref));
     }
 
     /// This method wakes the chip from sleep mode using clockless register access
@@ -344,17 +356,23 @@ impl HostInterface {
 
     pub fn _wifi_callback<SPI, O>(
         &mut self,
-        _spi_bus: &mut SpiBus<SPI, O>,
+        spi_bus: &mut SpiBus<SPI, O>,
         opcode: u8,
         _data_size: u16,
-        _address: u32,
+        address: u32,
     ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
     {
         match opcode {
-            commands::wifi::_RESP_CON_STATE_CHANGED => {}
+            commands::wifi::_RESP_CON_STATE_CHANGED => {
+                let mut data_buf: [u8; 10] = [0; 10];
+                self._receive(spi_bus, address, &mut data_buf)?;
+                if let Some(ref_mut) = self.atwinc_state.get() {
+                    let mut _state: RefMut<_> = ref_mut.borrow_mut();
+                }
+            }
             commands::wifi::_RESP_GET_SYS_TIME => {}
             commands::wifi::_RESP_CONN_INFO => {}
             commands::wifi::_REQ_DHCP_CONF => {}
