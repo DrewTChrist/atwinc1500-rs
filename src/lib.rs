@@ -353,6 +353,12 @@ where
             .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
         Ok(())
     }
+
+    /// Takes care of interrupt events
+    pub fn handle_events(&mut self) -> Result<(), Error> {
+        self.hif.isr(&mut self.spi_bus)?;
+        Ok(())
+    }
 }
 
 #[doc(hidden)]
