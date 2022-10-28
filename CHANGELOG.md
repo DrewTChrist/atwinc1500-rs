@@ -6,8 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ## Added
-- Add Connection struct so pub types can be private
-- Add Mode and Status enums to lib.rs
+- Added Connection struct so pub types can be private
+- Added Mode and Status enums to lib.rs
+- Added a shared state between Atwinc1500 struct and HostInterface
 
 ## Changed
 - Change wifi::NewConnection and wifi::OldConnection to pub(crate)

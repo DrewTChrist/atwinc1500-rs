@@ -31,8 +31,6 @@ use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
 use wifi::{Connection, OldConnection};
 
-pub(crate) struct State;
-
 #[derive(Default)]
 enum Status {
     #[default]
@@ -51,12 +49,52 @@ enum Status {
 }
 
 #[derive(Default)]
-enum _Mode {
+enum Mode {
     _Reset,
     #[default]
     Station,
     _Provisioning,
     _Ap,
+}
+
+struct State {
+    _firmware_version: Option<FirmwareVersion>,
+    _mac_address: Option<MacAddress>,
+    _status: Status,
+    _mode: Mode,
+    _dhcp: bool,
+}
+
+impl State {
+    fn default() -> Self {
+        Self {
+            _firmware_version: None,
+            _mac_address: None,
+            _mode: Mode::default(),
+            _status: Status::default(),
+            _dhcp: true,
+        }
+    }
+
+    fn _set_firmware_version(&mut self, version: FirmwareVersion) {
+        self._firmware_version = Some(version);
+    }
+
+    fn _set_mac_address(&mut self, mac: MacAddress) {
+        self._mac_address = Some(mac);
+    }
+
+    fn _set_status(&mut self, status: Status) {
+        self._status = status;
+    }
+
+    fn _set_mode(&mut self, mode: Mode) {
+        self._mode = mode;
+    }
+
+    fn _set_dhcp(&mut self, dhcp: bool) {
+        self._dhcp = dhcp;
+    }
 }
 
 /// Atwin1500 driver struct
@@ -113,7 +151,7 @@ where
             reset,
             wake,
             crc,
-            state: RefCell::new(State {}),
+            state: RefCell::new(State::default()),
         }
     }
 
