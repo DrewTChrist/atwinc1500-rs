@@ -20,7 +20,7 @@ pub mod wifi;
 use core::cell::{RefCell, RefMut};
 
 use embedded_hal::blocking::{delay::DelayMs, spi::Transfer};
-use embedded_hal::digital::v2::{InputPin, OutputPin};
+use embedded_hal::digital::v2::OutputPin;
 use embedded_nal::{SocketAddr, TcpClientStack, TcpFullStack};
 
 use error::Error;
@@ -98,31 +98,27 @@ impl State {
 }
 
 /// Atwin1500 driver struct
-pub struct Atwinc1500<'a, SPI, D, O, I>
+pub struct Atwinc1500<'a, SPI, D, O>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
-    I: InputPin,
 {
     delay: D,
     spi_bus: SpiBus<SPI, O>,
     hif: HostInterface<'a>,
-    _irq: I,
     reset: O,
-    wake: O,
     crc: bool,
     state: RefCell<State>,
 }
 
 /// Atwinc1500 struct implementation containing non embedded-nal
 /// public methods
-impl<'a, SPI, D, O, I> Atwinc1500<'a, SPI, D, O, I>
+impl<'a, SPI, D, O> Atwinc1500<'a, SPI, D, O>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
-    I: InputPin,
 {
     /// Returns an Atwin1500 struct
     ///
@@ -134,22 +130,16 @@ where
     ///
     /// * `cs` - An OutputPin for the chip select
     ///
-    /// * `irq` - An InputPin for interrupt requests
-    ///
     /// * `reset` - An OutputPin for chip reset
-    ///
-    /// * `wake` - An OutputPin for chip wake
     ///
     /// * `crc` - Turn on CRC in transactions
     ///
-    pub fn new(spi: SPI, delay: D, cs: O, _irq: I, reset: O, wake: O, crc: bool) -> Self {
+    pub fn new(spi: SPI, delay: D, cs: O, reset: O, crc: bool) -> Self {
         Self {
             delay,
             spi_bus: SpiBus::new(spi, cs, crc),
             hif: HostInterface::new(),
-            _irq,
             reset,
-            wake,
             crc,
             state: RefCell::new(State::default()),
         }
@@ -213,9 +203,6 @@ where
     /// a delay
     fn init_pins(&mut self) -> Result<(), Error> {
         self.spi_bus.init_cs()?;
-        if self.wake.set_high().is_err() {
-            return Err(Error::PinStateError);
-        }
         if self.reset.set_low().is_err() {
             return Err(Error::PinStateError);
         }
@@ -377,12 +364,11 @@ where
 }
 
 #[doc(hidden)]
-impl<'a, SPI, D, O, I> TcpClientStack for Atwinc1500<'a, SPI, D, O, I>
+impl<'a, SPI, D, O> TcpClientStack for Atwinc1500<'a, SPI, D, O>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
-    I: InputPin,
 {
     type TcpSocket = TcpSocket;
     type Error = Error;
@@ -425,12 +411,11 @@ where
 }
 
 #[doc(hidden)]
-impl<'a, SPI, D, O, I> TcpFullStack for Atwinc1500<'a, SPI, D, O, I>
+impl<'a, SPI, D, O> TcpFullStack for Atwinc1500<'a, SPI, D, O>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
     O: OutputPin,
-    I: InputPin,
 {
     fn bind(&mut self, _socket: &mut TcpSocket, _port: u16) -> Result<(), Error> {
         todo!()
