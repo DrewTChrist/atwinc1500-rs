@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ## Added
 - Add Connection struct so pub types can be private
+- Add Mode and Status enums to lib.rs
 
 ## Changed
 - Change wifi::NewConnection and wifi::OldConnection to pub(crate)

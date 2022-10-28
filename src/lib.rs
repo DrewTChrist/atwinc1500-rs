@@ -33,6 +33,32 @@ use wifi::{Connection, OldConnection};
 
 pub(crate) struct State;
 
+#[derive(Default)]
+enum Status {
+    #[default]
+    Idle,
+    _NoSsidAvail,
+    _ScanComplete,
+    _Connected,
+    _ConnectionFailed,
+    _ConnectionLost,
+    _Disconnected,
+    _ApListening,
+    _ApConnected,
+    _ApFailed,
+    _Provisioning,
+    _ProvisioningFailed,
+}
+
+#[derive(Default)]
+enum _Mode {
+    _Reset,
+    #[default]
+    Station,
+    _Provisioning,
+    _Ap,
+}
+
 /// Atwin1500 driver struct
 pub struct Atwinc1500<'a, SPI, D, O, I>
 where
