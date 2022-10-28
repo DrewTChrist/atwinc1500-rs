@@ -1,7 +1,8 @@
 use crate::error::Error;
 use crate::registers;
 use crate::spi::SpiBus;
-use crate::State;
+use crate::wifi::{ConnectionState, StateChange};
+use crate::{Mode, State, Status};
 use core::cell::{Cell, RefCell, RefMut};
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
@@ -21,7 +22,7 @@ pub mod commands {
         pub const REQ_DEFAULT_CONNECT: u8 = 41;
         pub const _RESP_CONNECT: u8 = 42;
         pub const REQ_DISCONNECT: u8 = 43;
-        pub const _RESP_CON_STATE_CHANGED: u8 = 44;
+        pub const RESP_CON_STATE_CHANGED: u8 = 44;
         pub const _REQ_SLEEP: u8 = 45;
         pub const _REQ_WPS_SCAN: u8 = 46;
         pub const _REQ_WPS: u8 = 47;
@@ -233,7 +234,7 @@ impl<'a> HostInterface<'a> {
     }
 
     /// This method is the host interface interrupt service routine
-    pub fn _isr<SPI, O>(&mut self, spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
+    pub fn isr<SPI, O>(&mut self, spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
@@ -249,7 +250,7 @@ impl<'a> HostInterface<'a> {
                 spi_bus.read_data(&mut header_buf, address, HIF_HEADER_SIZE as u32)?;
                 let header = HifHeader::from(header_buf);
                 match header.gid {
-                    group_ids::WIFI => self._wifi_callback(
+                    group_ids::WIFI => self.wifi_callback(
                         spi_bus,
                         header.op,
                         header.length - HIF_HEADER_SIZE as u16,
@@ -269,7 +270,7 @@ impl<'a> HostInterface<'a> {
     }
 
     /// This method receives data read from the chip
-    pub fn _receive<SPI, O>(
+    pub fn receive<SPI, O>(
         &mut self,
         spi_bus: &mut SpiBus<SPI, O>,
         address: u32,
@@ -354,7 +355,7 @@ impl<'a> HostInterface<'a> {
         todo!()
     }
 
-    pub fn _wifi_callback<SPI, O>(
+    pub fn wifi_callback<SPI, O>(
         &mut self,
         spi_bus: &mut SpiBus<SPI, O>,
         opcode: u8,
@@ -366,11 +367,33 @@ impl<'a> HostInterface<'a> {
         O: OutputPin,
     {
         match opcode {
-            commands::wifi::_RESP_CON_STATE_CHANGED => {
-                let mut data_buf: [u8; 10] = [0; 10];
-                self._receive(spi_bus, address, &mut data_buf)?;
+            commands::wifi::RESP_CON_STATE_CHANGED => {
+                let mut data_buf: [u8; 4] = [0; 4];
+                self.receive(spi_bus, address, &mut data_buf)?;
+                let state_change = StateChange::from(data_buf);
                 if let Some(ref_mut) = self.atwinc_state.get() {
-                    let mut _state: RefMut<_> = ref_mut.borrow_mut();
+                    let mut state: RefMut<_> = ref_mut.borrow_mut();
+                    match state_change.current_state {
+                        ConnectionState::Connected => match state.mode {
+                            Mode::Station => {
+                                state.set_status(Status::Connected);
+                            }
+                            Mode::_Ap => {
+                                state.set_status(Status::ApConnected);
+                            }
+                            _ => {}
+                        },
+                        ConnectionState::Disconnected => match state.mode {
+                            Mode::Station => {
+                                state.set_status(Status::Disconnected);
+                            }
+                            Mode::_Ap => {
+                                state.set_status(Status::ApListening);
+                            }
+                            _ => {}
+                        },
+                        ConnectionState::Undefined => {}
+                    }
                 }
             }
             commands::wifi::_RESP_GET_SYS_TIME => {}

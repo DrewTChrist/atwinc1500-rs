@@ -37,12 +37,12 @@ enum Status {
     Idle,
     _NoSsidAvail,
     _ScanComplete,
-    _Connected,
+    Connected,
     _ConnectionFailed,
     _ConnectionLost,
-    _Disconnected,
-    _ApListening,
-    _ApConnected,
+    Disconnected,
+    ApListening,
+    ApConnected,
     _ApFailed,
     _Provisioning,
     _ProvisioningFailed,
@@ -61,7 +61,7 @@ struct State {
     _firmware_version: Option<FirmwareVersion>,
     _mac_address: Option<MacAddress>,
     _status: Status,
-    _mode: Mode,
+    mode: Mode,
     _dhcp: bool,
 }
 
@@ -70,7 +70,7 @@ impl State {
         Self {
             _firmware_version: None,
             _mac_address: None,
-            _mode: Mode::default(),
+            mode: Mode::default(),
             _status: Status::default(),
             _dhcp: true,
         }
@@ -84,12 +84,12 @@ impl State {
         self._mac_address = Some(mac);
     }
 
-    fn _set_status(&mut self, status: Status) {
+    fn set_status(&mut self, status: Status) {
         self._status = status;
     }
 
     fn _set_mode(&mut self, mode: Mode) {
-        self._mode = mode;
+        self.mode = mode;
     }
 
     fn _set_dhcp(&mut self, dhcp: bool) {
