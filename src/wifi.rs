@@ -241,3 +241,21 @@ impl From<u8> for StateChangeErrorCode {
         }
     }
 }
+
+#[repr(u8)]
+pub(crate) enum ConnectionState {
+    Connected = 0,
+    Disconnected = 1,
+    Undefined = 0xff,
+}
+
+impl From<u8> for ConnectionState {
+    fn from(code: u8) -> Self {
+        match code {
+            0 => ConnectionState::Connected,
+            1 => ConnectionState::Disconnected,
+            0xff => ConnectionState::Undefined,
+            _ => todo!(),
+        }
+    }
+}
