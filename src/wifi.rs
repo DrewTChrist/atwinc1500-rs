@@ -259,3 +259,17 @@ impl From<u8> for ConnectionState {
         }
     }
 }
+
+pub(crate) struct StateChange {
+    pub current_state: ConnectionState,
+    pub _error_code: StateChangeErrorCode,
+}
+
+impl From<[u8; 4]> for StateChange {
+    fn from(data: [u8; 4]) -> Self {
+        Self {
+            current_state: ConnectionState::from(data[0]),
+            _error_code: StateChangeErrorCode::from(data[1]),
+        }
+    }
+}

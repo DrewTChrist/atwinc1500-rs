@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added Connection struct so pub types can be private
 - Added Mode and Status enums to lib.rs
 - Added a shared state between Atwinc1500 struct and HostInterface
+- Added StateChangeErrorCode, ConnectionState and StateChange to handle RESP_CON_STATE_CHANGED
 
 ## Changed
 - Change wifi::NewConnection and wifi::OldConnection to pub(crate)
