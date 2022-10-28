@@ -4,8 +4,11 @@ use core::fmt;
 use defmt::{write as defmt_write, Format, Formatter};
 
 /// Firmware version of 3 bytes in the format x.x.x
+#[derive(Copy, Clone)]
 pub struct FirmwareVersion(pub [u8; 3]);
+
 /// Mac address of 6 bytes in the format x:x:x:x:x:x
+#[derive(Copy, Clone)]
 pub struct MacAddress(pub [u8; 6]);
 
 #[cfg(target_os = "none")]
