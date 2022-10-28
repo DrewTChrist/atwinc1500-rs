@@ -219,3 +219,25 @@ impl From<Connection> for NewConnection {
         _conn_header
     }
 }
+
+#[repr(u8)]
+pub(crate) enum StateChangeErrorCode {
+    ScanFail = 1,
+    JoinFail = 2,
+    AuthFail = 3,
+    AssocFail = 4,
+    ConnectionInProgress = 5,
+}
+
+impl From<u8> for StateChangeErrorCode {
+    fn from(code: u8) -> Self {
+        match code {
+            1 => StateChangeErrorCode::ScanFail,
+            2 => StateChangeErrorCode::JoinFail,
+            3 => StateChangeErrorCode::AuthFail,
+            4 => StateChangeErrorCode::AssocFail,
+            5 => StateChangeErrorCode::ConnectionInProgress,
+            _ => todo!(),
+        }
+    }
+}
