@@ -17,7 +17,7 @@ pub mod spi;
 pub mod types;
 pub mod wifi;
 
-use core::cell::RefCell;
+use core::cell::{RefCell, RefMut};
 
 use embedded_hal::blocking::{delay::DelayMs, spi::Transfer};
 use embedded_hal::digital::v2::{InputPin, OutputPin};
@@ -58,9 +58,9 @@ enum Mode {
 }
 
 struct State {
-    _firmware_version: Option<FirmwareVersion>,
-    _mac_address: Option<MacAddress>,
-    _status: Status,
+    firmware_version: Option<FirmwareVersion>,
+    mac_address: Option<MacAddress>,
+    status: Status,
     mode: Mode,
     _dhcp: bool,
 }
@@ -68,24 +68,24 @@ struct State {
 impl State {
     fn default() -> Self {
         Self {
-            _firmware_version: None,
-            _mac_address: None,
+            firmware_version: None,
+            mac_address: None,
             mode: Mode::default(),
-            _status: Status::default(),
+            status: Status::default(),
             _dhcp: true,
         }
     }
 
-    fn _set_firmware_version(&mut self, version: FirmwareVersion) {
-        self._firmware_version = Some(version);
+    fn set_firmware_version(&mut self, version: FirmwareVersion) {
+        self.firmware_version = Some(version);
     }
 
-    fn _set_mac_address(&mut self, mac: MacAddress) {
-        self._mac_address = Some(mac);
+    fn set_mac_address(&mut self, mac: MacAddress) {
+        self.mac_address = Some(mac);
     }
 
     fn set_status(&mut self, status: Status) {
-        self._status = status;
+        self.status = status;
     }
 
     fn _set_mode(&mut self, mode: Mode) {
@@ -254,11 +254,19 @@ where
         if reg_value == registers::M2M_ATE_FW_IS_UP_VALUE {
             reg_value = self.spi_bus.read_register(registers::NMI_REV_REG_ATE)?;
         }
-        Ok(FirmwareVersion([
+        let fw_vers = FirmwareVersion([
             ((reg_value >> 8) & 0xff) as u8, // major
             ((reg_value >> 4) & 0x0f) as u8, // minor
             (reg_value & 0x0f) as u8,        // patch
-        ]))
+        ]);
+        {
+            // create scope to drop RefMut
+            let mut state: RefMut<_> = self.state.borrow_mut();
+            if state.firmware_version.is_none() {
+                state.set_firmware_version(fw_vers);
+            }
+        }
+        Ok(fw_vers)
     }
 
     /// Gets the mac address stored in
@@ -283,6 +291,13 @@ where
         reg_value |= 0x30000;
         self.spi_bus
             .read_data(&mut mac.0, reg_value, MAC_SIZE as u32)?;
+        {
+            // create scope to drop RefMut
+            let mut state: RefMut<_> = self.state.borrow_mut();
+            if state.mac_address.is_none() {
+                state.set_mac_address(mac);
+            }
+        }
         Ok(mac)
     }
 
