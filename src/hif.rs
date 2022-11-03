@@ -3,7 +3,6 @@ use crate::registers;
 use crate::spi::SpiBus;
 use crate::wifi::{ConnectionState, StateChange};
 use crate::{Mode, State, Status};
-use core::cell::{Cell, RefCell, RefMut};
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
 
@@ -144,22 +143,12 @@ impl From<[u8; 4]> for HifHeader {
 /// Empty struct used to represent the Host Interface layer.
 /// The host interface layer abstracts away all the low level
 /// calls to the spi bus and provides a higher level api to work with.
-pub(crate) struct HostInterface<'a> {
-    atwinc_state: Cell<Option<&'a RefCell<State>>>,
-}
+pub(crate) struct HostInterface;
 
-impl<'a> HostInterface<'a> {
+impl HostInterface {
     /// Creates a new HostInterface struct
     pub fn new() -> Self {
-        Self {
-            atwinc_state: Cell::new(None),
-        }
-    }
-
-    /// This method sets a shared mutable reference
-    /// to the driver State for the HostInterface struct
-    pub fn set_state_reference(&self, state_ref: &'a RefCell<State>) {
-        self.atwinc_state.set(Some(state_ref));
+        Self {}
     }
 
     /// This method wakes the chip from sleep mode using clockless register access
@@ -234,7 +223,11 @@ impl<'a> HostInterface<'a> {
     }
 
     /// This method is the host interface interrupt service routine
-    pub fn isr<SPI, O>(&mut self, spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
+    pub fn isr<SPI, O>(
+        &mut self,
+        spi_bus: &mut SpiBus<SPI, O>,
+        state: &mut State,
+    ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
@@ -255,12 +248,14 @@ impl<'a> HostInterface<'a> {
                         header.op,
                         header.length - HIF_HEADER_SIZE as u16,
                         address + HIF_HEADER_SIZE as u32,
+                        state,
                     )?,
                     group_ids::_IP => self._ip_callback(
                         spi_bus,
                         header.op,
                         header.length - HIF_HEADER_SIZE as u16,
                         address + HIF_HEADER_SIZE as u32,
+                        state,
                     )?,
                     _ => { /* Invalid group id */ }
                 }
@@ -361,6 +356,7 @@ impl<'a> HostInterface<'a> {
         opcode: u8,
         _data_size: u16,
         address: u32,
+        state: &mut State,
     ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
@@ -371,29 +367,26 @@ impl<'a> HostInterface<'a> {
                 let mut data_buf: [u8; 4] = [0; 4];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let state_change = StateChange::from(data_buf);
-                if let Some(ref_mut) = self.atwinc_state.get() {
-                    let mut state: RefMut<_> = ref_mut.borrow_mut();
-                    match state_change.current_state {
-                        ConnectionState::Connected => match state.mode {
-                            Mode::Station => {
-                                state.set_status(Status::Connected);
-                            }
-                            Mode::_Ap => {
-                                state.set_status(Status::ApConnected);
-                            }
-                            _ => {}
-                        },
-                        ConnectionState::Disconnected => match state.mode {
-                            Mode::Station => {
-                                state.set_status(Status::Disconnected);
-                            }
-                            Mode::_Ap => {
-                                state.set_status(Status::ApListening);
-                            }
-                            _ => {}
-                        },
-                        ConnectionState::Undefined => {}
-                    }
+                match state_change.current_state {
+                    ConnectionState::Connected => match state.mode {
+                        Mode::Station => {
+                            state.set_status(Status::Connected);
+                        }
+                        Mode::_Ap => {
+                            state.set_status(Status::ApConnected);
+                        }
+                        _ => {}
+                    },
+                    ConnectionState::Disconnected => match state.mode {
+                        Mode::Station => {
+                            state.set_status(Status::Disconnected);
+                        }
+                        Mode::_Ap => {
+                            state.set_status(Status::ApListening);
+                        }
+                        _ => {}
+                    },
+                    ConnectionState::Undefined => {}
                 }
             }
             commands::wifi::_RESP_GET_SYS_TIME => {}
@@ -415,6 +408,7 @@ impl<'a> HostInterface<'a> {
         _opcode: u8,
         _data_size: u16,
         _address: u32,
+        _state: &mut State,
     ) -> Result<(), Error>
     where
         SPI: Transfer<u8>,

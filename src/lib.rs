@@ -17,8 +17,6 @@ pub mod spi;
 pub mod types;
 pub mod wifi;
 
-use core::cell::{RefCell, RefMut};
-
 use embedded_hal::blocking::{delay::DelayMs, spi::Transfer};
 use embedded_hal::digital::v2::OutputPin;
 use embedded_nal::{SocketAddr, TcpClientStack, TcpFullStack};
@@ -98,7 +96,7 @@ impl State {
 }
 
 /// Atwin1500 driver struct
-pub struct Atwinc1500<'a, SPI, D, O>
+pub struct Atwinc1500<SPI, D, O>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
@@ -106,15 +104,15 @@ where
 {
     delay: D,
     spi_bus: SpiBus<SPI, O>,
-    hif: HostInterface<'a>,
+    hif: HostInterface,
     reset: O,
     crc: bool,
-    state: RefCell<State>,
+    state: State,
 }
 
 /// Atwinc1500 struct implementation containing non embedded-nal
 /// public methods
-impl<'a, SPI, D, O> Atwinc1500<'a, SPI, D, O>
+impl<SPI, D, O> Atwinc1500<SPI, D, O>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
@@ -141,7 +139,7 @@ where
             hif: HostInterface::new(),
             reset,
             crc,
-            state: RefCell::new(State::default()),
+            state: State::default(),
         }
     }
 
@@ -152,7 +150,7 @@ where
     /// * Waits for boot rom ready
     /// * Writes driver version and configuration
     /// * Enables chip interrupt
-    pub fn initialize(&'a mut self) -> Result<(), Error> {
+    pub fn initialize(&mut self) -> Result<(), Error> {
         const FINISH_BOOT_VAL: u32 = 0x10add09e;
         const DRIVER_VER_INFO: u32 = 0x13521330;
         const CONF_VAL: u32 = 0x102;
@@ -188,14 +186,7 @@ where
         });
         self.spi_bus.write_register(registers::NMI_STATE_REG, 0)?;
         self.enable_chip_interrupt()?;
-        self.set_state_reference();
         Ok(())
-    }
-
-    /// This method sets a shared mutable reference
-    /// to the driver State for the HostInterface struct
-    fn set_state_reference(&'a self) {
-        self.hif.set_state_reference(&self.state);
     }
 
     /// Pulls the chip select and wake pins high
@@ -246,12 +237,8 @@ where
             ((reg_value >> 4) & 0x0f) as u8, // minor
             (reg_value & 0x0f) as u8,        // patch
         ]);
-        {
-            // create scope to drop RefMut
-            let mut state: RefMut<_> = self.state.borrow_mut();
-            if state.firmware_version.is_none() {
-                state.set_firmware_version(fw_vers);
-            }
+        if self.state.firmware_version.is_none() {
+            self.state.set_firmware_version(fw_vers);
         }
         Ok(fw_vers)
     }
@@ -278,12 +265,8 @@ where
         reg_value |= 0x30000;
         self.spi_bus
             .read_data(&mut mac.0, reg_value, MAC_SIZE as u32)?;
-        {
-            // create scope to drop RefMut
-            let mut state: RefMut<_> = self.state.borrow_mut();
-            if state.mac_address.is_none() {
-                state.set_mac_address(mac);
-            }
+        if self.state.mac_address.is_none() {
+            self.state.set_mac_address(mac);
         }
         Ok(mac)
     }
@@ -358,13 +341,13 @@ where
 
     /// Takes care of interrupt events
     pub fn handle_events(&mut self) -> Result<(), Error> {
-        self.hif.isr(&mut self.spi_bus)?;
+        self.hif.isr(&mut self.spi_bus, &mut self.state)?;
         Ok(())
     }
 }
 
 #[doc(hidden)]
-impl<'a, SPI, D, O> TcpClientStack for Atwinc1500<'a, SPI, D, O>
+impl<SPI, D, O> TcpClientStack for Atwinc1500<SPI, D, O>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
@@ -411,7 +394,7 @@ where
 }
 
 #[doc(hidden)]
-impl<'a, SPI, D, O> TcpFullStack for Atwinc1500<'a, SPI, D, O>
+impl<SPI, D, O> TcpFullStack for Atwinc1500<SPI, D, O>
 where
     SPI: Transfer<u8>,
     D: DelayMs<u32>,
