@@ -29,20 +29,33 @@ use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
 use wifi::{Connection, OldConnection};
 
-#[derive(Default)]
-enum Status {
+/// Connection status of the Atwinc1500
+#[derive(Default, PartialEq, Eq, defmt::Format)]
+pub enum Status {
+    /// Atwinc1500 is idle
     #[default]
     Idle,
+    /// SSID not available
     _NoSsidAvail,
+    /// Scan is complete
     _ScanComplete,
+    /// Atwinc1500 is connected to a network
     Connected,
+    /// Connection attempt failed
     _ConnectionFailed,
+    /// Atwinc1500 lost connection
     _ConnectionLost,
+    /// Atwinc1500 is disconnected
     Disconnected,
+    /// Access point mode listening
     ApListening,
+    /// Access point mode connected
     ApConnected,
+    /// Access point mode failed
     _ApFailed,
+    /// Provisioning mode
     _Provisioning,
+    /// Provisioning mode failed
     _ProvisioningFailed,
 }
 
@@ -343,6 +356,11 @@ where
     pub fn handle_events(&mut self) -> Result<(), Error> {
         self.hif.isr(&mut self.spi_bus, &mut self.state)?;
         Ok(())
+    }
+
+    /// Returns the connection status of the Atwinc1500
+    pub fn get_status(&self) -> &Status {
+        &self.state.status
     }
 }
 
