@@ -200,6 +200,7 @@ where
         self.spi_bus.write_register(registers::NMI_STATE_REG, 0)?;
         self.enable_chip_interrupt()?;
         self.get_firmware_version()?;
+        self.get_mac_address()?;
         Ok(())
     }
 
@@ -271,23 +272,28 @@ where
     /// Gets the working mac address
     /// on the Atwinc1500
     pub fn get_mac_address(&mut self) -> Result<MacAddress, Error> {
-        const MAC_SIZE: usize = 6;
-        const DATA_SIZE: usize = 8;
-        let mut mac: MacAddress = MacAddress([0; MAC_SIZE]);
-        let mut data: [u8; DATA_SIZE] = [0; DATA_SIZE];
-        let mut reg_value = self.spi_bus.read_register(registers::rNMI_GP_REG_2)?;
-        reg_value |= 0x30000;
-        self.spi_bus
-            .read_data(&mut data, reg_value, DATA_SIZE as u32)?;
-        reg_value = combine_bytes_lsb!(data[0..4]);
-        reg_value &= 0x0000ffff;
-        reg_value |= 0x30000;
-        self.spi_bus
-            .read_data(&mut mac.0, reg_value, MAC_SIZE as u32)?;
-        if self.state.mac_address.is_none() {
-            self.state.set_mac_address(mac);
+        match self.state.mac_address {
+            Some(mac) => Ok(mac),
+            None => {
+                const MAC_SIZE: usize = 6;
+                const DATA_SIZE: usize = 8;
+                let mut mac: MacAddress = MacAddress([0; MAC_SIZE]);
+                let mut data: [u8; DATA_SIZE] = [0; DATA_SIZE];
+                let mut reg_value = self.spi_bus.read_register(registers::rNMI_GP_REG_2)?;
+                reg_value |= 0x30000;
+                self.spi_bus
+                    .read_data(&mut data, reg_value, DATA_SIZE as u32)?;
+                reg_value = combine_bytes_lsb!(data[0..4]);
+                reg_value &= 0x0000ffff;
+                reg_value |= 0x30000;
+                self.spi_bus
+                    .read_data(&mut mac.0, reg_value, MAC_SIZE as u32)?;
+                if self.state.mac_address.is_none() {
+                    self.state.set_mac_address(mac);
+                }
+                Ok(mac)
+            }
         }
-        Ok(mac)
     }
 
     /// Sets the direction of a gpio pin
