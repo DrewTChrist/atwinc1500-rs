@@ -199,6 +199,7 @@ where
         });
         self.spi_bus.write_register(registers::NMI_STATE_REG, 0)?;
         self.enable_chip_interrupt()?;
+        self.get_firmware_version()?;
         Ok(())
     }
 
@@ -241,19 +242,24 @@ where
     /// Gets the version of the firmware on
     /// the Atwinc1500
     pub fn get_firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
-        let mut reg_value = self.spi_bus.read_register(registers::NMI_REV_REG)?;
-        if reg_value == registers::M2M_ATE_FW_IS_UP_VALUE {
-            reg_value = self.spi_bus.read_register(registers::NMI_REV_REG_ATE)?;
+        match self.state.firmware_version {
+            Some(fw) => Ok(fw),
+            None => {
+                let mut reg_value = self.spi_bus.read_register(registers::NMI_REV_REG)?;
+                if reg_value == registers::M2M_ATE_FW_IS_UP_VALUE {
+                    reg_value = self.spi_bus.read_register(registers::NMI_REV_REG_ATE)?;
+                }
+                let fw_vers = FirmwareVersion([
+                    ((reg_value >> 8) & 0xff) as u8, // major
+                    ((reg_value >> 4) & 0x0f) as u8, // minor
+                    (reg_value & 0x0f) as u8,        // patch
+                ]);
+                if self.state.firmware_version.is_none() {
+                    self.state.set_firmware_version(fw_vers);
+                }
+                Ok(fw_vers)
+            }
         }
-        let fw_vers = FirmwareVersion([
-            ((reg_value >> 8) & 0xff) as u8, // major
-            ((reg_value >> 4) & 0x0f) as u8, // minor
-            (reg_value & 0x0f) as u8,        // patch
-        ]);
-        if self.state.firmware_version.is_none() {
-            self.state.set_firmware_version(fw_vers);
-        }
-        Ok(fw_vers)
     }
 
     /// Gets the mac address stored in
