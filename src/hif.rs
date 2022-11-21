@@ -244,15 +244,6 @@ impl HostInterface {
         Ok(())
     }
 
-    /// This method sets the callback function for different events
-    pub fn _register_cb<SPI, O>(&mut self, _spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
-    where
-        SPI: Transfer<u8>,
-        O: OutputPin,
-    {
-        todo!()
-    }
-
     /// This method is the host interface interrupt service routine
     pub fn isr<SPI, O>(
         &mut self,
