@@ -1,7 +1,8 @@
 use crate::error::Error;
 use crate::registers;
 use crate::spi::SpiBus;
-use crate::wifi::{ConnectionState, StateChange};
+use crate::types::MacAddress;
+use crate::wifi::{ConnectionState, StateChange, MAX_SSID_LEN};
 use crate::{Mode, State, Status};
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
@@ -42,7 +43,7 @@ pub mod commands {
         pub const _REQ_CURRENT_RSSI: u8 = 3;
         pub const _RESP_CURRENT_RSSI: u8 = 4;
         pub const _REQ_GET_CONN_INFO: u8 = 5;
-        pub const _RESP_CONN_INFO: u8 = 6;
+        pub const RESP_CONN_INFO: u8 = 6;
         pub const _REQ_SET_DEVICE_NAME: u8 = 7;
         pub const _REQ_START_PROVISION_MODE: u8 = 8;
         pub const _RESP_PROVISION_INFO: u8 = 9;
@@ -136,6 +137,36 @@ impl From<[u8; 4]> for HifHeader {
             gid: array[0],
             op: array[1],
             length: ((array[2] as u16) << 8) | array[3] as u16,
+        }
+    }
+}
+
+/// Connection Information returned
+/// from the Atwinc1500 after wifi callback
+struct ConnectionInfo {
+    _ssid: [u8; MAX_SSID_LEN],
+    _security_type: u8,
+    _ip_address: [u8; 4],
+    _mac_address: MacAddress,
+    _rssi: i8,
+    _padding: [u8; 3],
+}
+
+impl From<&[u8]> for ConnectionInfo {
+    fn from(slice: &[u8]) -> Self {
+        let mut ssid: [u8; MAX_SSID_LEN] = [0; MAX_SSID_LEN];
+        let mut ip: [u8; 4] = [0; 4];
+        let mut mac: [u8; 6] = [0; 6];
+        ssid[..MAX_SSID_LEN].copy_from_slice(&slice[..MAX_SSID_LEN]);
+        ip[..4].copy_from_slice(&slice[MAX_SSID_LEN + 1..MAX_SSID_LEN + 5]);
+        mac[..6].copy_from_slice(&slice[MAX_SSID_LEN + 6..MAX_SSID_LEN + 12]);
+        Self {
+            _ssid: ssid,
+            _security_type: slice[MAX_SSID_LEN],
+            _ip_address: ip,
+            _mac_address: MacAddress(mac),
+            _rssi: (!slice[MAX_SSID_LEN + 13] + 1) as i8,
+            _padding: [0; 3],
         }
     }
 }
@@ -390,7 +421,11 @@ impl HostInterface {
                 }
             }
             commands::wifi::_RESP_GET_SYS_TIME => {}
-            commands::wifi::_RESP_CONN_INFO => {}
+            commands::wifi::RESP_CONN_INFO => {
+                let mut data_buf: [u8; 48] = [0; 48];
+                self.receive(spi_bus, address, &mut data_buf)?;
+                let _connection_info = ConnectionInfo::from(data_buf.as_slice());
+            }
             commands::wifi::_REQ_DHCP_CONF => {}
             commands::wifi::_REQ_WPS => {}
             commands::wifi::_RESP_IP_CONFLICT => {}

@@ -1,7 +1,7 @@
 //! Wifi connection items
 
 // constants
-const MAX_SSID_LEN: usize = 33;
+pub(crate) const MAX_SSID_LEN: usize = 33;
 const MAX_PSK_LEN: usize = 65;
 const _MIN_PSK_LEN: usize = 9;
 const USER_NAME_MAX: usize = 21;
