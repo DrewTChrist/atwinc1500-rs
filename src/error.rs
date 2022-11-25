@@ -1,6 +1,50 @@
 //! Atwinc1500 error definitions
 use core::fmt;
 
+/// These are the error values defined
+/// in the Atwinc data sheet. InvalidError is
+/// a catch all for error values greater than
+/// 5 that are not real errors. If InvalidError
+/// is caught, then the responses are no longer
+/// being read correctly. These errors should be
+/// handled with the error recovery mechanisms
+/// also defined in the data sheet.
+#[repr(u8)]
+#[derive(Eq, PartialEq, PartialOrd)]
+pub enum AtwincSpiError {
+    /// No error received from the Atwinc1500
+    NoError = 0,
+    /// Command sent to the Atwinc1500 is not valid
+    UnsupportedCommand = 1,
+    /// Data sent to the Atwinc1500 was not expected
+    UnexpectedDataReceived = 2,
+    /// Crc7 sent to the Atwinc1500 was invalid
+    Crc7Error = 3,
+    /// Crc16 sent to the Atwinc1500 was invalid
+    Crc16Error = 4,
+    /// Atwinc1500 experienced an internal error
+    InternalError = 5,
+    /// Catch all for invalid errors
+    /// passed to From<u8>
+    InvalidError,
+}
+
+impl From<u8> for AtwincSpiError {
+    /// For easily converting a response byte
+    /// to an SpiError type
+    fn from(other: u8) -> Self {
+        match other {
+            0 => AtwincSpiError::NoError,
+            1 => AtwincSpiError::UnsupportedCommand,
+            2 => AtwincSpiError::UnexpectedDataReceived,
+            3 => AtwincSpiError::Crc7Error,
+            4 => AtwincSpiError::Crc16Error,
+            5 => AtwincSpiError::InternalError,
+            _ => AtwincSpiError::InvalidError,
+        }
+    }
+}
+
 // Derives defmt::Format if building for bare metal
 // otherwise it does not derive defmt::Format
 // Unit tests get a linker error if this isn't done
