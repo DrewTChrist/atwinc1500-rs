@@ -58,12 +58,16 @@ pub enum SpiError {
     PinStateError,
     /// Error transferring data over the spi bus
     TransferError,
-    /// Error received from the atwinc1500
-    /// while trying to write to register
-    WriteRegisterError,
+    /// Error reading data from the atwinc1500
+    ReadDataError,
     /// Error received from the atwinc1500
     /// while trying to read from register
     ReadRegisterError,
+    /// Error writing data to the atwinc1500
+    WriteDataError,
+    /// Error received from the atwinc1500
+    /// while trying to write to register
+    WriteRegisterError,
 }
 
 impl fmt::Display for SpiError {
@@ -72,8 +76,10 @@ impl fmt::Display for SpiError {
             SpiError::InvalidCommand => write!(f, "Invalid Spi Command"),
             SpiError::PinStateError => write!(f, "Pin State Error"),
             SpiError::TransferError => write!(f, "Spi Transfer Error"),
-            SpiError::WriteRegisterError => write!(f, "Error writing to register"),
+            SpiError::ReadDataError => write!(f, "Error reading data"),
             SpiError::ReadRegisterError => write!(f, "Error reading from register"),
+            SpiError::WriteDataError => write!(f, "Error writing data"),
+            SpiError::WriteRegisterError => write!(f, "Error writing to register"),
         }
     }
 }
