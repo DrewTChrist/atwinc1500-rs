@@ -227,6 +227,7 @@ pub(crate) enum StateChangeErrorCode {
     AuthFail = 3,
     AssocFail = 4,
     ConnectionInProgress = 5,
+    Invalid,
 }
 
 impl From<u8> for StateChangeErrorCode {
@@ -237,7 +238,7 @@ impl From<u8> for StateChangeErrorCode {
             3 => StateChangeErrorCode::AuthFail,
             4 => StateChangeErrorCode::AssocFail,
             5 => StateChangeErrorCode::ConnectionInProgress,
-            _ => todo!(),
+            _ => StateChangeErrorCode::Invalid,
         }
     }
 }
@@ -255,7 +256,7 @@ impl From<u8> for ConnectionState {
             0 => ConnectionState::Connected,
             1 => ConnectionState::Disconnected,
             0xff => ConnectionState::Undefined,
-            _ => todo!(),
+            _ => ConnectionState::Undefined,
         }
     }
 }
