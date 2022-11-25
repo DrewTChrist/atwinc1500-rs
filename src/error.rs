@@ -50,30 +50,58 @@ impl From<u8> for AtwincSpiError {
 // Unit tests get a linker error if this isn't done
 #[cfg_attr(target_os = "none", derive(Eq, PartialEq, Debug, defmt::Format))]
 #[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
-/// Atwinc1500 error types
-pub enum Error {
+/// Spi error variants
+pub enum SpiError {
     /// Attempted to parse an invalid spi command
-    InvalidSpiCommandError,
+    InvalidCommand,
     /// Error changing the state of a pin
     PinStateError,
     /// Error transferring data over the spi bus
-    SpiTransferError,
+    TransferError,
     /// Error received from the atwinc1500
     /// while trying to write to register
-    SpiWriteRegisterError,
+    WriteRegisterError,
     /// Error received from the atwinc1500
     /// while trying to read from register
-    SpiReadRegisterError,
+    ReadRegisterError,
+}
+
+impl fmt::Display for SpiError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            SpiError::InvalidCommand => write!(f, "Invalid Spi Command"),
+            SpiError::PinStateError => write!(f, "Pin State Error"),
+            SpiError::TransferError => write!(f, "Spi Transfer Error"),
+            SpiError::WriteRegisterError => write!(f, "Error writing to register"),
+            SpiError::ReadRegisterError => write!(f, "Error reading from register"),
+        }
+    }
+}
+
+#[cfg_attr(target_os = "none", derive(Eq, PartialEq, Debug, defmt::Format))]
+#[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
+/// Atwinc1500 error variants
+pub enum Error {
+    /// Error occurred during Spi interaction
+    SpiError(SpiError),
+    /// Error updating pin state
+    PinStateError,
 }
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
-            Error::InvalidSpiCommandError => write!(f, "Invalid Spi Command"),
-            Error::PinStateError => write!(f, "Pin State Error"),
-            Error::SpiTransferError => write!(f, "Spi Transfer Error"),
-            Error::SpiWriteRegisterError => write!(f, "Error writing to register"),
-            Error::SpiReadRegisterError => write!(f, "Error reading from register"),
+            Error::SpiError(_) => write!(f, "Error"),
+            Error::PinStateError => write!(f, "Error"),
+        }
+    }
+}
+
+impl From<SpiError> for Error {
+    fn from(value: SpiError) -> Self {
+        match value {
+            SpiError::PinStateError => Self::PinStateError,
+            _ => Self::SpiError(value),
         }
     }
 }

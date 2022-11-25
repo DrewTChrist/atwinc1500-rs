@@ -30,7 +30,11 @@ use types::{FirmwareVersion, MacAddress};
 use wifi::{Connection, OldConnection};
 
 /// Connection status of the Atwinc1500
-#[derive(Default, PartialEq, Eq, defmt::Format)]
+#[cfg_attr(
+    target_os = "none",
+    derive(Default, Eq, PartialEq, Debug, defmt::Format)
+)]
+#[cfg_attr(not(target_os = "none"), derive(Default, Eq, PartialEq, Debug))]
 pub enum Status {
     /// Atwinc1500 is idle
     #[default]
@@ -309,7 +313,8 @@ where
             GpioDirection::Output => value |= 1 << gpio as u8,
             GpioDirection::Input => value &= !(1 << gpio as u8),
         }
-        self.spi_bus.write_register(GPIO_DIR_REG, value)
+        self.spi_bus.write_register(GPIO_DIR_REG, value)?;
+        Ok(())
     }
 
     /// Sets the value of a gpio
@@ -321,17 +326,16 @@ where
             GpioValue::Low => response |= 1 << gpio as u8,
             GpioValue::High => response &= !(1 << gpio as u8),
         }
-        self.spi_bus.write_register(GPIO_VAL_REG, response)
+        self.spi_bus.write_register(GPIO_VAL_REG, response)?;
+        Ok(())
     }
 
     /// Gets the direction of a gpio pin
     /// as either Ouput or Input
     pub fn get_gpio_direction(&mut self, gpio: AtwincGpio) -> Result<GpioDirection, Error> {
         const GPIO_GET_DIR_REG: u32 = 0x20104;
-        match self.spi_bus.read_register(GPIO_GET_DIR_REG) {
-            Ok(v) => Ok(GpioDirection::from(((v >> gpio as u8) & 0x01) as u8)),
-            Err(e) => Err(e),
-        }
+        let response = self.spi_bus.read_register(GPIO_GET_DIR_REG)?;
+        Ok(GpioDirection::from(((response >> gpio as u8) & 0x01) as u8))
     }
 
     /// Connects to a wireless network

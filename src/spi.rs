@@ -1,5 +1,5 @@
 use crate::crc::crc7;
-use crate::error::Error;
+use crate::error::SpiError;
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
 
@@ -85,29 +85,29 @@ where
 
     /// Pulls the chip select high
     /// as it is active low
-    pub fn init_cs(&mut self) -> Result<(), Error> {
+    pub fn init_cs(&mut self) -> Result<(), SpiError> {
         match self.cs.set_high() {
             Ok(_) => Ok(()),
-            Err(_) => Err(Error::PinStateError),
+            Err(_) => Err(SpiError::PinStateError),
         }
     }
 
     /// Sets crc_disabled to true
-    pub fn crc_disabled(&mut self) -> Result<(), Error> {
+    pub fn crc_disabled(&mut self) -> Result<(), SpiError> {
         self.crc_disabled = true;
         Ok(())
     }
 
     /// Sends some data then receives some data on the spi bus
-    fn transfer(&mut self, words: &'_ mut [u8]) -> Result<(), Error> {
+    fn transfer(&mut self, words: &'_ mut [u8]) -> Result<(), SpiError> {
         if self.cs.set_low().is_err() {
-            return Err(Error::PinStateError);
+            return Err(SpiError::PinStateError);
         }
         if self.spi.transfer(words).is_err() {
-            return Err(Error::SpiTransferError);
+            return Err(SpiError::TransferError);
         }
         if self.cs.set_high().is_err() {
-            return Err(Error::PinStateError);
+            return Err(SpiError::PinStateError);
         }
         Ok(())
     }
@@ -124,7 +124,7 @@ where
         data: u32,
         size: u32,
         clockless: bool,
-    ) -> Result<(), Error> {
+    ) -> Result<(), SpiError> {
         cmd_buffer[0] = command;
         let mut crc_index: usize = 0;
         match command {
@@ -211,7 +211,7 @@ where
                 crc_index = sizes::TYPE_A;
             }
             _ => {
-                return Err(Error::InvalidSpiCommandError);
+                return Err(SpiError::InvalidCommand);
             }
         }
         if self.crc || !self.crc_disabled {
@@ -223,7 +223,7 @@ where
 
     /// Wraps the read_reg method to pass it the size
     /// of the command buffer based on crc being enabled
-    pub fn read_register(&mut self, address: u32) -> Result<u32, Error> {
+    pub fn read_register(&mut self, address: u32) -> Result<u32, SpiError> {
         match self.crc_disabled {
             true => {
                 const SIZE: usize =
@@ -252,7 +252,7 @@ where
         beg: usize,
         end: usize,
         response_start: usize,
-    ) -> Result<u32, Error> {
+    ) -> Result<u32, SpiError> {
         let cmd: u8;
         let clockless: bool;
         let mut cmd_buffer: [u8; S] = [0; S];
@@ -267,14 +267,14 @@ where
         }
         self.command(&mut cmd_buffer, cmd, address, 0, 0, clockless)?;
         if cmd_buffer[response_start] != cmd || cmd_buffer[response_start + 2] & 0xf0 != 0xf0 {
-            return Err(Error::SpiReadRegisterError);
+            return Err(SpiError::ReadRegisterError);
         }
         Ok(combine_bytes_lsb!(cmd_buffer[beg..end]))
     }
 
     /// Wraps the read method to change the command buffer size
     /// depending on crc being enabled or not
-    pub fn read_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
+    pub fn read_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), SpiError> {
         match self.crc_disabled {
             true => {
                 const SIZE: usize = sizes::TYPE_C;
@@ -293,7 +293,7 @@ where
         data: &mut [u8],
         address: u32,
         count: u32,
-    ) -> Result<(), Error> {
+    ) -> Result<(), SpiError> {
         let cmd: u8 = commands::CMD_DMA_EXT_READ;
         let mut cmd_buffer: [u8; S] = [0; S];
         let mut response: [u8; sizes::RESPONSE + sizes::DATA_START] =
@@ -303,14 +303,14 @@ where
             self.transfer(&mut response)?;
         });
         if response[0] == cmd {
-            self.transfer(data)?;
+            self.transfer(data)?
         }
         Ok(())
     }
 
     /// Wraps the read_reg method to pass it the size
     /// of the command buffer based on crc being enabled
-    pub fn write_register(&mut self, address: u32, data: u32) -> Result<(), Error> {
+    pub fn write_register(&mut self, address: u32, data: u32) -> Result<(), SpiError> {
         match self.crc_disabled {
             // response starts at index 8
             true => {
@@ -331,7 +331,7 @@ where
         address: u32,
         data: u32,
         response_start: usize,
-    ) -> Result<(), Error> {
+    ) -> Result<(), SpiError> {
         let cmd: u8;
         let clockless: bool;
         let mut cmd_buffer: [u8; S] = [0; S];
@@ -346,14 +346,19 @@ where
         }
         self.command(&mut cmd_buffer, cmd, address, data, 0, clockless)?;
         if cmd_buffer[response_start] != cmd || cmd_buffer[response_start + 1] != 0 {
-            return Err(Error::SpiWriteRegisterError);
+            return Err(SpiError::WriteRegisterError);
         }
         Ok(())
     }
 
     /// Wraps the write method to change the command buffer size
     /// depending on crc being enabled or not
-    pub fn write_data(&mut self, data: &mut [u8], address: u32, count: u32) -> Result<(), Error> {
+    pub fn write_data(
+        &mut self,
+        data: &mut [u8],
+        address: u32,
+        count: u32,
+    ) -> Result<(), SpiError> {
         match self.crc_disabled {
             true => {
                 const SIZE: usize = sizes::TYPE_C;
@@ -372,7 +377,7 @@ where
         data: &mut [u8],
         address: u32,
         count: u32,
-    ) -> Result<(), Error> {
+    ) -> Result<(), SpiError> {
         let cmd: u8 = commands::CMD_DMA_EXT_WRITE;
         let mut cmd_buffer: [u8; S] = [0; S];
         let mut response: [u8; sizes::RESPONSE] = [0; sizes::RESPONSE];

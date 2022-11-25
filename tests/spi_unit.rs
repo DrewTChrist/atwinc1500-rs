@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod spi_unit_tests {
-    use atwinc1500::error::Error;
+    use atwinc1500::error::SpiError;
     use atwinc1500::registers;
     use atwinc1500::spi;
     use embedded_hal_mock::pin::{
@@ -145,7 +145,7 @@ mod spi_unit_tests {
         }
         match spi_bus.read_register(registers::BOOTROM_REG) {
             Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e, Error::SpiReadRegisterError),
+            Err(e) => assert_eq!(e, SpiError::ReadRegisterError),
         }
     }
 
@@ -289,7 +289,7 @@ mod spi_unit_tests {
         }
         match spi_bus.write_register(registers::BOOTROM_REG, START_FIRMWARE) {
             Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e, Error::SpiWriteRegisterError),
+            Err(e) => assert_eq!(e, SpiError::WriteRegisterError),
         }
     }
 
