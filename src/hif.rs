@@ -171,15 +171,35 @@ impl From<&[u8]> for ConnectionInfo {
     }
 }
 
+struct HifContext {
+    read_addr: u32,
+    read_size: u32,
+    read_done: bool,
+}
+
+impl HifContext {
+    fn default() -> Self {
+        Self {
+            read_addr: 0,
+            read_size: 0,
+            read_done: true,
+        }
+    }
+}
+
 /// Empty struct used to represent the Host Interface layer.
 /// The host interface layer abstracts away all the low level
 /// calls to the spi bus and provides a higher level api to work with.
-pub(crate) struct HostInterface;
+pub(crate) struct HostInterface {
+    ctx: HifContext,
+}
 
 impl HostInterface {
     /// Creates a new HostInterface struct
     pub fn new() -> Self {
-        Self {}
+        Self {
+            ctx: HifContext::default(),
+        }
     }
 
     /// This method wakes the chip from sleep mode using clockless register access
@@ -258,9 +278,12 @@ impl HostInterface {
         if reg_value & 0x1 != 0 {
             reg_value &= !0x00000001;
             spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_0, reg_value)?;
-            let size: u16 = ((reg_value >> 2) & 0xfff) as u16;
+            self.ctx.read_done = false;
+            let size: u32 = ((reg_value >> 2) & 0xfff) as u32;
             if size > 0 {
                 let address: u32 = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_1)?;
+                self.ctx.read_addr = address;
+                self.ctx.read_size = size;
                 let mut header_buf: [u8; 4] = [0; 4];
                 let header_buf_len = header_buf.len() as u32;
                 spi_bus.read_data(&mut header_buf, address, header_buf_len)?;
@@ -283,7 +306,9 @@ impl HostInterface {
                     _ => { /* Invalid group id */ }
                 }
             }
-            self.finish_reception(spi_bus)?;
+            if !self.ctx.read_done {
+                self.finish_reception(spi_bus)?;
+            }
         }
         Ok(())
     }
@@ -300,6 +325,9 @@ impl HostInterface {
         O: OutputPin,
     {
         spi_bus.read_data(buffer, address, buffer.len() as u32)?;
+        if (self.ctx.read_addr + self.ctx.read_size) - (address + buffer.len() as u32) == 0 {
+            self.finish_reception(spi_bus)?;
+        }
         Ok(())
     }
 
@@ -309,6 +337,7 @@ impl HostInterface {
         SPI: Transfer<u8>,
         O: OutputPin,
     {
+        self.ctx.read_done = true;
         let value: u32 = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_0)?;
         spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_0, value | 2)?;
         Ok(())
