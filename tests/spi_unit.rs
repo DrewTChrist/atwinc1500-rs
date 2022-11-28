@@ -145,7 +145,10 @@ mod spi_unit_tests {
         }
         match spi_bus.read_register(registers::BOOTROM_REG) {
             Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e, SpiError::ReadRegisterError),
+            Err(e) => assert_eq!(
+                e,
+                SpiError::ReadRegisterError(spi::commands::CMD_SINGLE_READ, 0.into(), 0xee,)
+            ),
         }
     }
 
@@ -289,7 +292,10 @@ mod spi_unit_tests {
         }
         match spi_bus.write_register(registers::BOOTROM_REG, START_FIRMWARE) {
             Ok(_) => assert!(false),
-            Err(e) => assert_eq!(e, SpiError::WriteRegisterError),
+            Err(e) => assert_eq!(
+                e,
+                SpiError::WriteRegisterError(spi::commands::CMD_SINGLE_WRITE, 0xff.into())
+            ),
         }
     }
 

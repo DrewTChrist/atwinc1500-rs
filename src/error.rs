@@ -10,7 +10,8 @@ use core::fmt;
 /// handled with the error recovery mechanisms
 /// also defined in the data sheet.
 #[repr(u8)]
-#[derive(Eq, PartialEq, PartialOrd)]
+#[cfg_attr(target_os = "none", derive(Eq, PartialEq, Debug, defmt::Format))]
+#[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
 pub enum AtwincSpiError {
     /// No error received from the Atwinc1500
     NoError = 0,
@@ -53,33 +54,49 @@ impl From<u8> for AtwincSpiError {
 /// Spi error variants
 pub enum SpiError {
     /// Attempted to parse an invalid spi command
-    InvalidCommand,
+    InvalidCommand(u8),
     /// Error changing the state of a pin
     PinStateError,
     /// Error transferring data over the spi bus
     TransferError,
     /// Error reading data from the atwinc1500
-    ReadDataError,
+    ReadDataError(u8, AtwincSpiError),
     /// Error received from the atwinc1500
     /// while trying to read from register
-    ReadRegisterError,
+    ReadRegisterError(u8, AtwincSpiError, u8),
     /// Error writing data to the atwinc1500
-    WriteDataError,
+    WriteDataError(u8, AtwincSpiError),
     /// Error received from the atwinc1500
     /// while trying to write to register
-    WriteRegisterError,
+    WriteRegisterError(u8, AtwincSpiError),
 }
 
 impl fmt::Display for SpiError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            SpiError::InvalidCommand => write!(f, "Invalid Spi Command"),
+        match self {
+            SpiError::InvalidCommand(cmd) => write!(f, "Invalid Spi Command: {:#04x}", cmd),
             SpiError::PinStateError => write!(f, "Pin State Error"),
             SpiError::TransferError => write!(f, "Spi Transfer Error"),
-            SpiError::ReadDataError => write!(f, "Error reading data"),
-            SpiError::ReadRegisterError => write!(f, "Error reading from register"),
-            SpiError::WriteDataError => write!(f, "Error writing data"),
-            SpiError::WriteRegisterError => write!(f, "Error writing to register"),
+            SpiError::ReadDataError(cmd, spi_error) => write!(
+                f,
+                "Error reading data {{cmd: {}, err: {:?}}}",
+                cmd, spi_error
+            ),
+            SpiError::ReadRegisterError(cmd, spi_error, pkt) => write!(
+                f,
+                "Error reading from register {{cmd: {:#04x}, err: {:?}, pkt: {:#04x}}}",
+                cmd, spi_error, pkt
+            ),
+            SpiError::WriteDataError(cmd, spi_error) => write!(
+                f,
+                "Error writing data {{cmd: {}, err: {:?}}}",
+                cmd, spi_error
+            ),
+            SpiError::WriteRegisterError(cmd, spi_error) => write!(
+                f,
+                "Error writing to register {{cmd: {}, err: {:?}}}",
+                cmd, spi_error
+            ),
         }
     }
 }

@@ -211,7 +211,7 @@ where
                 crc_index = sizes::TYPE_A;
             }
             _ => {
-                return Err(SpiError::InvalidCommand);
+                return Err(SpiError::InvalidCommand(command));
             }
         }
         if self.crc || !self.crc_disabled {
@@ -267,7 +267,11 @@ where
         }
         self.command(&mut cmd_buffer, cmd, address, 0, 0, clockless)?;
         if cmd_buffer[response_start] != cmd || cmd_buffer[response_start + 2] & 0xf0 != 0xf0 {
-            return Err(SpiError::ReadRegisterError);
+            return Err(SpiError::ReadRegisterError(
+                cmd,
+                cmd_buffer[response_start + 1].into(),
+                cmd_buffer[response_start + 2],
+            ));
         }
         Ok(combine_bytes_lsb!(cmd_buffer[beg..end]))
     }
@@ -346,7 +350,10 @@ where
         }
         self.command(&mut cmd_buffer, cmd, address, data, 0, clockless)?;
         if cmd_buffer[response_start] != cmd || cmd_buffer[response_start + 1] != 0 {
-            return Err(SpiError::WriteRegisterError);
+            return Err(SpiError::WriteRegisterError(
+                cmd,
+                cmd_buffer[response_start + 1].into(),
+            ));
         }
         Ok(())
     }
