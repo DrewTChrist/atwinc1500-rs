@@ -282,6 +282,7 @@ impl HostInterface {
                     _ => { /* Invalid group id */ }
                 }
             }
+            self.finish_reception(spi_bus)?;
         }
         Ok(())
     }
@@ -302,7 +303,7 @@ impl HostInterface {
     }
 
     /// Lets the atwinc1500 know we're done receiving data
-    fn _finish_reception<SPI, O>(&mut self, spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
+    fn finish_reception<SPI, O>(&mut self, spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
