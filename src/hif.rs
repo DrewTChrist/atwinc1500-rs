@@ -262,7 +262,8 @@ impl HostInterface {
             if size > 0 {
                 let address: u32 = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_1)?;
                 let mut header_buf: [u8; 4] = [0; 4];
-                spi_bus.read_data(&mut header_buf, address, HIF_HEADER_SIZE as u32)?;
+                let header_buf_len = header_buf.len() as u32;
+                spi_bus.read_data(&mut header_buf, address, header_buf_len)?;
                 let header = HifHeader::from(header_buf);
                 match header.gid {
                     group_ids::WIFI => self.wifi_callback(
