@@ -1,4 +1,4 @@
-use crate::error::Error;
+use crate::error::{Error, HifError};
 use crate::registers;
 use crate::spi::SpiBus;
 use crate::types::MacAddress;
@@ -324,7 +324,12 @@ impl HostInterface {
         SPI: Transfer<u8>,
         O: OutputPin,
     {
+        if buffer.len() as u32 > self.ctx.read_size {
+            return Err(HifError::SizeMismatch(buffer.len(), self.ctx.read_size as usize).into());
+        }
+
         spi_bus.read_data(buffer, address, buffer.len() as u32)?;
+
         if (self.ctx.read_addr + self.ctx.read_size) - (address + buffer.len() as u32) == 0 {
             self.finish_reception(spi_bus)?;
         }

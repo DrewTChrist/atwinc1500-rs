@@ -46,6 +46,34 @@ impl From<u8> for AtwincSpiError {
     }
 }
 
+/// Host Interface error variants
+#[cfg_attr(target_os = "none", derive(Eq, PartialEq, Debug, defmt::Format))]
+#[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
+pub enum HifError {
+    /// App requested data buffer was larger than the data buffer received
+    /// from the Atwinc1500
+    SizeMismatch(usize, usize),
+    /// App requested data from an address beyond that of the received data
+    AddressMismatch(u32, u32),
+}
+
+impl fmt::Display for HifError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match *self {
+            HifError::SizeMismatch(app_size, data_size) => write!(
+                f,
+                "App requested ({} bytes) more data than received ({} bytes)",
+                app_size, data_size
+            ),
+            HifError::AddressMismatch(app_size, data_size) => write!(
+                f,
+                "App requested ({} bytes) more data than received ({} bytes)",
+                app_size, data_size
+            ),
+        }
+    }
+}
+
 // Derives defmt::Format if building for bare metal
 // otherwise it does not derive defmt::Format
 // Unit tests get a linker error if this isn't done
@@ -105,6 +133,8 @@ impl fmt::Display for SpiError {
 #[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
 /// Atwinc1500 error variants
 pub enum Error {
+    /// Error occured during Hif interaction
+    HifError(HifError),
     /// Error occurred during Spi interaction
     SpiError(SpiError),
     /// Error updating pin state
@@ -114,6 +144,7 @@ pub enum Error {
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
+            Error::HifError(_) => write!(f, "Error"),
             Error::SpiError(_) => write!(f, "Error"),
             Error::PinStateError => write!(f, "Error"),
         }
@@ -126,5 +157,11 @@ impl From<SpiError> for Error {
             SpiError::PinStateError => Self::PinStateError,
             _ => Self::SpiError(value),
         }
+    }
+}
+
+impl From<HifError> for Error {
+    fn from(value: HifError) -> Self {
+        Self::HifError(value)
     }
 }
