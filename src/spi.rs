@@ -308,6 +308,8 @@ where
         });
         if response[0] == cmd {
             self.transfer(data)?
+        } else {
+            return Err(SpiError::ReadDataError(cmd, response[1].into()));
         }
         Ok(())
     }
@@ -398,6 +400,8 @@ where
             retry_while!(response[0] != 0xc3, retries = 10, {
                 self.transfer(&mut response[0..1])?;
             });
+        } else {
+            return Err(SpiError::WriteDataError(cmd, response[1].into()));
         }
         Ok(())
     }
