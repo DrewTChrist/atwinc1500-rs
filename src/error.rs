@@ -12,7 +12,7 @@ use core::fmt;
 #[repr(u8)]
 #[cfg_attr(target_os = "none", derive(Eq, PartialEq, Debug, defmt::Format))]
 #[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
-pub enum AtwincSpiError {
+pub enum SpiCommandError {
     /// No error received from the Atwinc1500
     NoError = 0,
     /// Command sent to the Atwinc1500 is not valid
@@ -30,18 +30,18 @@ pub enum AtwincSpiError {
     InvalidError,
 }
 
-impl From<u8> for AtwincSpiError {
+impl From<u8> for SpiCommandError {
     /// For easily converting a response byte
     /// to an SpiError type
     fn from(other: u8) -> Self {
         match other {
-            0 => AtwincSpiError::NoError,
-            1 => AtwincSpiError::UnsupportedCommand,
-            2 => AtwincSpiError::UnexpectedDataReceived,
-            3 => AtwincSpiError::Crc7Error,
-            4 => AtwincSpiError::Crc16Error,
-            5 => AtwincSpiError::InternalError,
-            _ => AtwincSpiError::InvalidError,
+            0 => SpiCommandError::NoError,
+            1 => SpiCommandError::UnsupportedCommand,
+            2 => SpiCommandError::UnexpectedDataReceived,
+            3 => SpiCommandError::Crc7Error,
+            4 => SpiCommandError::Crc16Error,
+            5 => SpiCommandError::InternalError,
+            _ => SpiCommandError::InvalidError,
         }
     }
 }
@@ -88,15 +88,15 @@ pub enum SpiError {
     /// Error transferring data over the spi bus
     TransferError,
     /// Error reading data from the atwinc1500
-    ReadDataError(u8, AtwincSpiError),
+    ReadDataError(u8, SpiCommandError),
     /// Error received from the atwinc1500
     /// while trying to read from register
-    ReadRegisterError(u8, AtwincSpiError, u8),
+    ReadRegisterError(u8, SpiCommandError, u8),
     /// Error writing data to the atwinc1500
-    WriteDataError(u8, AtwincSpiError),
+    WriteDataError(u8, SpiCommandError),
     /// Error received from the atwinc1500
     /// while trying to write to register
-    WriteRegisterError(u8, AtwincSpiError),
+    WriteRegisterError(u8, SpiCommandError),
 }
 
 impl fmt::Display for SpiError {
