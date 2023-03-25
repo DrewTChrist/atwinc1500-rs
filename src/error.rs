@@ -10,8 +10,11 @@ use core::fmt;
 /// handled with the error recovery mechanisms
 /// also defined in the data sheet.
 #[repr(u8)]
-#[cfg_attr(target_os = "none", derive(Eq, PartialEq, Debug, defmt::Format))]
-#[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
+#[cfg_attr(
+    target_os = "none",
+    derive(Clone, Copy, Eq, PartialEq, Debug, defmt::Format)
+)]
+#[cfg_attr(not(target_os = "none"), derive(Clone, Copy, Eq, PartialEq, Debug))]
 pub enum SpiCommandError {
     /// No error received from the Atwinc1500
     NoError = 0,
@@ -32,7 +35,7 @@ pub enum SpiCommandError {
 
 impl From<u8> for SpiCommandError {
     /// For easily converting a response byte
-    /// to an SpiError type
+    /// to an SpiCommandError type
     fn from(other: u8) -> Self {
         match other {
             0 => SpiCommandError::NoError,
@@ -43,6 +46,15 @@ impl From<u8> for SpiCommandError {
             5 => SpiCommandError::InternalError,
             _ => SpiCommandError::InvalidError,
         }
+    }
+}
+
+impl PartialEq<SpiCommandError> for u8 {
+    /// Allows for directly comparing a byte
+    /// to an SpiCommandError without casting to
+    /// u8 in the comparison
+    fn eq(&self, other: &SpiCommandError) -> bool {
+        *self == *other as u8
     }
 }
 

@@ -22,7 +22,7 @@ fn crc7_byte(crc: u8, data: u8) -> u8 {
 }
 
 pub fn crc7(mut crc: u8, buffer: &[u8]) -> u8 {
-    let len: usize = buffer.len() as usize;
+    let len: usize = buffer.len();
     for byte in buffer.iter().take(len) {
         crc = crc7_byte(crc, *byte);
     }

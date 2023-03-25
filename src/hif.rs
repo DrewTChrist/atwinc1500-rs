@@ -279,7 +279,7 @@ impl HostInterface {
             reg_value &= !0x00000001;
             spi_bus.write_register(registers::WIFI_HOST_RCV_CTRL_0, reg_value)?;
             self.ctx.read_done = false;
-            let size: u32 = ((reg_value >> 2) & 0xfff) as u32;
+            let size: u32 = (reg_value >> 2) & 0xfff;
             if size > 0 {
                 let address: u32 = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_1)?;
                 self.ctx.read_addr = address;

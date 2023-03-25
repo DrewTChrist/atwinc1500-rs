@@ -1,5 +1,5 @@
 use crate::crc::crc7;
-use crate::error::SpiError;
+use crate::error::{SpiCommandError, SpiError};
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
 
@@ -266,10 +266,13 @@ where
             clockless = false;
         }
         self.command(&mut cmd_buffer, cmd, address, 0, 0, clockless)?;
-        if cmd_buffer[response_start] != cmd || cmd_buffer[response_start + 2] & 0xf0 != 0xf0 {
+        if cmd_buffer[response_start] != cmd
+            || cmd_buffer[response_start + 1] & 0x0f != SpiCommandError::NoError
+            || cmd_buffer[response_start + 2] & 0xf0 != 0xf0
+        {
             return Err(SpiError::ReadRegisterError(
                 cmd,
-                cmd_buffer[response_start + 1].into(),
+                SpiCommandError::from(cmd_buffer[response_start + 1] & 0x0f),
                 cmd_buffer[response_start + 2],
             ));
         }
@@ -351,10 +354,12 @@ where
             clockless = false;
         }
         self.command(&mut cmd_buffer, cmd, address, data, 0, clockless)?;
-        if cmd_buffer[response_start] != cmd || cmd_buffer[response_start + 1] != 0 {
+        if cmd_buffer[response_start] != cmd
+            || cmd_buffer[response_start + 1] & 0x0f != SpiCommandError::NoError
+        {
             return Err(SpiError::WriteRegisterError(
                 cmd,
-                cmd_buffer[response_start + 1].into(),
+                SpiCommandError::from(cmd_buffer[response_start + 1] & 0x0f),
             ));
         }
         Ok(())
