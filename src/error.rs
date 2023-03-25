@@ -107,7 +107,7 @@ impl fmt::Display for SpiError {
             SpiError::TransferError => write!(f, "Spi Transfer Error"),
             SpiError::ReadDataError(cmd, spi_error) => write!(
                 f,
-                "Error reading data {{cmd: {}, err: {:?}}}",
+                "Error reading data {{cmd: {:#04x}, err: {:?}}}",
                 cmd, spi_error
             ),
             SpiError::ReadRegisterError(cmd, spi_error, pkt) => write!(
@@ -117,12 +117,12 @@ impl fmt::Display for SpiError {
             ),
             SpiError::WriteDataError(cmd, spi_error) => write!(
                 f,
-                "Error writing data {{cmd: {}, err: {:?}}}",
+                "Error writing data {{cmd: {:#04x}, err: {:?}}}",
                 cmd, spi_error
             ),
             SpiError::WriteRegisterError(cmd, spi_error) => write!(
                 f,
-                "Error writing to register {{cmd: {}, err: {:?}}}",
+                "Error writing to register {{cmd: {:#04x}, err: {:?}}}",
                 cmd, spi_error
             ),
         }
@@ -143,10 +143,10 @@ pub enum Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Error::HifError(_) => write!(f, "Error"),
-            Error::SpiError(_) => write!(f, "Error"),
-            Error::PinStateError => write!(f, "Error"),
+        match self {
+            Error::HifError(hif_error) => write!(f, "{}", hif_error),
+            Error::SpiError(spi_error) => write!(f, "{}", spi_error),
+            Error::PinStateError => write!(f, "Pin State Error"),
         }
     }
 }
