@@ -19,9 +19,7 @@ mod spi_unit_tests {
         let spi = SpiMock::new(spi_expect);
         let cs = PinMock::new(pin_expect);
         let mut bus = spi::SpiBus::new(spi, cs, false);
-        if let Err(e) = bus.crc_disabled() {
-            panic!("{}", e);
-        }
+        bus.crc_disabled().unwrap();
         bus
     }
 

@@ -1,5 +1,4 @@
 //! Atwinc1500 error definitions
-use core::fmt;
 
 /// These are the error values defined
 /// in the Atwinc data sheet. InvalidError is
@@ -10,11 +9,7 @@ use core::fmt;
 /// handled with the error recovery mechanisms
 /// also defined in the data sheet.
 #[repr(u8)]
-#[cfg_attr(
-    target_os = "none",
-    derive(Clone, Copy, Eq, PartialEq, Debug, defmt::Format)
-)]
-#[cfg_attr(not(target_os = "none"), derive(Clone, Copy, Eq, PartialEq, Debug))]
+#[derive(Clone, Copy, Eq, PartialEq, core::fmt::Debug, defmt::Format)]
 pub enum SpiCommandError {
     /// No error received from the Atwinc1500
     NoError = 0,
@@ -59,8 +54,7 @@ impl PartialEq<SpiCommandError> for u8 {
 }
 
 /// Host Interface error variants
-#[cfg_attr(target_os = "none", derive(Eq, PartialEq, Debug, defmt::Format))]
-#[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
+#[derive(Eq, PartialEq, core::fmt::Debug)]
 pub enum HifError {
     /// App requested data buffer was larger than the data buffer received
     /// from the Atwinc1500
@@ -69,29 +63,27 @@ pub enum HifError {
     AddressMismatch(u32, u32),
 }
 
-impl fmt::Display for HifError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl defmt::Format for HifError {
+    fn format(&self, f: defmt::Formatter) {
         match *self {
-            HifError::SizeMismatch(app_size, data_size) => write!(
+            HifError::SizeMismatch(app_size, data_size) => defmt::write!(
                 f,
                 "App requested ({} bytes) more data than received ({} bytes)",
-                app_size, data_size
+                app_size,
+                data_size
             ),
-            HifError::AddressMismatch(app_size, data_size) => write!(
+            HifError::AddressMismatch(app_size, data_size) => defmt::write!(
                 f,
                 "App requested ({} bytes) more data than received ({} bytes)",
-                app_size, data_size
+                app_size,
+                data_size
             ),
         }
     }
 }
 
-// Derives defmt::Format if building for bare metal
-// otherwise it does not derive defmt::Format
-// Unit tests get a linker error if this isn't done
-#[cfg_attr(target_os = "none", derive(Eq, PartialEq, Debug, defmt::Format))]
-#[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
 /// Spi error variants
+#[derive(Eq, PartialEq, core::fmt::Debug)]
 pub enum SpiError {
     /// Attempted to parse an invalid spi command
     InvalidCommand(u8),
@@ -111,39 +103,43 @@ pub enum SpiError {
     WriteRegisterError(u8, SpiCommandError),
 }
 
-impl fmt::Display for SpiError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl defmt::Format for SpiError {
+    fn format(&self, f: defmt::Formatter) {
         match self {
-            SpiError::InvalidCommand(cmd) => write!(f, "Invalid Spi Command: {:#04x}", cmd),
-            SpiError::PinStateError => write!(f, "Pin State Error"),
-            SpiError::TransferError => write!(f, "Spi Transfer Error"),
-            SpiError::ReadDataError(cmd, spi_error) => write!(
+            SpiError::InvalidCommand(cmd) => defmt::write!(f, "Invalid Spi Command: {:#04x}", cmd),
+            SpiError::PinStateError => defmt::write!(f, "Pin State Error"),
+            SpiError::TransferError => defmt::write!(f, "Spi Transfer Error"),
+            SpiError::ReadDataError(cmd, spi_error) => defmt::write!(
                 f,
                 "Error reading data {{cmd: {:#04x}, err: {:?}}}",
-                cmd, spi_error
+                cmd,
+                spi_error
             ),
-            SpiError::ReadRegisterError(cmd, spi_error, pkt) => write!(
+            SpiError::ReadRegisterError(cmd, spi_error, pkt) => defmt::write!(
                 f,
                 "Error reading from register {{cmd: {:#04x}, err: {:?}, pkt: {:#04x}}}",
-                cmd, spi_error, pkt
+                cmd,
+                spi_error,
+                pkt
             ),
-            SpiError::WriteDataError(cmd, spi_error) => write!(
+            SpiError::WriteDataError(cmd, spi_error) => defmt::write!(
                 f,
                 "Error writing data {{cmd: {:#04x}, err: {:?}}}",
-                cmd, spi_error
+                cmd,
+                spi_error
             ),
-            SpiError::WriteRegisterError(cmd, spi_error) => write!(
+            SpiError::WriteRegisterError(cmd, spi_error) => defmt::write!(
                 f,
                 "Error writing to register {{cmd: {:#04x}, err: {:?}}}",
-                cmd, spi_error
+                cmd,
+                spi_error
             ),
         }
     }
 }
 
-#[cfg_attr(target_os = "none", derive(Eq, PartialEq, Debug, defmt::Format))]
-#[cfg_attr(not(target_os = "none"), derive(Eq, PartialEq, Debug))]
 /// Atwinc1500 error variants
+#[derive(Eq, PartialEq, core::fmt::Debug)]
 pub enum Error {
     /// Error occured during Hif interaction
     HifError(HifError),
@@ -153,11 +149,11 @@ pub enum Error {
     PinStateError,
 }
 
-impl fmt::Display for Error {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl core::fmt::Display for Error {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
-            Error::HifError(hif_error) => write!(f, "{}", hif_error),
-            Error::SpiError(spi_error) => write!(f, "{}", spi_error),
+            Error::HifError(hif_error) => write!(f, "{:?}", hif_error),
+            Error::SpiError(spi_error) => write!(f, "{:?}", spi_error),
             Error::PinStateError => write!(f, "Pin State Error"),
         }
     }
