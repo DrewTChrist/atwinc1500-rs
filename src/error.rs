@@ -85,8 +85,6 @@ impl defmt::Format for HifError {
 /// Spi error variants
 #[derive(Eq, PartialEq, core::fmt::Debug)]
 pub enum SpiError {
-    /// Attempted to parse an invalid spi command
-    InvalidCommand(u8),
     /// Error changing the state of a pin
     PinStateError,
     /// Error transferring data over the spi bus
@@ -106,7 +104,6 @@ pub enum SpiError {
 impl defmt::Format for SpiError {
     fn format(&self, f: defmt::Formatter) {
         match self {
-            SpiError::InvalidCommand(cmd) => defmt::write!(f, "Invalid Spi Command: {:#04x}", cmd),
             SpiError::PinStateError => defmt::write!(f, "Pin State Error"),
             SpiError::TransferError => defmt::write!(f, "Spi Transfer Error"),
             SpiError::ReadDataError(cmd, spi_error) => defmt::write!(
