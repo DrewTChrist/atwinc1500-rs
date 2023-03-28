@@ -3,24 +3,25 @@ use crate::error::{SpiCommandError, SpiError};
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
 
-/// This module contains the valid
-/// Spi commands for the Atwinc1500
-pub mod commands {
+/// This enum contains the valid
+/// spi commands for the Atwinc1500
+#[derive(Eq, PartialEq, Copy, Clone)]
+pub enum Command {
     // Command start + Command Type
     // Command start = 0b1100
     // Example: 0b1100 | 0b0001 into one byte
     // CMD_DMA_WRITE = 0b11000001
-    pub const CMD_DMA_WRITE: u8 = 0xc1; // type B
-    pub const CMD_DMA_READ: u8 = 0xc2; // type B
-    pub const CMD_INTERNAL_WRITE: u8 = 0xc3; // type C
-    pub const CMD_INTERNAL_READ: u8 = 0xc4; // type A
-    pub const CMD_TERMINATE: u8 = 0xc5; // type A
-    pub const CMD_REPEAT: u8 = 0xc6; // type A
-    pub const CMD_DMA_EXT_WRITE: u8 = 0xc7; // type C
-    pub const CMD_DMA_EXT_READ: u8 = 0xc8; // type C
-    pub const CMD_SINGLE_WRITE: u8 = 0xc9; // type D
-    pub const CMD_SINGLE_READ: u8 = 0xca; // type A
-    pub const CMD_RESET: u8 = 0xcf; // type A
+    CmdDmaWrite = 0xc1,      // type B
+    CmdDmaRead = 0xc2,       // type B
+    CmdInternalWrite = 0xc3, // type C
+    CmdInternalRead = 0xc4,  // type A
+    CmdTerminate = 0xc5,     // type A
+    CmdRepeat = 0xc6,        // type A
+    CmdDmaExtWrite = 0xc7,   // type C
+    CmdDmaExtRead = 0xc8,    // type C
+    CmdSingleWrite = 0xc9,   // type D
+    CmdSingleRead = 0xca,    // type A
+    CmdReset = 0xcf,         // type A
 }
 
 /// This module contains the different
@@ -119,17 +120,17 @@ where
     pub fn command(
         &mut self,
         cmd_buffer: &'_ mut [u8],
-        command: u8,
+        command: Command,
         address: u32,
         data: u32,
         size: u32,
         clockless: bool,
     ) -> Result<(), SpiError> {
-        cmd_buffer[0] = command;
+        cmd_buffer[0] = command as u8;
         let mut crc_index: usize = 0;
         match command {
-            commands::CMD_DMA_WRITE => {}
-            commands::CMD_DMA_READ => {
+            Command::CmdDmaWrite => {}
+            Command::CmdDmaRead => {
                 cmd_buffer[1] = (address >> 16) as u8;
                 cmd_buffer[2] = (address >> 8) as u8;
                 cmd_buffer[3] = address as u8;
@@ -137,7 +138,7 @@ where
                 cmd_buffer[5] = size as u8;
                 crc_index = sizes::TYPE_B;
             }
-            commands::CMD_INTERNAL_WRITE => {
+            Command::CmdInternalWrite => {
                 cmd_buffer[1] = (address >> 8) as u8;
                 if clockless {
                     cmd_buffer[1] |= 1 << 7;
@@ -149,7 +150,7 @@ where
                 cmd_buffer[6] = data as u8;
                 crc_index = sizes::TYPE_C;
             }
-            commands::CMD_INTERNAL_READ => {
+            Command::CmdInternalRead => {
                 cmd_buffer[1] = (address >> 8) as u8;
                 if clockless {
                     cmd_buffer[1] |= 1 << 7;
@@ -158,19 +159,19 @@ where
                 cmd_buffer[3] = 0;
                 crc_index = sizes::TYPE_A;
             }
-            commands::CMD_TERMINATE => {
+            Command::CmdTerminate => {
                 cmd_buffer[1] = 0x0;
                 cmd_buffer[2] = 0x0;
                 cmd_buffer[3] = 0x0;
                 crc_index = sizes::TYPE_A;
             }
-            commands::CMD_REPEAT => {
+            Command::CmdRepeat => {
                 cmd_buffer[1] = 0x0;
                 cmd_buffer[2] = 0x0;
                 cmd_buffer[3] = 0x0;
                 crc_index = sizes::TYPE_A;
             }
-            commands::CMD_DMA_EXT_WRITE => {
+            Command::CmdDmaExtWrite => {
                 cmd_buffer[1] = (address >> 16) as u8;
                 cmd_buffer[2] = (address >> 8) as u8;
                 cmd_buffer[3] = address as u8;
@@ -179,7 +180,7 @@ where
                 cmd_buffer[6] = size as u8;
                 crc_index = 0;
             }
-            commands::CMD_DMA_EXT_READ => {
+            Command::CmdDmaExtRead => {
                 cmd_buffer[1] = (address >> 16) as u8;
                 cmd_buffer[2] = (address >> 8) as u8;
                 cmd_buffer[3] = address as u8;
@@ -188,7 +189,7 @@ where
                 cmd_buffer[6] = size as u8;
                 crc_index = 0;
             }
-            commands::CMD_SINGLE_WRITE => {
+            Command::CmdSingleWrite => {
                 cmd_buffer[1] = (address >> 16) as u8;
                 cmd_buffer[2] = (address >> 8) as u8;
                 cmd_buffer[3] = address as u8;
@@ -198,20 +199,17 @@ where
                 cmd_buffer[7] = data as u8;
                 crc_index = sizes::TYPE_D;
             }
-            commands::CMD_SINGLE_READ => {
+            Command::CmdSingleRead => {
                 cmd_buffer[1] = (address >> 16) as u8;
                 cmd_buffer[2] = (address >> 8) as u8;
                 cmd_buffer[3] = address as u8;
                 crc_index = sizes::TYPE_A;
             }
-            commands::CMD_RESET => {
+            Command::CmdReset => {
                 cmd_buffer[1] = 0xff;
                 cmd_buffer[2] = 0xff;
                 cmd_buffer[3] = 0xff;
                 crc_index = sizes::TYPE_A;
-            }
-            _ => {
-                return Err(SpiError::InvalidCommand(command));
             }
         }
         if self.crc || !self.crc_disabled {
@@ -253,25 +251,25 @@ where
         end: usize,
         response_start: usize,
     ) -> Result<u32, SpiError> {
-        let cmd: u8;
+        let cmd: Command;
         let clockless: bool;
         let mut cmd_buffer: [u8; S] = [0; S];
         // The Atmel driver does a clockless read
         // if address is less than 0xff (0b11111111).
         if address <= 0xff {
-            cmd = commands::CMD_INTERNAL_READ;
+            cmd = Command::CmdInternalRead;
             clockless = true;
         } else {
-            cmd = commands::CMD_SINGLE_READ;
+            cmd = Command::CmdSingleRead;
             clockless = false;
         }
         self.command(&mut cmd_buffer, cmd, address, 0, 0, clockless)?;
-        if cmd_buffer[response_start] != cmd
+        if cmd_buffer[response_start] != cmd as u8
             || cmd_buffer[response_start + 1] & 0x0f != SpiCommandError::NoError
             || cmd_buffer[response_start + 2] & 0xf0 != 0xf0
         {
             return Err(SpiError::ReadRegisterError(
-                cmd,
+                cmd as u8,
                 SpiCommandError::from(cmd_buffer[response_start + 1] & 0x0f),
                 cmd_buffer[response_start + 2],
             ));
@@ -301,7 +299,7 @@ where
         address: u32,
         count: u32,
     ) -> Result<(), SpiError> {
-        let cmd: u8 = commands::CMD_DMA_EXT_READ;
+        let cmd = Command::CmdDmaExtRead;
         let mut cmd_buffer: [u8; S] = [0; S];
         let mut response: [u8; sizes::RESPONSE + sizes::DATA_START] =
             [0; sizes::RESPONSE + sizes::DATA_START];
@@ -309,10 +307,10 @@ where
         retry_while!(response[0] == 0, retries = 10, {
             self.transfer(&mut response)?;
         });
-        if response[0] == cmd {
+        if response[0] == cmd as u8 {
             self.transfer(data)?
         } else {
-            return Err(SpiError::ReadDataError(cmd, response[1].into()));
+            return Err(SpiError::ReadDataError(cmd as u8, response[1].into()));
         }
         Ok(())
     }
@@ -341,24 +339,24 @@ where
         data: u32,
         response_start: usize,
     ) -> Result<(), SpiError> {
-        let cmd: u8;
+        let cmd: Command;
         let clockless: bool;
         let mut cmd_buffer: [u8; S] = [0; S];
         // The Atmel driver does a clockless write
         // if address is less than 0x30 (0b00110000).
         if address <= 0x30 {
-            cmd = commands::CMD_INTERNAL_WRITE;
+            cmd = Command::CmdInternalWrite;
             clockless = true;
         } else {
-            cmd = commands::CMD_SINGLE_WRITE;
+            cmd = Command::CmdSingleWrite;
             clockless = false;
         }
         self.command(&mut cmd_buffer, cmd, address, data, 0, clockless)?;
-        if cmd_buffer[response_start] != cmd
+        if cmd_buffer[response_start] != cmd as u8
             || cmd_buffer[response_start + 1] & 0x0f != SpiCommandError::NoError
         {
             return Err(SpiError::WriteRegisterError(
-                cmd,
+                cmd as u8,
                 SpiCommandError::from(cmd_buffer[response_start + 1] & 0x0f),
             ));
         }
@@ -392,13 +390,13 @@ where
         address: u32,
         count: u32,
     ) -> Result<(), SpiError> {
-        let cmd: u8 = commands::CMD_DMA_EXT_WRITE;
+        let cmd = Command::CmdDmaExtWrite;
         let mut cmd_buffer: [u8; S] = [0; S];
         let mut response: [u8; sizes::RESPONSE] = [0; sizes::RESPONSE];
         let data_mark: u8 = SpiPacket::Last as u8;
         self.command(&mut cmd_buffer, cmd, address, 0, count, false)?;
         self.transfer(&mut response)?;
-        if response[0] == cmd {
+        if response[0] == cmd as u8 {
             self.transfer(&mut [data_mark])?;
             self.transfer(data)?;
             response[0] = 0;
@@ -406,7 +404,7 @@ where
                 self.transfer(&mut response[0..1])?;
             });
         } else {
-            return Err(SpiError::WriteDataError(cmd, response[1].into()));
+            return Err(SpiError::WriteDataError(cmd as u8, response[1].into()));
         }
         Ok(())
     }

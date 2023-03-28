@@ -51,7 +51,7 @@ mod spi_unit_tests {
             // Send
             SpiTransaction::transfer(
                 vec![
-                    spi::commands::CMD_SINGLE_READ,
+                    spi::Command::CmdSingleRead as u8,
                     (address >> 16) as u8,
                     (address >> 8) as u8,
                     address as u8,
@@ -69,7 +69,7 @@ mod spi_unit_tests {
                     0x0,
                     0x0,
                     0x0,
-                    spi::commands::CMD_SINGLE_READ,
+                    spi::Command::CmdSingleRead as u8,
                     0x0,
                     0xf3,
                     (FINISH_BOOT_VAL & 0xff) as u8,
@@ -105,7 +105,7 @@ mod spi_unit_tests {
             // Send command
             SpiTransaction::transfer(
                 vec![
-                    spi::commands::CMD_SINGLE_READ,
+                    spi::Command::CmdSingleRead as u8,
                     (address >> 16) as u8,
                     (address >> 8) as u8,
                     address as u8,
@@ -122,7 +122,7 @@ mod spi_unit_tests {
                     0x0,
                     0x0,
                     0x0,
-                    spi::commands::CMD_SINGLE_READ,
+                    spi::Command::CmdSingleRead as u8,
                     0x0,
                     0xee, // error caused here expects 0xf-
                     (FINISH_BOOT_VAL & 0xff) as u8,
@@ -145,7 +145,7 @@ mod spi_unit_tests {
             Ok(_) => assert!(false),
             Err(e) => assert_eq!(
                 e,
-                SpiError::ReadRegisterError(spi::commands::CMD_SINGLE_READ, 0.into(), 0xee,)
+                SpiError::ReadRegisterError(spi::Command::CmdSingleRead as u8, 0.into(), 0xee,)
             ),
         }
     }
@@ -158,7 +158,7 @@ mod spi_unit_tests {
             // Send
             SpiTransaction::transfer(
                 vec![
-                    spi::commands::CMD_SINGLE_READ,
+                    spi::Command::CmdSingleRead as u8,
                     (address >> 16) as u8,
                     (address >> 8) as u8,
                     address as u8,
@@ -178,7 +178,7 @@ mod spi_unit_tests {
                     0x0,
                     0x0,
                     0x0,
-                    spi::commands::CMD_SINGLE_READ,
+                    spi::Command::CmdSingleRead as u8,
                     0x0,
                     0xf3,
                     (FINISH_BOOT_VAL & 0xff) as u8,
@@ -211,7 +211,7 @@ mod spi_unit_tests {
         const START_FIRMWARE: u32 = 0xef522f61;
         let spi_expect = [SpiTransaction::transfer(
             vec![
-                spi::commands::CMD_SINGLE_WRITE,
+                spi::Command::CmdSingleWrite as u8,
                 (address >> 16) as u8,
                 (address >> 8) as u8,
                 address as u8,
@@ -231,7 +231,7 @@ mod spi_unit_tests {
                 0x0,
                 0x0,
                 0x0,
-                spi::commands::CMD_SINGLE_WRITE,
+                spi::Command::CmdSingleWrite as u8,
                 0x0,
             ],
         )];
@@ -255,7 +255,7 @@ mod spi_unit_tests {
         const START_FIRMWARE: u32 = 0xef522f61;
         let spi_expect = [SpiTransaction::transfer(
             vec![
-                spi::commands::CMD_SINGLE_WRITE,
+                spi::Command::CmdSingleWrite as u8,
                 (address >> 16) as u8,
                 (address >> 8) as u8,
                 address as u8,
@@ -275,7 +275,7 @@ mod spi_unit_tests {
                 0x0,
                 0x0,
                 0x0,
-                spi::commands::CMD_SINGLE_WRITE,
+                spi::Command::CmdSingleWrite as u8,
                 0xff, // error caused here
             ],
         )];
@@ -292,7 +292,7 @@ mod spi_unit_tests {
             Ok(_) => assert!(false),
             Err(e) => assert_eq!(
                 e,
-                SpiError::WriteRegisterError(spi::commands::CMD_SINGLE_WRITE, 0xff.into())
+                SpiError::WriteRegisterError(spi::Command::CmdSingleWrite as u8, 0xff.into())
             ),
         }
     }
@@ -303,7 +303,7 @@ mod spi_unit_tests {
         const START_FIRMWARE: u32 = 0xef522f61;
         let spi_expect = [SpiTransaction::transfer(
             vec![
-                spi::commands::CMD_SINGLE_WRITE,
+                spi::Command::CmdSingleWrite as u8,
                 (address >> 16) as u8,
                 (address >> 8) as u8,
                 address as u8,
@@ -325,7 +325,7 @@ mod spi_unit_tests {
                 0x0,
                 0x0,
                 0x0,
-                spi::commands::CMD_SINGLE_WRITE,
+                spi::Command::CmdSingleWrite as u8,
                 0x0,
             ],
         )];
