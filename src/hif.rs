@@ -2,7 +2,7 @@ use crate::error::{Error, HifError};
 use crate::registers;
 use crate::spi::SpiBus;
 use crate::types::MacAddress;
-use crate::wifi::{ConnectionState, StateChange, MAX_SSID_LEN};
+use crate::wifi::{ConnectionState, ScanResult, ScanResultCount, StateChange, MAX_SSID_LEN};
 use crate::{Mode, State, Status};
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
@@ -52,9 +52,9 @@ pub mod commands {
         pub const _REQ_ENABLE_SNTP_CLIENT: u8 = 12;
         pub const _REQ_DISABLE_SNTP_CLIENT: u8 = 13;
         pub const _REQ_CUST_INFO_ELEMENT: u8 = 15;
-        pub const _REQ_SCAN: u8 = 16;
+        pub const REQ_SCAN: u8 = 16;
         pub const _RESP_SCAN_DONE: u8 = 17;
-        pub const _REQ_SCAN_RESULT: u8 = 18;
+        pub const REQ_SCAN_RESULT: u8 = 18;
         pub const _RESP_SCAN_RESULT: u8 = 19;
         pub const _REQ_SET_SCAN_OPTION: u8 = 20;
         pub const _REQ_SET_SCAN_REGION: u8 = 21;
@@ -456,8 +456,20 @@ impl HostInterface {
             commands::wifi::_REQ_DHCP_CONF => {}
             commands::wifi::_REQ_WPS => {}
             commands::wifi::_RESP_IP_CONFLICT => {}
-            commands::wifi::_RESP_SCAN_DONE => {}
-            commands::wifi::_RESP_SCAN_RESULT => {}
+            commands::wifi::_RESP_SCAN_DONE => {
+                let mut data_buf: [u8; 4] = [0; 4];
+                self.receive(spi_bus, address, &mut data_buf)?;
+                let scan_count = ScanResultCount::from(data_buf);
+                state.num_ap = scan_count.num_ap;
+                state.scan_in_progress = false;
+                // TODO: Handle potential scan_count.scan_state error
+            }
+            commands::wifi::_RESP_SCAN_RESULT => {
+                let mut data_buf: [u8; 44] = [0; 44];
+                self.receive(spi_bus, address, &mut data_buf)?;
+                let result = ScanResult::from(data_buf);
+                state.scan_result = Some(result);
+            }
             commands::wifi::_RESP_CURRENT_RSSI => {}
             _ => {}
         }

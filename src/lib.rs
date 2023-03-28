@@ -27,7 +27,7 @@ use hif::{commands, group_ids, HifHeader, HostInterface};
 use socket::TcpSocket;
 use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
-use wifi::{Connection, OldConnection};
+use wifi::{Channel, Connection, OldConnection, ScanChannel, ScanResult};
 
 /// Connection status of the Atwinc1500
 #[cfg_attr(
@@ -78,6 +78,9 @@ struct State {
     status: Status,
     mode: Mode,
     _dhcp: bool,
+    scan_in_progress: bool,
+    num_ap: u8,
+    scan_result: Option<ScanResult>,
 }
 
 impl State {
@@ -88,6 +91,9 @@ impl State {
             mode: Mode::default(),
             status: Status::default(),
             _dhcp: true,
+            scan_in_progress: false,
+            num_ap: 0,
+            scan_result: None,
         }
     }
 
@@ -365,6 +371,37 @@ where
         let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_DEFAULT_CONNECT, 0);
         self.hif
             .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
+        Ok(())
+    }
+
+    /// Begin a scan for networks
+    pub fn request_network_scan(&mut self, channel: Channel) -> Result<(), Error> {
+        let mut channel: [u8; 4] = ScanChannel {
+            channel: channel as u8,
+            reserved: 0,
+            passive_scan_time: 0,
+        }
+        .into();
+        let hif_header = HifHeader::new(
+            group_ids::WIFI,
+            commands::wifi::REQ_SCAN,
+            channel.len() as u16,
+        );
+        self.hif
+            .send(&mut self.spi_bus, hif_header, &mut channel, &mut [])?;
+        Ok(())
+    }
+
+    /// Get the result from the previous scan
+    /// at the index passed to this function
+    pub fn request_scan_result(&mut self, index: u8) -> Result<(), Error> {
+        let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_SCAN_RESULT, 4);
+        self.hif.send(
+            &mut self.spi_bus,
+            hif_header,
+            &mut [index, 0, 0, 0],
+            &mut [],
+        )?;
         Ok(())
     }
 

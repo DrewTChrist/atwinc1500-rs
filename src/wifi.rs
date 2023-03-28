@@ -33,6 +33,7 @@ enum SecurityType {
 ///
 /// The default channel is any
 #[derive(Default)]
+#[repr(u8)]
 pub enum Channel {
     /// Channel 1
     Ch1 = 1,
@@ -271,6 +272,93 @@ impl From<[u8; 4]> for StateChange {
         Self {
             current_state: ConnectionState::from(data[0]),
             _error_code: StateChangeErrorCode::from(data[1]),
+        }
+    }
+}
+
+pub(crate) struct ScanChannel {
+    /// The channel to scan for networks
+    pub channel: u8,
+    /// Reserved for future use
+    pub reserved: u8,
+    /// Passive scan time if
+    /// doing a passive scan
+    pub passive_scan_time: u16,
+}
+
+impl From<ScanChannel> for [u8; 4] {
+    fn from(scan_channel: ScanChannel) -> [u8; 4] {
+        [
+            scan_channel.channel as u8,
+            scan_channel.reserved,
+            (scan_channel.passive_scan_time >> 4) as u8,
+            (scan_channel.passive_scan_time & 0x0f) as u8,
+        ]
+    }
+}
+
+/// The ScanResultCount holds the
+/// number of access points that were
+/// found in the scan and the state of the scan
+pub(crate) struct ScanResultCount {
+    /// Number of access points
+    /// found in the scan
+    pub num_ap: u8,
+    /// Scan state returned
+    /// from the Atwinc1500
+    pub _scan_state: i8,
+}
+
+impl From<[u8; 4]> for ScanResultCount {
+    fn from(data: [u8; 4]) -> Self {
+        Self {
+            num_ap: data[0],
+            _scan_state: data[1] as i8,
+        }
+    }
+}
+
+/// The ScanResultIndex is sent to the
+/// Atwinc1500 to get the ScanResult back
+pub(crate) struct _ScanResultIndex {
+    /// An index to pass to
+    /// the Atwinc1500
+    index: u8,
+}
+
+/// The ScanResult is the information
+/// returned from the Atwinc1500. The
+/// ScanResultIndex is used to choose
+/// which access point to get a ScanResult
+/// for
+pub(crate) struct ScanResult {
+    /// The index of the scan result
+    pub _index: u8,
+    /// Rssi
+    pub _rssi: i8,
+    /// Authorization type
+    pub _auth_type: u8,
+    /// Wifi channel
+    pub _channel: u8,
+    /// bssid, mac address?
+    pub _bssid: [u8; 6],
+    /// Network name
+    pub _ssid: [u8; MAX_SSID_LEN],
+}
+
+impl From<[u8; 44]> for ScanResult {
+    fn from(data: [u8; 44]) -> Self {
+        let mut _bssid = [0; 6];
+        _bssid.copy_from_slice(&data[4..11]);
+        let mut _ssid = [0; MAX_SSID_LEN];
+        _ssid.copy_from_slice(&data[11..34]);
+        Self {
+            _index: data[0],
+            _rssi: data[1] as i8,
+            _auth_type: data[2],
+            _channel: data[3],
+            _bssid,
+            _ssid,
         }
     }
 }
