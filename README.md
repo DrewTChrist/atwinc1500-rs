@@ -1,6 +1,6 @@
 # atwinc1500-rs
 
-![](https://img.shields.io/github/workflow/status/drewtchrist/atwinc1500-rs/CI)
+![](https://img.shields.io/github/actions/workflow/status/drewtchrist/atwinc1500-rs/ci.yml)
 ![](https://img.shields.io/docsrs/atwinc1500)
 ![](https://img.shields.io/crates/v/atwinc1500)
 
@@ -27,7 +27,7 @@ This roadmap is subject to change.
     - [x] Read mac address
     - [x] Read firmware version
 - [ ] Wifi
-    - [ ] Scan
+    - [x] Scan for networks
     - [ ] Connect
         - [x] Older connection format
         - [ ] Newer connection format
