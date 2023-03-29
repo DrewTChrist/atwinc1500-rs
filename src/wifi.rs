@@ -286,6 +286,23 @@ pub(crate) struct ScanChannel {
     pub passive_scan_time: u16,
 }
 
+impl ScanChannel {
+    pub fn new(channel: Channel) -> Self {
+        Self {
+            channel: channel as u8,
+            reserved: 0,
+            passive_scan_time: 0,
+        }
+    }
+    pub fn _new_passive(channel: Channel, passive_scan_time: u16) -> Self {
+        Self {
+            channel: channel as u8,
+            reserved: 0,
+            passive_scan_time,
+        }
+    }
+}
+
 impl From<ScanChannel> for [u8; 4] {
     fn from(scan_channel: ScanChannel) -> [u8; 4] {
         [
@@ -320,10 +337,12 @@ impl From<[u8; 4]> for ScanResultCount {
 
 /// The ScanResultIndex is sent to the
 /// Atwinc1500 to get the ScanResult back
-pub(crate) struct _ScanResultIndex {
-    /// An index to pass to
-    /// the Atwinc1500
-    index: u8,
+pub(crate) struct ScanResultIndex(pub u8);
+
+impl From<ScanResultIndex> for [u8; 4] {
+    fn from(scan_index: ScanResultIndex) -> [u8; 4] {
+        [scan_index.0, 0, 0, 0]
+    }
 }
 
 /// The ScanResult is the information
@@ -331,6 +350,7 @@ pub(crate) struct _ScanResultIndex {
 /// ScanResultIndex is used to choose
 /// which access point to get a ScanResult
 /// for
+#[derive(Clone)]
 pub struct ScanResult {
     /// The index of the scan result
     pub index: u8,

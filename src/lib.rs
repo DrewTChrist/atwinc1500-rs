@@ -21,13 +21,13 @@ use embedded_hal::blocking::{delay::DelayMs, spi::Transfer};
 use embedded_hal::digital::v2::OutputPin;
 use embedded_nal::{SocketAddr, TcpClientStack, TcpFullStack};
 
-use error::Error;
+use error::{Error, ScanError};
 use gpio::{AtwincGpio, GpioDirection, GpioValue};
 use hif::{commands, group_ids, HifHeader, HostInterface};
 use socket::TcpSocket;
 use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
-use wifi::{Channel, Connection, OldConnection, ScanChannel, ScanResult};
+use wifi::{Channel, Connection, OldConnection, ScanChannel, ScanResult, ScanResultIndex};
 
 /// Connection status of the Atwinc1500
 #[cfg_attr(
@@ -376,12 +376,10 @@ where
 
     /// Begin a scan for networks
     pub fn request_network_scan(&mut self, channel: Channel) -> Result<(), Error> {
-        let mut channel: [u8; 4] = ScanChannel {
-            channel: channel as u8,
-            reserved: 0,
-            passive_scan_time: 0,
+        if self.state.scan_in_progress {
+            return Err(Error::ScanError(ScanError::ScanInProgress));
         }
-        .into();
+        let mut channel: [u8; 4] = ScanChannel::new(channel).into();
         let hif_header = HifHeader::new(
             group_ids::WIFI,
             commands::wifi::REQ_SCAN,
@@ -389,31 +387,25 @@ where
         );
         self.hif
             .send(&mut self.spi_bus, hif_header, &mut channel, &mut [])?;
+        self.state.scan_in_progress = true;
         Ok(())
     }
 
     /// Get the result from the previous scan
     /// at the index passed to this function
     pub fn request_scan_result(&mut self, index: u8) -> Result<(), Error> {
-        let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_SCAN_RESULT, 4);
-        self.hif.send(
-            &mut self.spi_bus,
-            hif_header,
-            &mut [index, 0, 0, 0],
-            &mut [],
-        )?;
+        if index >= self.state.num_ap {
+            return Err(Error::ScanError(ScanError::IndexOutOfRange));
+        }
+        let mut scan_index: [u8; 4] = ScanResultIndex(index).into();
+        let hif_header = HifHeader::new(
+            group_ids::WIFI,
+            commands::wifi::REQ_SCAN_RESULT,
+            scan_index.len() as u16,
+        );
+        self.hif
+            .send(&mut self.spi_bus, hif_header, &mut scan_index, &mut [])?;
         Ok(())
-    }
-
-    /// Takes care of interrupt events
-    pub fn handle_events(&mut self) -> Result<(), Error> {
-        self.hif.isr(&mut self.spi_bus, &mut self.state)?;
-        Ok(())
-    }
-
-    /// Returns the connection status of the Atwinc1500
-    pub fn get_status(&self) -> &Status {
-        &self.state.status
     }
 
     /// Returns a reference to the most recently
@@ -426,6 +418,17 @@ where
     /// were found in the previous scan
     pub fn num_ap(&self) -> u8 {
         self.state.num_ap
+    }
+
+    /// Takes care of interrupt events
+    pub fn handle_events(&mut self) -> Result<(), Error> {
+        self.hif.isr(&mut self.spi_bus, &mut self.state)?;
+        Ok(())
+    }
+
+    /// Returns the connection status of the Atwinc1500
+    pub fn get_status(&self) -> &Status {
+        &self.state.status
     }
 }
 

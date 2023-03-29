@@ -135,11 +135,25 @@ impl defmt::Format for SpiError {
     }
 }
 
+/// Network scan error variants
+#[derive(Eq, PartialEq, core::fmt::Debug, defmt::Format)]
+pub enum ScanError {
+    /// There is already a network
+    /// scan in progress
+    ScanInProgress,
+    /// The scan result index
+    /// is outside the range of
+    /// valid indexes
+    IndexOutOfRange,
+}
+
 /// Atwinc1500 error variants
 #[derive(Eq, PartialEq, core::fmt::Debug, defmt::Format)]
 pub enum Error {
     /// Error occured during Hif interaction
     HifError(HifError),
+    /// Error occurred during network scan
+    ScanError(ScanError),
     /// Error occurred during Spi interaction
     SpiError(SpiError),
     /// Error updating pin state
@@ -150,6 +164,7 @@ impl core::fmt::Display for Error {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         match self {
             Error::HifError(hif_error) => write!(f, "{:?}", hif_error),
+            Error::ScanError(scan_error) => write!(f, "{:?}", scan_error),
             Error::SpiError(spi_error) => write!(f, "{:?}", spi_error),
             Error::PinStateError => write!(f, "Pin State Error"),
         }
