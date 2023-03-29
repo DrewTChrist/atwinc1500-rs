@@ -136,7 +136,7 @@ impl defmt::Format for SpiError {
 }
 
 /// Atwinc1500 error variants
-#[derive(Eq, PartialEq, core::fmt::Debug)]
+#[derive(Eq, PartialEq, core::fmt::Debug, defmt::Format)]
 pub enum Error {
     /// Error occured during Hif interaction
     HifError(HifError),

@@ -289,7 +289,7 @@ pub(crate) struct ScanChannel {
 impl From<ScanChannel> for [u8; 4] {
     fn from(scan_channel: ScanChannel) -> [u8; 4] {
         [
-            scan_channel.channel as u8,
+            scan_channel.channel,
             scan_channel.reserved,
             (scan_channel.passive_scan_time >> 4) as u8,
             (scan_channel.passive_scan_time & 0x0f) as u8,
@@ -331,34 +331,58 @@ pub(crate) struct _ScanResultIndex {
 /// ScanResultIndex is used to choose
 /// which access point to get a ScanResult
 /// for
-pub(crate) struct ScanResult {
+pub struct ScanResult {
     /// The index of the scan result
-    pub _index: u8,
+    pub index: u8,
     /// Rssi
-    pub _rssi: i8,
+    pub rssi: i8,
     /// Authorization type
-    pub _auth_type: u8,
+    pub auth_type: u8,
     /// Wifi channel
-    pub _channel: u8,
+    pub channel: u8,
     /// bssid, mac address?
-    pub _bssid: [u8; 6],
+    pub bssid: [u8; 6],
     /// Network name
-    pub _ssid: [u8; MAX_SSID_LEN],
+    pub ssid: [u8; MAX_SSID_LEN],
 }
 
 impl From<[u8; 44]> for ScanResult {
     fn from(data: [u8; 44]) -> Self {
-        let mut _bssid = [0; 6];
-        _bssid.copy_from_slice(&data[4..11]);
-        let mut _ssid = [0; MAX_SSID_LEN];
-        _ssid.copy_from_slice(&data[11..34]);
+        let mut bssid = [0; 6];
+        bssid.copy_from_slice(&data[4..10]);
+        let mut ssid = [0; MAX_SSID_LEN];
+        ssid.copy_from_slice(&data[10..43]);
         Self {
-            _index: data[0],
-            _rssi: data[1] as i8,
-            _auth_type: data[2],
-            _channel: data[3],
-            _bssid,
-            _ssid,
+            index: data[0],
+            rssi: data[1] as i8,
+            auth_type: data[2],
+            channel: data[3],
+            bssid,
+            ssid,
         }
+    }
+}
+
+impl defmt::Format for ScanResult {
+    fn format(&self, f: defmt::Formatter) {
+        defmt::write!(
+            f,
+            "ScanResult {{ \
+                index: {}, \
+                rssi: {}, \
+                auth_type: {}, \
+                channel: {}, \
+                bssid: {}, \
+                rssi: {} \
+            }}",
+            self.index,
+            self.rssi,
+            self.auth_type,
+            self.channel,
+            self.bssid,
+            core::str::from_utf8(&self.ssid)
+                .unwrap()
+                .trim_matches(char::from(0)),
+        );
     }
 }

@@ -415,6 +415,18 @@ where
     pub fn get_status(&self) -> &Status {
         &self.state.status
     }
+
+    /// Returns a reference to the most recently
+    /// retrieved scan result
+    pub fn scan_result(&self) -> &Option<ScanResult> {
+        &self.state.scan_result
+    }
+
+    /// Returns the number of access points that
+    /// were found in the previous scan
+    pub fn num_ap(&self) -> u8 {
+        self.state.num_ap
+    }
 }
 
 #[doc(hidden)]
