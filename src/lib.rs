@@ -27,7 +27,9 @@ use hif::{commands, group_ids, HifHeader, HostInterface};
 use socket::TcpSocket;
 use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
-use wifi::{Channel, Connection, OldConnection, ScanChannel, ScanResult, ScanResultIndex};
+use wifi::{
+    Channel, Connection, OldConnection, ScanChannel, ScanResult, ScanResultIndex, SystemTime,
+};
 
 /// Connection status of the Atwinc1500
 #[cfg_attr(
@@ -81,6 +83,7 @@ struct State {
     scan_in_progress: bool,
     num_ap: u8,
     scan_result: Option<ScanResult>,
+    system_time: Option<SystemTime>,
 }
 
 impl State {
@@ -94,6 +97,7 @@ impl State {
             scan_in_progress: false,
             num_ap: 0,
             scan_result: None,
+            system_time: None,
         }
     }
 
@@ -420,6 +424,15 @@ where
         self.state.num_ap
     }
 
+    /// Requests the system time from
+    /// the Atwinc1500
+    pub fn request_system_time(&mut self) -> Result<(), Error> {
+        let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_GET_SYS_TIME, 0);
+        self.hif
+            .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
+        Ok(())
+    }
+
     /// Takes care of interrupt events
     pub fn handle_events(&mut self) -> Result<(), Error> {
         self.hif.isr(&mut self.spi_bus, &mut self.state)?;
@@ -429,6 +442,11 @@ where
     /// Returns the connection status of the Atwinc1500
     pub fn get_status(&self) -> &Status {
         &self.state.status
+    }
+
+    /// Returns the system time of the Atwinc1500
+    pub fn get_system_time(&self) -> &Option<SystemTime> {
+        &self.state.system_time
     }
 }
 

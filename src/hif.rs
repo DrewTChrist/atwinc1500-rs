@@ -2,7 +2,9 @@ use crate::error::{Error, HifError};
 use crate::registers;
 use crate::spi::SpiBus;
 use crate::types::MacAddress;
-use crate::wifi::{ConnectionState, ScanResult, ScanResultCount, StateChange, MAX_SSID_LEN};
+use crate::wifi::{
+    ConnectionState, ScanResult, ScanResultCount, StateChange, SystemTime, MAX_SSID_LEN,
+};
 use crate::{Mode, State, Status};
 use embedded_hal::blocking::spi::Transfer;
 use embedded_hal::digital::v2::OutputPin;
@@ -62,8 +64,8 @@ pub mod commands {
         pub const _REQ_SET_TX_POWER: u8 = 23;
         pub const _REQ_SET_BATTERY_VOLTAGE: u8 = 24;
         pub const _REQ_SET_ENABLE_LOGS: u8 = 25;
-        pub const _REQ_GET_SYS_TIME: u8 = 26;
-        pub const _RESP_GET_SYS_TIME: u8 = 27;
+        pub const REQ_GET_SYS_TIME: u8 = 26;
+        pub const RESP_GET_SYS_TIME: u8 = 27;
         pub const _REQ_SEND_ETHERNET_PACKET: u8 = 28;
         pub const _RESP_ETHERNET_RX_PACKET: u8 = 29;
         pub const _REQ_SET_MAC_MCAST: u8 = 30;
@@ -447,7 +449,12 @@ impl HostInterface {
                     ConnectionState::Undefined => {}
                 }
             }
-            commands::wifi::_RESP_GET_SYS_TIME => {}
+            commands::wifi::RESP_GET_SYS_TIME => {
+                let mut data_buf: [u8; 8] = [0; 8];
+                self.receive(spi_bus, address, &mut data_buf)?;
+                let system_time = SystemTime::from(data_buf);
+                state.system_time = Some(system_time);
+            }
             commands::wifi::RESP_CONN_INFO => {
                 let mut data_buf: [u8; 48] = [0; 48];
                 self.receive(spi_bus, address, &mut data_buf)?;

@@ -28,6 +28,8 @@ This roadmap is subject to change.
     - [x] Read firmware version
 - [ ] Wifi
     - [x] Scan for networks
+    - [ ] Get system time
+    - [ ] Set system time
     - [ ] Connect
         - [x] Older connection format
         - [ ] Newer connection format

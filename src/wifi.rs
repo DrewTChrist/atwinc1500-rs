@@ -406,3 +406,34 @@ impl defmt::Format for ScanResult {
         );
     }
 }
+
+/// System time as returned
+/// from the Atwinc1500
+#[derive(Clone)]
+pub struct SystemTime {
+    /// Year
+    pub year: u16,
+    /// Month
+    pub month: u8,
+    /// Day
+    pub day: u8,
+    /// Hour
+    pub hour: u8,
+    /// Minute
+    pub minute: u8,
+    /// Second
+    pub second: u8,
+}
+
+impl From<[u8; 8]> for SystemTime {
+    fn from(data: [u8; 8]) -> Self {
+        Self {
+            year: (((data[0] as u16) << 8) | data[1] as u16),
+            month: data[2],
+            day: data[3],
+            hour: data[4],
+            minute: data[5],
+            second: data[6],
+        }
+    }
+}
