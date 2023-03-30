@@ -433,6 +433,18 @@ where
         Ok(())
     }
 
+    /// Enable or disable the Atwinc1500 sntp client. The
+    /// sntp client is enabled by default.
+    pub fn enable_sntp_client(&mut self, enable: bool) -> Result<(), Error> {
+        let hif_header = match enable {
+            true => HifHeader::new(group_ids::WIFI, commands::wifi::REQ_ENABLE_SNTP_CLIENT, 0),
+            false => HifHeader::new(group_ids::WIFI, commands::wifi::REQ_DISABLE_SNTP_CLIENT, 0),
+        };
+        self.hif
+            .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
+        Ok(())
+    }
+
     /// Takes care of interrupt events
     pub fn handle_events(&mut self) -> Result<(), Error> {
         self.hif.isr(&mut self.spi_bus, &mut self.state)?;

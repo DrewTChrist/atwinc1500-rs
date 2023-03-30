@@ -51,8 +51,8 @@ pub mod commands {
         pub const _RESP_PROVISION_INFO: u8 = 9;
         pub const _REQ_STOP_PROVISION_MODE: u8 = 10;
         pub const _REQ_SET_SYS_TIME: u8 = 11;
-        pub const _REQ_ENABLE_SNTP_CLIENT: u8 = 12;
-        pub const _REQ_DISABLE_SNTP_CLIENT: u8 = 13;
+        pub const REQ_ENABLE_SNTP_CLIENT: u8 = 12;
+        pub const REQ_DISABLE_SNTP_CLIENT: u8 = 13;
         pub const _REQ_CUST_INFO_ELEMENT: u8 = 15;
         pub const REQ_SCAN: u8 = 16;
         pub const RESP_SCAN_DONE: u8 = 17;
