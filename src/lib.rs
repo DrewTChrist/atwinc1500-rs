@@ -2,6 +2,7 @@
 #![no_std]
 #![warn(missing_docs)]
 
+extern crate from_u8_derive;
 #[macro_use]
 mod macros;
 mod crc;
@@ -23,7 +24,7 @@ use embedded_nal::{SocketAddr, TcpClientStack, TcpFullStack};
 
 use error::{Error, ScanError};
 use gpio::{AtwincGpio, GpioDirection, GpioValue};
-use hif::{commands, group_ids, HifHeader, HostInterface};
+use hif::{group_ids, HifHeader, HostInterface, WifiCommand};
 use socket::TcpSocket;
 use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
@@ -354,7 +355,7 @@ where
         let mut conn_header: OldConnection = connection.into();
         let hif_header = HifHeader::new(
             group_ids::WIFI,
-            commands::wifi::REQ_CONNECT,
+            WifiCommand::ReqConnect as u8,
             conn_header.len() as u16,
         );
         self.hif
@@ -364,7 +365,7 @@ where
 
     /// Disconnects from a wireless network
     pub fn disconnect_network(&mut self) -> Result<(), Error> {
-        let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_DISCONNECT, 0);
+        let hif_header = HifHeader::new(group_ids::WIFI, WifiCommand::ReqDisconnect as u8, 0);
         self.hif
             .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
         Ok(())
@@ -372,7 +373,7 @@ where
 
     /// Connects to the last remembered network
     pub fn connect_default_network(&mut self) -> Result<(), Error> {
-        let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_DEFAULT_CONNECT, 0);
+        let hif_header = HifHeader::new(group_ids::WIFI, WifiCommand::ReqDefaultConnect as u8, 0);
         self.hif
             .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
         Ok(())
@@ -386,7 +387,7 @@ where
         let mut channel: [u8; 4] = ScanChannel::new(channel).into();
         let hif_header = HifHeader::new(
             group_ids::WIFI,
-            commands::wifi::REQ_SCAN,
+            WifiCommand::ReqScan as u8,
             channel.len() as u16,
         );
         self.hif
@@ -404,7 +405,7 @@ where
         let mut scan_index: [u8; 4] = ScanResultIndex(index).into();
         let hif_header = HifHeader::new(
             group_ids::WIFI,
-            commands::wifi::REQ_SCAN_RESULT,
+            WifiCommand::ReqScanResult as u8,
             scan_index.len() as u16,
         );
         self.hif
@@ -424,22 +425,10 @@ where
         self.state.num_ap
     }
 
-    /// Requests the system time from the Atwinc1500
-    /// SNTP server
+    /// Requests the system time from
+    /// the Atwinc1500
     pub fn request_system_time(&mut self) -> Result<(), Error> {
-        let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_GET_SYS_TIME, 0);
-        self.hif
-            .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
-        Ok(())
-    }
-
-    /// Enable or disable the Atwinc1500 sntp client. The
-    /// sntp client is enabled by default.
-    pub fn enable_sntp_client(&mut self, enable: bool) -> Result<(), Error> {
-        let hif_header = match enable {
-            true => HifHeader::new(group_ids::WIFI, commands::wifi::REQ_ENABLE_SNTP_CLIENT, 0),
-            false => HifHeader::new(group_ids::WIFI, commands::wifi::REQ_DISABLE_SNTP_CLIENT, 0),
-        };
+        let hif_header = HifHeader::new(group_ids::WIFI, WifiCommand::ReqGetSysTime as u8, 0);
         self.hif
             .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
         Ok(())

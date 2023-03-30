@@ -16,68 +16,63 @@ pub mod group_ids {
     pub const _HIF: u8 = 3;
 }
 
-pub mod commands {
-    pub mod main {}
-    pub mod wifi {
-        // station mode commands
-        pub const REQ_CONNECT: u8 = 40;
-        pub const REQ_DEFAULT_CONNECT: u8 = 41;
-        pub const _RESP_CONNECT: u8 = 42;
-        pub const REQ_DISCONNECT: u8 = 43;
-        pub const RESP_CON_STATE_CHANGED: u8 = 44;
-        pub const _REQ_SLEEP: u8 = 45;
-        pub const _REQ_WPS_SCAN: u8 = 46;
-        pub const _REQ_WPS: u8 = 47;
-        pub const _REQ_DISABLE_WPS: u8 = 49;
-        pub const _REQ_DHCP_CONF: u8 = 50;
-        pub const _RESP_IP_CONFIGURED: u8 = 51;
-        pub const _RESP_IP_CONFLICT: u8 = 52;
-        pub const _REQ_ENABLE_MONITORING: u8 = 53;
-        pub const _REQ_DISABLE_MONITORING: u8 = 54;
-        pub const _RESP_WIFI_RX_PACKET: u8 = 55;
-        pub const _REQ_SEND_WIFI_PACKET: u8 = 56;
-        pub const _REQ_LSN_INT: u8 = 57;
-        pub const _REQ_DOZE: u8 = 58;
-
-        // configuration commands
-        pub const _REQ_RESTART: u8 = 1;
-        pub const _REQ_SET_MAC_ADDRESS: u8 = 2;
-        pub const _REQ_CURRENT_RSSI: u8 = 3;
-        pub const _RESP_CURRENT_RSSI: u8 = 4;
-        pub const _REQ_GET_CONN_INFO: u8 = 5;
-        pub const RESP_CONN_INFO: u8 = 6;
-        pub const _REQ_SET_DEVICE_NAME: u8 = 7;
-        pub const _REQ_START_PROVISION_MODE: u8 = 8;
-        pub const _RESP_PROVISION_INFO: u8 = 9;
-        pub const _REQ_STOP_PROVISION_MODE: u8 = 10;
-        pub const _REQ_SET_SYS_TIME: u8 = 11;
-        pub const REQ_ENABLE_SNTP_CLIENT: u8 = 12;
-        pub const REQ_DISABLE_SNTP_CLIENT: u8 = 13;
-        pub const _REQ_CUST_INFO_ELEMENT: u8 = 15;
-        pub const REQ_SCAN: u8 = 16;
-        pub const RESP_SCAN_DONE: u8 = 17;
-        pub const REQ_SCAN_RESULT: u8 = 18;
-        pub const RESP_SCAN_RESULT: u8 = 19;
-        pub const _REQ_SET_SCAN_OPTION: u8 = 20;
-        pub const _REQ_SET_SCAN_REGION: u8 = 21;
-        pub const _REQ_SET_POWER_PROFILE: u8 = 22;
-        pub const _REQ_SET_TX_POWER: u8 = 23;
-        pub const _REQ_SET_BATTERY_VOLTAGE: u8 = 24;
-        pub const _REQ_SET_ENABLE_LOGS: u8 = 25;
-        pub const REQ_GET_SYS_TIME: u8 = 26;
-        pub const RESP_GET_SYS_TIME: u8 = 27;
-        pub const _REQ_SEND_ETHERNET_PACKET: u8 = 28;
-        pub const _RESP_ETHERNET_RX_PACKET: u8 = 29;
-        pub const _REQ_SET_MAC_MCAST: u8 = 30;
-        pub const _REQ_GET_PRNG: u8 = 31;
-        pub const _RESP_GET_PRNG: u8 = 32;
-        pub const _REQ_SCAN_SSID_LIST: u8 = 33;
-        pub const _REQ_SET_GAINS: u8 = 34;
-        pub const _REQ_PASSIVE_SCAN: u8 = 35;
-        pub const _MAX_CONFIG_AL: u8 = 36;
-    }
-    pub mod ip {}
-    pub mod hif {}
+#[repr(u8)]
+#[derive(from_u8_derive::FromByte)]
+pub enum WifiCommand {
+    ReqRestart = 1,
+    ReqSetMacAddress = 2,
+    ReqCurrentRssi = 3,
+    RespCurrentRssi = 4,
+    ReqGetConnInfo = 5,
+    RespConnInfo = 6,
+    ReqSetDeviceName = 7,
+    ReqStartProvisionMode = 8,
+    RespProvisionInfo = 9,
+    ReqStopProvisionMode = 10,
+    ReqSetSysTime = 11,
+    ReqEnableSntpClient = 12,
+    ReqDisableSntpClient = 13,
+    ReqCustInfoElement = 15,
+    ReqScan = 16,
+    RespScanDone = 17,
+    ReqScanResult = 18,
+    RespScanResult = 19,
+    ReqSetScanOption = 20,
+    ReqSetScanRegion = 21,
+    ReqSetPowerProfile = 22,
+    ReqSetTxPower = 23,
+    ReqSetBatteryVoltage = 24,
+    ReqSetEnableLogs = 25,
+    ReqGetSysTime = 26,
+    RespGetSysTime = 27,
+    ReqSendEthernetPacket = 28,
+    RespEthernetRxPacket = 29,
+    ReqSetMacMcast = 30,
+    ReqGetPrng = 31,
+    RespGetPrng = 32,
+    ReqScanSsidList = 33,
+    ReqSetGains = 34,
+    ReqPassiveScan = 35,
+    RaxConfigAl = 36,
+    ReqConnect = 40,
+    ReqDefaultConnect = 41,
+    RespConnect = 42,
+    ReqDisconnect = 43,
+    RespConStateChanged = 44,
+    ReqSleep = 45,
+    ReqWpsScan = 46,
+    ReqWps = 47,
+    ReqDisableWps = 49,
+    ReqDhcpConf = 50,
+    RespIpConfigured = 51,
+    RespIpConflict = 52,
+    ReqEnableMonitoring = 53,
+    ReqDisableMonitoring = 54,
+    RespWifiRxPacket = 55,
+    ReqSendWifiPacket = 56,
+    ReqLsnInt = 57,
+    ReqDoze = 58,
+    Invalid,
 }
 
 const HIF_HEADER_SIZE: usize = 8;
@@ -293,7 +288,7 @@ impl HostInterface {
                 match header.gid {
                     group_ids::WIFI => self.wifi_callback(
                         spi_bus,
-                        header.op,
+                        WifiCommand::from(header.op),
                         header.length - HIF_HEADER_SIZE as u16,
                         address + HIF_HEADER_SIZE as u32,
                         state,
@@ -413,7 +408,7 @@ impl HostInterface {
     pub fn wifi_callback<SPI, O>(
         &mut self,
         spi_bus: &mut SpiBus<SPI, O>,
-        opcode: u8,
+        opcode: WifiCommand,
         _data_size: u16,
         address: u32,
         state: &mut State,
@@ -423,7 +418,7 @@ impl HostInterface {
         O: OutputPin,
     {
         match opcode {
-            commands::wifi::RESP_CON_STATE_CHANGED => {
+            WifiCommand::RespConStateChanged => {
                 let mut data_buf: [u8; 4] = [0; 4];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let state_change = StateChange::from(data_buf);
@@ -449,7 +444,7 @@ impl HostInterface {
                     ConnectionState::Undefined => {}
                 }
             }
-            commands::wifi::RESP_GET_SYS_TIME => {
+            WifiCommand::RespGetSysTime => {
                 let mut data_buf: [u8; 8] = [0; 8];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let system_time = SystemTime::from(data_buf);
@@ -458,15 +453,15 @@ impl HostInterface {
                 }
                 // may need to return an error here
             }
-            commands::wifi::RESP_CONN_INFO => {
+            WifiCommand::RespConnInfo => {
                 let mut data_buf: [u8; 48] = [0; 48];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let _connection_info = ConnectionInfo::from(data_buf.as_slice());
             }
-            commands::wifi::_REQ_DHCP_CONF => {}
-            commands::wifi::_REQ_WPS => {}
-            commands::wifi::_RESP_IP_CONFLICT => {}
-            commands::wifi::RESP_SCAN_DONE => {
+            WifiCommand::ReqDhcpConf => {}
+            WifiCommand::ReqWps => {}
+            WifiCommand::RespIpConflict => {}
+            WifiCommand::RespScanDone => {
                 let mut data_buf: [u8; 4] = [0; 4];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let scan_count = ScanResultCount::from(data_buf);
@@ -474,13 +469,13 @@ impl HostInterface {
                 state.scan_in_progress = false;
                 // TODO: Handle potential scan_count.scan_state error
             }
-            commands::wifi::RESP_SCAN_RESULT => {
+            WifiCommand::RespScanResult => {
                 let mut data_buf: [u8; 44] = [0; 44];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let result = ScanResult::from(data_buf);
                 state.scan_result = Some(result);
             }
-            commands::wifi::_RESP_CURRENT_RSSI => {}
+            WifiCommand::RespCurrentRssi => {}
             _ => {}
         }
         Ok(())
