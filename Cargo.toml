@@ -16,5 +16,8 @@ embedded-hal = { version = "0.2", features=["unproven"] }
 embedded-nal = "0.6"
 defmt = "0.3.0"
 
+[dependencies.from-u8-derive]
+path = "from-u8-derive"
+
 [dev-dependencies]
 embedded-hal-mock = "0.8.0"
