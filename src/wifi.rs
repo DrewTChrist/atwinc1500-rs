@@ -409,7 +409,7 @@ impl defmt::Format for ScanResult {
 
 /// System time as returned
 /// from the Atwinc1500
-#[derive(Clone)]
+#[derive(Clone, defmt::Format)]
 pub struct SystemTime {
     /// Year
     pub year: u16,
@@ -428,7 +428,7 @@ pub struct SystemTime {
 impl From<[u8; 8]> for SystemTime {
     fn from(data: [u8; 8]) -> Self {
         Self {
-            year: (((data[0] as u16) << 8) | data[1] as u16),
+            year: (((data[1] as u16) << 8) | data[0] as u16),
             month: data[2],
             day: data[3],
             hour: data[4],

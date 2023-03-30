@@ -453,7 +453,10 @@ impl HostInterface {
                 let mut data_buf: [u8; 8] = [0; 8];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let system_time = SystemTime::from(data_buf);
-                state.system_time = Some(system_time);
+                if system_time.year > 0 {
+                    state.system_time = Some(system_time);
+                }
+                // may need to return an error here
             }
             commands::wifi::RESP_CONN_INFO => {
                 let mut data_buf: [u8; 48] = [0; 48];

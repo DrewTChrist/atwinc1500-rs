@@ -424,8 +424,8 @@ where
         self.state.num_ap
     }
 
-    /// Requests the system time from
-    /// the Atwinc1500
+    /// Requests the system time from the Atwinc1500
+    /// SNTP server
     pub fn request_system_time(&mut self) -> Result<(), Error> {
         let hif_header = HifHeader::new(group_ids::WIFI, commands::wifi::REQ_GET_SYS_TIME, 0);
         self.hif
