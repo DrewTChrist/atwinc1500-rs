@@ -1,5 +1,6 @@
 use crate::error::{Error, HifError};
 use crate::registers;
+use crate::socket::SocketCommand;
 use crate::spi::SpiBus;
 use crate::wifi::{
     ConnectionInfo, ConnectionState, ScanResult, ScanResultCount, StateChange, SystemTime,
@@ -11,7 +12,7 @@ use embedded_hal::digital::v2::OutputPin;
 pub mod group_ids {
     pub const _MAIN: u8 = 0;
     pub const WIFI: u8 = 1;
-    pub const _IP: u8 = 2;
+    pub const IP: u8 = 2;
     pub const _HIF: u8 = 3;
 }
 
@@ -262,9 +263,9 @@ impl HostInterface {
                         address + HIF_HEADER_SIZE as u32,
                         state,
                     )?,
-                    group_ids::_IP => self._ip_callback(
+                    group_ids::IP => self.ip_callback(
                         spi_bus,
-                        header.op,
+                        SocketCommand::from(header.op),
                         header.length - HIF_HEADER_SIZE as u16,
                         address + HIF_HEADER_SIZE as u32,
                         state,
@@ -450,10 +451,10 @@ impl HostInterface {
         Ok(())
     }
 
-    pub fn _ip_callback<SPI, O>(
+    pub fn ip_callback<SPI, O>(
         &mut self,
         _spi_bus: &mut SpiBus<SPI, O>,
-        _opcode: u8,
+        opcode: SocketCommand,
         _data_size: u16,
         _address: u32,
         _state: &mut State,
@@ -462,6 +463,17 @@ impl HostInterface {
         SPI: Transfer<u8>,
         O: OutputPin,
     {
-        todo!()
+        match opcode {
+            SocketCommand::Bind | SocketCommand::SslBind => {}
+            SocketCommand::Listen => {}
+            SocketCommand::Accept => {}
+            SocketCommand::Connect | SocketCommand::SslConnect => {}
+            SocketCommand::DnsResolve => {}
+            SocketCommand::Recv | SocketCommand::Recvfrom | SocketCommand::SslRecv => {}
+            SocketCommand::Send | SocketCommand::Sendto | SocketCommand::SslSend => {}
+            SocketCommand::Ping => {}
+            _ => {}
+        }
+        Ok(())
     }
 }
