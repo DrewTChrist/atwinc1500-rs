@@ -1,9 +1,8 @@
 use crate::error::{Error, HifError};
 use crate::registers;
 use crate::spi::SpiBus;
-use crate::types::MacAddress;
 use crate::wifi::{
-    ConnectionState, ScanResult, ScanResultCount, StateChange, SystemTime, MAX_SSID_LEN,
+    ConnectionInfo, ConnectionState, ScanResult, ScanResultCount, StateChange, SystemTime,
 };
 use crate::{Mode, State, Status};
 use embedded_hal::blocking::spi::Transfer;
@@ -134,36 +133,6 @@ impl From<[u8; 4]> for HifHeader {
             gid: array[0],
             op: array[1],
             length: ((array[2] as u16) << 8) | array[3] as u16,
-        }
-    }
-}
-
-/// Connection Information returned
-/// from the Atwinc1500 after wifi callback
-struct ConnectionInfo {
-    _ssid: [u8; MAX_SSID_LEN],
-    _security_type: u8,
-    _ip_address: [u8; 4],
-    _mac_address: MacAddress,
-    _rssi: i8,
-    _padding: [u8; 3],
-}
-
-impl From<&[u8]> for ConnectionInfo {
-    fn from(slice: &[u8]) -> Self {
-        let mut ssid: [u8; MAX_SSID_LEN] = [0; MAX_SSID_LEN];
-        let mut ip: [u8; 4] = [0; 4];
-        let mut mac: [u8; 6] = [0; 6];
-        ssid[..MAX_SSID_LEN].copy_from_slice(&slice[..MAX_SSID_LEN]);
-        ip[..4].copy_from_slice(&slice[MAX_SSID_LEN + 1..MAX_SSID_LEN + 5]);
-        mac[..6].copy_from_slice(&slice[MAX_SSID_LEN + 6..MAX_SSID_LEN + 12]);
-        Self {
-            _ssid: ssid,
-            _security_type: slice[MAX_SSID_LEN],
-            _ip_address: ip,
-            _mac_address: MacAddress(mac),
-            _rssi: (!slice[MAX_SSID_LEN + 13] + 1) as i8,
-            _padding: [0; 3],
         }
     }
 }
@@ -456,7 +425,7 @@ impl HostInterface {
             WifiCommand::RespConnInfo => {
                 let mut data_buf: [u8; 48] = [0; 48];
                 self.receive(spi_bus, address, &mut data_buf)?;
-                let _connection_info = ConnectionInfo::from(data_buf.as_slice());
+                state.connection_info = Some(ConnectionInfo::from(data_buf.as_slice()));
             }
             WifiCommand::ReqDhcpConf => {}
             WifiCommand::ReqWps => {}

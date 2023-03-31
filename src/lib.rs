@@ -29,7 +29,8 @@ use socket::TcpSocket;
 use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
 use wifi::{
-    Channel, Connection, OldConnection, ScanChannel, ScanResult, ScanResultIndex, SystemTime,
+    Channel, Connection, ConnectionInfo, OldConnection, ScanChannel, ScanResult, ScanResultIndex,
+    SystemTime,
 };
 
 /// Connection status of the Atwinc1500
@@ -81,6 +82,7 @@ struct State {
     status: Status,
     mode: Mode,
     _dhcp: bool,
+    connection_info: Option<ConnectionInfo>,
     scan_in_progress: bool,
     num_ap: u8,
     scan_result: Option<ScanResult>,
@@ -95,6 +97,7 @@ impl State {
             mode: Mode::default(),
             status: Status::default(),
             _dhcp: true,
+            connection_info: None,
             scan_in_progress: false,
             num_ap: 0,
             scan_result: None,
@@ -379,6 +382,15 @@ where
         Ok(())
     }
 
+    /// Request the connection info of the network
+    /// currently connected to
+    pub fn request_connection_info(&mut self) -> Result<(), Error> {
+        let hif_header = HifHeader::new(group_ids::WIFI, WifiCommand::ReqGetConnInfo as u8, 0);
+        self.hif
+            .send(&mut self.spi_bus, hif_header, &mut [], &mut [])?;
+        Ok(())
+    }
+
     /// Begin a scan for networks
     pub fn request_network_scan(&mut self, channel: Channel) -> Result<(), Error> {
         if self.state.scan_in_progress {
@@ -448,6 +460,11 @@ where
     /// Returns the system time of the Atwinc1500
     pub fn get_system_time(&self) -> &Option<SystemTime> {
         &self.state.system_time
+    }
+
+    /// Get the connection info after calling `request_connection_info`
+    pub fn connection_info(&self) -> &Option<ConnectionInfo> {
+        &self.state.connection_info
     }
 }
 

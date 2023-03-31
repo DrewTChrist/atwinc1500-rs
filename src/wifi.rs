@@ -437,3 +437,35 @@ impl From<[u8; 8]> for SystemTime {
         }
     }
 }
+
+/// Connection Information returned
+/// from the Atwinc1500 after wifi callback
+#[derive(defmt::Format)]
+pub struct ConnectionInfo {
+    _ssid: [u8; MAX_SSID_LEN],
+    _security_type: u8,
+    _ip_address: [u8; 4],
+    //_mac_address: MacAddress,
+    _mac_address: [u8; 6],
+    _rssi: i8,
+}
+
+impl From<&[u8]> for ConnectionInfo {
+    fn from(slice: &[u8]) -> Self {
+        let mut ssid: [u8; MAX_SSID_LEN] = [0; MAX_SSID_LEN];
+        let mut ip: [u8; 4] = [0; 4];
+        let mut mac: [u8; 6] = [0; 6];
+        ssid[..MAX_SSID_LEN].copy_from_slice(&slice[..MAX_SSID_LEN]);
+        ip[..4].copy_from_slice(&slice[MAX_SSID_LEN + 1..MAX_SSID_LEN + 5]);
+        mac[..6].copy_from_slice(&slice[MAX_SSID_LEN + 5..MAX_SSID_LEN + 11]);
+        Self {
+            _ssid: ssid,
+            _security_type: slice[MAX_SSID_LEN],
+            _ip_address: ip,
+            //_mac_address: MacAddress(mac),
+            _mac_address: mac,
+            //_rssi: (!slice[MAX_SSID_LEN + 13] + 1) as i8,
+            _rssi: slice[44] as i8,
+        }
+    }
+}
