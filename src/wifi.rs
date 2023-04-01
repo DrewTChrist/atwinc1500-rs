@@ -1,4 +1,5 @@
 //! Wifi connection items
+use crate::types::MacAddress;
 
 // constants
 pub(crate) const MAX_SSID_LEN: usize = 33;
@@ -442,12 +443,11 @@ impl From<[u8; 8]> for SystemTime {
 /// from the Atwinc1500 after wifi callback
 #[derive(defmt::Format)]
 pub struct ConnectionInfo {
-    _ssid: [u8; MAX_SSID_LEN],
-    _security_type: u8,
-    _ip_address: [u8; 4],
-    //_mac_address: MacAddress,
-    _mac_address: [u8; 6],
-    _rssi: i8,
+    ssid: [u8; MAX_SSID_LEN],
+    security_type: u8,
+    ip_address: [u8; 4],
+    mac_address: MacAddress,
+    rssi: i8,
 }
 
 impl From<&[u8]> for ConnectionInfo {
@@ -459,13 +459,11 @@ impl From<&[u8]> for ConnectionInfo {
         ip[..4].copy_from_slice(&slice[MAX_SSID_LEN + 1..MAX_SSID_LEN + 5]);
         mac[..6].copy_from_slice(&slice[MAX_SSID_LEN + 5..MAX_SSID_LEN + 11]);
         Self {
-            _ssid: ssid,
-            _security_type: slice[MAX_SSID_LEN],
-            _ip_address: ip,
-            //_mac_address: MacAddress(mac),
-            _mac_address: mac,
-            //_rssi: (!slice[MAX_SSID_LEN + 13] + 1) as i8,
-            _rssi: slice[44] as i8,
+            ssid,
+            security_type: slice[MAX_SSID_LEN],
+            ip_address: ip,
+            mac_address: MacAddress(mac),
+            rssi: slice[44] as i8,
         }
     }
 }
