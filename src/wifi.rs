@@ -346,11 +346,10 @@ impl From<ScanResultIndex> for [u8; 4] {
     }
 }
 
-/// The ScanResult is the information
-/// returned from the Atwinc1500. The
-/// ScanResultIndex is used to choose
-/// which access point to get a ScanResult
-/// for
+/// The ScanResult struct holds information about an
+/// access point found in a network scan
+///
+/// Network scans can be initiated by calling [request_network_scan](crate::Atwinc1500::request_network_scan).
 #[derive(Clone)]
 pub struct ScanResult {
     /// The index of the scan result
@@ -408,8 +407,10 @@ impl defmt::Format for ScanResult {
     }
 }
 
-/// System time as returned
-/// from the Atwinc1500
+/// The System time returned from the Atwinc1500 SNTP client
+///
+/// A request for the system time can be initiated by first connecting to a
+/// wireless network and then calling [request_system_time](crate::Atwinc1500::request_system_time).
 #[derive(Clone, defmt::Format)]
 pub struct SystemTime {
     /// Year
@@ -439,15 +440,23 @@ impl From<[u8; 8]> for SystemTime {
     }
 }
 
-/// Connection Information returned
-/// from the Atwinc1500 after wifi callback
+/// The ConnectionInfo struct holds information returned from the
+/// Atwinc1500 regarding the current wireless connection.
+///
+/// This information can be requested by initiating a call to
+/// [request_connection_info](crate::Atwinc1500::request_connection_info).
 #[derive(defmt::Format)]
 pub struct ConnectionInfo {
-    ssid: [u8; MAX_SSID_LEN],
-    security_type: u8,
-    ip_address: [u8; 4],
-    mac_address: MacAddress,
-    rssi: i8,
+    /// SSID of the current connection
+    pub ssid: [u8; MAX_SSID_LEN],
+    /// Security type of the current connection
+    pub security_type: u8,
+    /// Local ip address of the atwinc1500
+    pub ip_address: [u8; 4],
+    /// Mac address of the AP
+    pub mac_address: MacAddress,
+    /// Current rssi
+    pub rssi: i8,
 }
 
 impl From<&[u8]> for ConnectionInfo {

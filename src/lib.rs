@@ -1,4 +1,21 @@
-#![doc = include_str!("../README.md")]
+//! This is a driver for the Atwinc1500 network controller written in pure Rust. The
+//! primary targets for this driver are boards like the [Adafruit Feather M0 Wifi](https://adafruit.com/product/3010)
+//! or the [Adafruit Atwinc1500 Breakout](https://adafruit.com/product/2999).
+//!
+//! ## Examples
+//! Due to each HAL working slightly different, the examples here will be brief. There
+//! are several working examples in [this repository](https://github.com/drewtchrist/atwinc1500-rs-examples)
+//! with different host targets. These examples show how to set up the
+//! [handle_events](Atwinc1500::handle_events) method inside of an interrupt.
+//!
+//! ## Callbacks
+//! The Atwinc1500 as a client device is able to let the host know when it is ready to return a
+//! response. The Atwinc1500 pulls the interrupt pin low notifying the host device. The methods
+//! prefixed by `request` do not receive an immediate response. The response must be collected by
+//! calling [handle_events](Atwinc1500::handle_events). This is best done by creating an interrupt
+//! that triggers when the irq line between the host and the Atwinc1500 is pulled low. The methods
+//! prefixed by `get` do not require a callback or are meant to collect the response after a
+//! `request`.
 #![no_std]
 #![warn(missing_docs)]
 
@@ -34,25 +51,21 @@ use wifi::{
 };
 
 /// Connection status of the Atwinc1500
-#[cfg_attr(
-    target_os = "none",
-    derive(Default, Eq, PartialEq, Debug, defmt::Format)
-)]
-#[cfg_attr(not(target_os = "none"), derive(Default, Eq, PartialEq, Debug))]
+#[derive(Default, Eq, PartialEq, Debug, defmt::Format)]
 pub enum Status {
     /// Atwinc1500 is idle
     #[default]
     Idle,
     /// SSID not available
-    _NoSsidAvail,
+    NoSsidAvail,
     /// Scan is complete
-    _ScanComplete,
+    ScanComplete,
     /// Atwinc1500 is connected to a network
     Connected,
     /// Connection attempt failed
-    _ConnectionFailed,
+    ConnectionFailed,
     /// Atwinc1500 lost connection
-    _ConnectionLost,
+    ConnectionLost,
     /// Atwinc1500 is disconnected
     Disconnected,
     /// Access point mode listening
@@ -60,11 +73,11 @@ pub enum Status {
     /// Access point mode connected
     ApConnected,
     /// Access point mode failed
-    _ApFailed,
+    ApFailed,
     /// Provisioning mode
-    _Provisioning,
+    Provisioning,
     /// Provisioning mode failed
-    _ProvisioningFailed,
+    ProvisioningFailed,
 }
 
 #[derive(Default)]
@@ -174,6 +187,8 @@ where
         }
     }
 
+    /// This needs to be called after creating the Atwinc1500 struct
+    ///
     /// Initializes the driver by:
     /// * Initializing pins between devices
     /// * Disables crc if needed
@@ -258,8 +273,7 @@ where
         Ok(())
     }
 
-    /// Gets the version of the firmware on
-    /// the Atwinc1500
+    /// Gets the version of the firmware on the Atwinc1500
     pub fn get_firmware_version(&mut self) -> Result<FirmwareVersion, Error> {
         match self.state.firmware_version {
             Some(fw) => Ok(fw),
@@ -281,14 +295,13 @@ where
         }
     }
 
-    /// Gets the mac address stored in
-    /// one time programmable memory
+    #[doc(hidden)]
+    /// Gets the mac address stored in one time programmable memory
     pub fn get_otp_mac_address(&mut self) -> Result<MacAddress, Error> {
         todo!()
     }
 
-    /// Gets the working mac address
-    /// on the Atwinc1500
+    /// Gets the working mac address on the Atwinc1500
     pub fn get_mac_address(&mut self) -> Result<MacAddress, Error> {
         match self.state.mac_address {
             Some(mac) => Ok(mac),
@@ -314,8 +327,7 @@ where
         }
     }
 
-    /// Sets the direction of a gpio pin
-    /// to either Output or Input
+    /// Sets the direction of a gpio pin to either Output or Input
     pub fn set_gpio_direction(
         &mut self,
         gpio: AtwincGpio,
@@ -331,8 +343,7 @@ where
         Ok(())
     }
 
-    /// Sets the value of a gpio
-    /// pin as either High or Low
+    /// Sets the value of a gpio pin as either High or Low
     pub fn set_gpio_value(&mut self, gpio: AtwincGpio, value: GpioValue) -> Result<(), Error> {
         const GPIO_VAL_REG: u32 = 0x20100;
         let mut response = self.spi_bus.read_register(GPIO_VAL_REG)?;
@@ -344,8 +355,7 @@ where
         Ok(())
     }
 
-    /// Gets the direction of a gpio pin
-    /// as either Ouput or Input
+    /// Gets the direction of a gpio pin as either Ouput or Input
     pub fn get_gpio_direction(&mut self, gpio: AtwincGpio) -> Result<GpioDirection, Error> {
         const GPIO_GET_DIR_REG: u32 = 0x20104;
         let response = self.spi_bus.read_register(GPIO_GET_DIR_REG)?;
@@ -353,7 +363,22 @@ where
     }
 
     /// Connects to a wireless network
-    /// given a [Connection] struct
+    ///
+    /// # Examples
+    /// ```
+    /// use atwinc1500::wifi::Channel;
+    /// use atwinc1500::wifi::Connection;
+    /// use atwinc1500::Atwinc1500;
+    ///
+    /// let connection = Connection::wpa_psk("my_network".as_bytes(), "my_password".as_bytes(), Channel::default(), 0);
+    /// let mut atwinc = Atwinc1500::new(spi, delay, cs, reset, false);
+    /// match atwinc.initialize() {
+    ///     Err(e) => info!("{:?}", e),
+    /// }
+    /// match atwinc.connect_network(connection) {
+    ///     Err(e) => info!("{:?}", e),
+    /// }
+    /// ```
     pub fn connect_network(&mut self, connection: Connection) -> Result<(), Error> {
         let mut conn_header: OldConnection = connection.into();
         let hif_header = HifHeader::new(
@@ -382,8 +407,7 @@ where
         Ok(())
     }
 
-    /// Request the connection info of the network
-    /// currently connected to
+    /// Request the connection info of the network currently connected to
     pub fn request_connection_info(&mut self) -> Result<(), Error> {
         let hif_header = HifHeader::new(group_ids::WIFI, WifiCommand::ReqGetConnInfo as u8, 0);
         self.hif
@@ -391,7 +415,7 @@ where
         Ok(())
     }
 
-    /// Begin a scan for networks
+    /// Requests the Atwinc1500 to begin a scan for networks
     pub fn request_network_scan(&mut self, channel: Channel) -> Result<(), Error> {
         if self.state.scan_in_progress {
             return Err(Error::ScanError(ScanError::ScanInProgress));
@@ -408,8 +432,7 @@ where
         Ok(())
     }
 
-    /// Get the result from the previous scan
-    /// at the index passed to this function
+    /// Gets the result from the previous scan at the index passed to this function
     pub fn request_scan_result(&mut self, index: u8) -> Result<(), Error> {
         if index >= self.state.num_ap {
             return Err(Error::ScanError(ScanError::IndexOutOfRange));
@@ -425,8 +448,7 @@ where
         Ok(())
     }
 
-    /// Requests the system time from
-    /// the Atwinc1500
+    /// Requests the system time from the Atwinc1500
     pub fn request_system_time(&mut self) -> Result<(), Error> {
         let hif_header = HifHeader::new(group_ids::WIFI, WifiCommand::ReqGetSysTime as u8, 0);
         self.hif
@@ -434,35 +456,63 @@ where
         Ok(())
     }
 
-    /// Takes care of interrupt events
+    /// The handle_events method takes care of the Atwinc1500 callbacks
+    ///
+    /// The Atwinc1500 has an interrupt line that it pulls low
+    /// when events need handling. It's best to set up an interrupt on the
+    /// irq pin falling low and call this method in the interrupt routine. In
+    /// an environment with std a thread could be used as well. The
+    /// handle_events method can also be called in a synchronous fashion after
+    /// any Atwinc1500 method that uses a callback.
+    ///
+    /// # Examples
+    ///
+    /// Handling events synchronously:
+    /// ```
+    /// match atwinc1500.request_system_time() {
+    ///     Err(e) => info!("{}", e),
+    /// }
+    /// match atwinc1500.handle_events().unwrap() {
+    ///     Err(e) => info!("{}", e),
+    /// }
+    /// if let Some(time) = atwinc1500.get_system_time() {
+    ///     info!("{:?}", time);
+    /// }
+    /// ```
+    /// To see an example of handling events with an interrupt or threads
+    /// see the [examples repo](https://github.com/drewtchrist/atwinc1500-rs-examples)
     pub fn handle_events(&mut self) -> Result<(), Error> {
         self.hif.isr(&mut self.spi_bus, &mut self.state)?;
         Ok(())
     }
 
-    /// Returns a reference to the most recently
-    /// retrieved scan result
+    /// Returns most recently retrieved scan result after a call to
+    /// [request_scan_result](Atwinc1500::request_scan_result)
     pub fn get_scan_result(&self) -> &Option<ScanResult> {
         &self.state.scan_result
     }
 
-    /// Returns the number of access points that
-    /// were found in the previous scan
+    /// Returns the number of access points that were found in a scan
+    /// after calling [request_network_scan](Atwinc1500::request_network_scan)
     pub fn get_num_ap(&self) -> u8 {
         self.state.num_ap
     }
 
-    /// Returns the connection status of the Atwinc1500
+    /// Returns the connection status of the Atwinc1500 after calling
+    /// [connect_network](Atwinc1500::connect_network) or
+    /// [connect_default_network](Atwinc1500::connect_default_network)
     pub fn get_status(&self) -> &Status {
         &self.state.status
     }
 
-    /// Returns the system time of the Atwinc1500
+    /// Returns the system time of the Atwinc1500 after calling
+    /// [request_system_time](Atwinc1500::request_system_time)
     pub fn get_system_time(&self) -> &Option<SystemTime> {
         &self.state.system_time
     }
 
-    /// Get the connection info after calling `request_connection_info`
+    /// Returns the [ConnectionInfo] for the current connection
+    /// after calling [request_connection_info](Atwinc1500::request_connection_info)
     pub fn get_connection_info(&self) -> &Option<ConnectionInfo> {
         &self.state.connection_info
     }

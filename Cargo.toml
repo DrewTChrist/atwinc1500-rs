@@ -7,7 +7,7 @@ description = "A pure Rust, host driver for the Atwinc1500"
 readme = "README.md"
 repository = "https://github.com/drewtchrist/atwinc1500-rs"
 license = "MIT OR Apache-2.0"
-keywords = ["atwinc1500"]
+keywords = ["atwinc1500", "embedded-hal"]
 categories = ["no-std", "embedded", "hardware-support"]
 exclude = ["/diagrams", "/tests", "/.github", ".gitignore"]
 
