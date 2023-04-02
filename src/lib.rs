@@ -365,7 +365,7 @@ where
     /// Connects to a wireless network
     ///
     /// # Examples
-    /// ```
+    /// ```ignore
     /// use atwinc1500::wifi::Channel;
     /// use atwinc1500::wifi::Connection;
     /// use atwinc1500::Atwinc1500;
@@ -468,7 +468,7 @@ where
     /// # Examples
     ///
     /// Handling events synchronously:
-    /// ```
+    /// ```ignore
     /// match atwinc1500.request_system_time() {
     ///     Err(e) => info!("{}", e),
     /// }

@@ -19,8 +19,6 @@ describes what is currently working.
 
 ## Roadmap
 
-This roadmap is subject to change.
-
 - [x] Info/Hardware
     - [x] Gpio control
     - [x] Read mac address
