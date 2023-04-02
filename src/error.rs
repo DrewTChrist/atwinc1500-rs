@@ -24,7 +24,7 @@ pub enum SpiCommandError {
     /// Atwinc1500 experienced an internal error
     InternalError = 5,
     /// Catch all for invalid errors
-    /// passed to From<u8>
+    /// passed to `From<u8>`
     InvalidError,
 }
 

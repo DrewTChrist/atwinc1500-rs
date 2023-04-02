@@ -425,18 +425,6 @@ where
         Ok(())
     }
 
-    /// Returns a reference to the most recently
-    /// retrieved scan result
-    pub fn scan_result(&self) -> &Option<ScanResult> {
-        &self.state.scan_result
-    }
-
-    /// Returns the number of access points that
-    /// were found in the previous scan
-    pub fn num_ap(&self) -> u8 {
-        self.state.num_ap
-    }
-
     /// Requests the system time from
     /// the Atwinc1500
     pub fn request_system_time(&mut self) -> Result<(), Error> {
@@ -452,6 +440,18 @@ where
         Ok(())
     }
 
+    /// Returns a reference to the most recently
+    /// retrieved scan result
+    pub fn get_scan_result(&self) -> &Option<ScanResult> {
+        &self.state.scan_result
+    }
+
+    /// Returns the number of access points that
+    /// were found in the previous scan
+    pub fn get_num_ap(&self) -> u8 {
+        self.state.num_ap
+    }
+
     /// Returns the connection status of the Atwinc1500
     pub fn get_status(&self) -> &Status {
         &self.state.status
@@ -463,7 +463,7 @@ where
     }
 
     /// Get the connection info after calling `request_connection_info`
-    pub fn connection_info(&self) -> &Option<ConnectionInfo> {
+    pub fn get_connection_info(&self) -> &Option<ConnectionInfo> {
         &self.state.connection_info
     }
 }

@@ -14,7 +14,6 @@ describes what is currently working.
 1. [Roadmap](#roadmap)
 2. [Installation](#installation)
 3. [Usage](#usage)
-4. [Documentation](#documentation)
 5. [License](#license)
 6. [Contribution](#contribution)
 
@@ -28,8 +27,9 @@ This roadmap is subject to change.
     - [x] Read firmware version
 - [ ] Wifi
     - [x] Scan for networks
-    - [ ] Get system time
+    - [x] Get system time
     - [ ] Set system time
+    - [x] Get current connection info
     - [ ] Connect
         - [x] Older connection format
         - [ ] Newer connection format
@@ -66,7 +66,7 @@ atwinc1500 = "0.1.0"
 ## Usage
 Examples can be found [here](https://github.com/drewtchrist/atwinc1500-rs-examples). 
 
-## [Documentation](https://docs.rs/atwinc1500/0.1.0/atwinc1500/)
+Documentation can be found [here](https://docs.rs/atwinc1500/latest/atwinc1500/).
 
 ## License
 
