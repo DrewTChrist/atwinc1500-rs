@@ -481,9 +481,8 @@ where
     /// ```
     /// To see an example of handling events with an interrupt or threads
     /// see the [examples repo](https://github.com/drewtchrist/atwinc1500-rs-examples)
-    pub fn handle_events(&mut self) -> Result<(), Error> {
-        self.hif.isr(&mut self.spi_bus, &mut self.state)?;
-        Ok(())
+    pub fn handle_events(&mut self) -> Result<Option<hif::Command>, Error> {
+        self.hif.isr(&mut self.spi_bus, &mut self.state)
     }
 
     /// Returns most recently retrieved scan result after a call to

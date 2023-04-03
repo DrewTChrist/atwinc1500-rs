@@ -154,6 +154,23 @@ impl HifContext {
     }
 }
 
+pub enum Command {
+    WifiCommand(WifiCommand),
+    SocketCommand(SocketCommand),
+}
+
+impl From<WifiCommand> for Command {
+    fn from(other: WifiCommand) -> Self {
+        Self::WifiCommand(other)
+    }
+}
+
+impl From<SocketCommand> for Command {
+    fn from(other: SocketCommand) -> Self {
+        Self::SocketCommand(other)
+    }
+}
+
 /// Empty struct used to represent the Host Interface layer.
 /// The host interface layer abstracts away all the low level
 /// calls to the spi bus and provides a higher level api to work with.
@@ -236,11 +253,12 @@ impl HostInterface {
         &mut self,
         spi_bus: &mut SpiBus<SPI, O>,
         state: &mut State,
-    ) -> Result<(), Error>
+    ) -> Result<Option<Command>, Error>
     where
         SPI: Transfer<u8>,
         O: OutputPin,
     {
+        let mut command = None;
         let mut reg_value = spi_bus.read_register(registers::WIFI_HOST_RCV_CTRL_0)?;
         if reg_value & 0x1 != 0 {
             reg_value &= !0x00000001;
@@ -256,20 +274,26 @@ impl HostInterface {
                 spi_bus.read_data(&mut header_buf, address, header_buf_len)?;
                 let header = HifHeader::from(header_buf);
                 match header.gid {
-                    group_ids::WIFI => self.wifi_callback(
-                        spi_bus,
-                        WifiCommand::from(header.op),
-                        header.length - HIF_HEADER_SIZE as u16,
-                        address + HIF_HEADER_SIZE as u32,
-                        state,
-                    )?,
-                    group_ids::IP => self.ip_callback(
-                        spi_bus,
-                        SocketCommand::from(header.op),
-                        header.length - HIF_HEADER_SIZE as u16,
-                        address + HIF_HEADER_SIZE as u32,
-                        state,
-                    )?,
+                    group_ids::WIFI => {
+                        self.wifi_callback(
+                            spi_bus,
+                            WifiCommand::from(header.op),
+                            header.length - HIF_HEADER_SIZE as u16,
+                            address + HIF_HEADER_SIZE as u32,
+                            state,
+                        )?;
+                        command = Some(Command::from(WifiCommand::from(header.op)));
+                    }
+                    group_ids::IP => {
+                        self.ip_callback(
+                            spi_bus,
+                            SocketCommand::from(header.op),
+                            header.length - HIF_HEADER_SIZE as u16,
+                            address + HIF_HEADER_SIZE as u32,
+                            state,
+                        )?;
+                        command = Some(Command::from(SocketCommand::from(header.op)));
+                    }
                     _ => { /* Invalid group id */ }
                 }
             }
@@ -277,7 +301,7 @@ impl HostInterface {
                 self.finish_reception(spi_bus)?;
             }
         }
-        Ok(())
+        Ok(command)
     }
 
     /// This method receives data read from the chip
