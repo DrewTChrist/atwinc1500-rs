@@ -1,7 +1,7 @@
 //! Socket related members
 
 #[repr(u8)]
-#[derive(from_u8_derive::FromByte)]
+#[derive(from_u8_derive::FromByte, Debug)]
 pub enum SocketCommand {
     Bind = 0x41,
     Listen = 0x42,

@@ -445,7 +445,7 @@ impl From<[u8; 8]> for SystemTime {
 ///
 /// This information can be requested by initiating a call to
 /// [request_connection_info](crate::Atwinc1500::request_connection_info).
-#[derive(defmt::Format)]
+#[derive(defmt::Format, Debug)]
 pub struct ConnectionInfo {
     /// SSID of the current connection
     pub ssid: [u8; MAX_SSID_LEN],

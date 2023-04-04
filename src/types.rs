@@ -7,7 +7,7 @@ use defmt::{write as defmt_write, Format, Formatter};
 pub struct FirmwareVersion(pub [u8; 3]);
 
 /// Mac address of 6 bytes in the format x:x:x:x:x:x
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct MacAddress(pub [u8; 6]);
 
 impl Format for FirmwareVersion {

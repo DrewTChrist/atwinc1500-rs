@@ -82,6 +82,9 @@ impl defmt::Format for HifError {
     }
 }
 
+type Command = u8;
+type Address = u32;
+
 /// Spi error variants
 #[derive(Eq, PartialEq, core::fmt::Debug)]
 pub enum SpiError {
@@ -90,15 +93,15 @@ pub enum SpiError {
     /// Error transferring data over the spi bus
     TransferError,
     /// Error reading data from the atwinc1500
-    ReadDataError(u8, SpiCommandError),
+    ReadDataError(Command, Address, SpiCommandError),
     /// Error received from the atwinc1500
     /// while trying to read from register
-    ReadRegisterError(u8, SpiCommandError, u8),
+    ReadRegisterError(Command, Address, SpiCommandError, u8),
     /// Error writing data to the atwinc1500
-    WriteDataError(u8, SpiCommandError),
+    WriteDataError(Command, Address, SpiCommandError),
     /// Error received from the atwinc1500
     /// while trying to write to register
-    WriteRegisterError(u8, SpiCommandError),
+    WriteRegisterError(Command, Address, SpiCommandError),
 }
 
 impl defmt::Format for SpiError {
@@ -106,29 +109,33 @@ impl defmt::Format for SpiError {
         match self {
             SpiError::PinStateError => defmt::write!(f, "Pin State Error"),
             SpiError::TransferError => defmt::write!(f, "Spi Transfer Error"),
-            SpiError::ReadDataError(cmd, spi_error) => defmt::write!(
+            SpiError::ReadDataError(cmd, address, spi_error) => defmt::write!(
                 f,
-                "Error reading data {{cmd: {:#04x}, err: {:?}}}",
+                "Error reading data {{cmd: {:#04x}, addr: {:#04x}, err: {:?}}}",
                 cmd,
+                address,
                 spi_error
             ),
-            SpiError::ReadRegisterError(cmd, spi_error, pkt) => defmt::write!(
+            SpiError::ReadRegisterError(cmd, address, spi_error, pkt) => defmt::write!(
                 f,
-                "Error reading from register {{cmd: {:#04x}, err: {:?}, pkt: {:#04x}}}",
+                "Error reading from register {{cmd: {:#04x}, addr: {:#04x}, err: {:?}, pkt: {:#04x}}}",
                 cmd,
+                address,
                 spi_error,
                 pkt
             ),
-            SpiError::WriteDataError(cmd, spi_error) => defmt::write!(
+            SpiError::WriteDataError(cmd, address, spi_error) => defmt::write!(
                 f,
-                "Error writing data {{cmd: {:#04x}, err: {:?}}}",
+                "Error writing data {{cmd: {:#04x}, addr: {:#04x}, err: {:?}}}",
                 cmd,
+                address,
                 spi_error
             ),
-            SpiError::WriteRegisterError(cmd, spi_error) => defmt::write!(
+            SpiError::WriteRegisterError(cmd, address, spi_error) => defmt::write!(
                 f,
-                "Error writing to register {{cmd: {:#04x}, err: {:?}}}",
+                "Error writing to register {{cmd: {:#04x}, addr: {:#04x}, err: {:?}}}",
                 cmd,
+                address,
                 spi_error
             ),
         }

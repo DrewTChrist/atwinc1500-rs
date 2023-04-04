@@ -270,6 +270,7 @@ where
         {
             return Err(SpiError::ReadRegisterError(
                 cmd as u8,
+                address,
                 SpiCommandError::from(cmd_buffer[response_start + 1] & 0x0f),
                 cmd_buffer[response_start + 2],
             ));
@@ -310,7 +311,7 @@ where
         if response[0] == cmd as u8 {
             self.transfer(data)?
         } else {
-            return Err(SpiError::ReadDataError(cmd as u8, response[1].into()));
+            return Err(SpiError::ReadDataError(cmd as u8, address, response[1].into()));
         }
         Ok(())
     }
@@ -357,6 +358,7 @@ where
         {
             return Err(SpiError::WriteRegisterError(
                 cmd as u8,
+                address,
                 SpiCommandError::from(cmd_buffer[response_start + 1] & 0x0f),
             ));
         }
@@ -404,7 +406,7 @@ where
                 self.transfer(&mut response[0..1])?;
             });
         } else {
-            return Err(SpiError::WriteDataError(cmd as u8, response[1].into()));
+            return Err(SpiError::WriteDataError(cmd as u8, address, response[1].into()));
         }
         Ok(())
     }

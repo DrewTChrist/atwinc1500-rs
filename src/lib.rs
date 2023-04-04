@@ -41,7 +41,7 @@ use embedded_nal::{SocketAddr, TcpClientStack, TcpFullStack};
 
 use error::{Error, ScanError};
 use gpio::{AtwincGpio, GpioDirection, GpioValue};
-use hif::{group_ids, HifHeader, HostInterface, WifiCommand};
+use hif::{group_ids, HifHeader, HostInterface};
 use socket::TcpSocket;
 use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
@@ -49,6 +49,9 @@ use wifi::{
     Channel, Connection, ConnectionInfo, OldConnection, ScanChannel, ScanResult, ScanResultIndex,
     SystemTime,
 };
+
+pub use crate::hif::Command;
+pub use crate::hif::WifiCommand;
 
 /// Connection status of the Atwinc1500
 #[derive(Default, Eq, PartialEq, Debug, defmt::Format)]

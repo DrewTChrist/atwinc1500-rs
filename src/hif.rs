@@ -17,7 +17,7 @@ pub mod group_ids {
 }
 
 #[repr(u8)]
-#[derive(from_u8_derive::FromByte)]
+#[derive(from_u8_derive::FromByte, Debug)]
 pub enum WifiCommand {
     ReqRestart = 1,
     ReqSetMacAddress = 2,
@@ -154,6 +154,7 @@ impl HifContext {
     }
 }
 
+#[derive(Debug)]
 pub enum Command {
     WifiCommand(WifiCommand),
     SocketCommand(SocketCommand),
