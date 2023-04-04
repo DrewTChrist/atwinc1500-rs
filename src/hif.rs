@@ -16,62 +16,120 @@ pub mod group_ids {
     pub const _HIF: u8 = 3;
 }
 
+/// WifiCommand variants represent
+/// valid Atwinc1500 wifi commands
+/// and responses
 #[repr(u8)]
 #[derive(from_u8_derive::FromByte, Debug)]
 pub enum WifiCommand {
+    /// Request to restart the MAC layer
     ReqRestart = 1,
+    /// Request to set the mac address
     ReqSetMacAddress = 2,
+    /// Request the current connection rssi
     ReqCurrentRssi = 3,
+    /// Response for current connection rssi
     RespCurrentRssi = 4,
+    /// Request current connection info
     ReqGetConnInfo = 5,
+    /// Response for current connection info
     RespConnInfo = 6,
+    /// Request to set device name
     ReqSetDeviceName = 7,
+    /// Request to start provision mode
     ReqStartProvisionMode = 8,
+    /// Responses for provision info
     RespProvisionInfo = 9,
+    /// Request to stop provision mode
     ReqStopProvisionMode = 10,
+    /// Request to set the system time
     ReqSetSysTime = 11,
+    /// Request to enable SNTP client
     ReqEnableSntpClient = 12,
+    /// Request to disable SNTP client
     ReqDisableSntpClient = 13,
+    /// Add custom element to beacon management frame
     ReqCustInfoElement = 15,
+    /// Request a network scan
     ReqScan = 16,
+    /// Response to network scan
     RespScanDone = 17,
+    /// Request a network scan result
     ReqScanResult = 18,
+    /// Response to a network scan result
     RespScanResult = 19,
+    /// Request to set scan options
     ReqSetScanOption = 20,
+    /// Request to set scan region
     ReqSetScanRegion = 21,
+    /// Request to set the power profile
     ReqSetPowerProfile = 22,
+    /// Request to set transfer power
     ReqSetTxPower = 23,
+    /// Request to set battery voltage
     ReqSetBatteryVoltage = 24,
+    /// Request to enable logs
     ReqSetEnableLogs = 25,
+    /// Request to get system time
     ReqGetSysTime = 26,
+    /// Response to get system time
     RespGetSysTime = 27,
+    /// Request to send ethernet packet in bypass mode
     ReqSendEthernetPacket = 28,
+    /// Response to sending ethernet packet
     RespEthernetRxPacket = 29,
+    /// Request to set multicast filters
     ReqSetMacMcast = 30,
+    /// Request to get prng
     ReqGetPrng = 31,
+    /// Response to prng
     RespGetPrng = 32,
+    /// Request a list of ssids
     ReqScanSsidList = 33,
+    /// Request to set the ppa gain
     ReqSetGains = 34,
+    /// Request a passive scan
     ReqPassiveScan = 35,
-    RaxConfigAl = 36,
+    /// Maximum config value
+    /// Probably not used
+    MaxConfigAll = 36,
+    /// Request to connect to network
     ReqConnect = 40,
+    /// Request to connect to default network
     ReqDefaultConnect = 41,
+    /// Response to connect to network
     RespConnect = 42,
+    /// Request to disconnect from network
     ReqDisconnect = 43,
+    /// Response to connection state changed
     RespConStateChanged = 44,
+    /// Request ps mode
     ReqSleep = 45,
+    /// Request a wps scan
     ReqWpsScan = 46,
+    /// Request wps start
     ReqWps = 47,
+    /// Request to disable wps
     ReqDisableWps = 49,
+    /// Response Ip address was obtained
     ReqDhcpConf = 50,
+    /// For internal use
     RespIpConfigured = 51,
+    /// Response to ip conflicts
     RespIpConflict = 52,
+    /// Request to enable monitor mode
     ReqEnableMonitoring = 53,
+    /// Request to disable monitor mode
     ReqDisableMonitoring = 54,
+    /// Response to send wifi packet
     RespWifiRxPacket = 55,
+    /// Request to send wifi packet
     ReqSendWifiPacket = 56,
+    /// Request wifi listen interval
     ReqLsnInt = 57,
+    /// Request the Atwinc1500 to sleep in ps mode
     ReqDoze = 58,
+    /// Not a valid command or response
     Invalid,
 }
 
@@ -154,9 +212,43 @@ impl HifContext {
     }
 }
 
+/// Command enums are returned from the
+/// [handle_events](crate::Atwinc1500::handle_events) method
+/// to allow for triggering actions when a specific event
+/// gets handled
+///
+/// # Examples
+/// For example if one wanted to blink an led when
+/// the connection state change response triggers:
+/// ```ignore
+/// #[interrupt]
+/// fn interrupt_routine() {
+///     match atwinc1500.handle_events() {
+///         Ok(command) => {
+///             if let Some(cmd) = command {
+///                 if let Command::WifiCommand(wcmd) = cmd {
+///                     match wcmd {
+///                         WifiCommand::RespConStateChanged => {
+///                             led.set_high();
+///                             delay.delay_ms(10);
+///                             led.set_low();
+///                         }
+///                         _ => {},
+///                     }
+///                 }
+///             }
+///         },
+///         Err(e) => info!("{}", e),
+///     }
+/// }
+/// ```
 #[derive(Debug)]
 pub enum Command {
+    /// The WifiCommand variant holds
+    /// a [WifiCommand](WifiCommand)
     WifiCommand(WifiCommand),
+    /// The SocketCommand variant holds
+    /// a [SocketCommand](SocketCommand)
     SocketCommand(SocketCommand),
 }
 

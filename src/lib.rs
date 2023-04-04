@@ -52,6 +52,7 @@ use wifi::{
 
 pub use crate::hif::Command;
 pub use crate::hif::WifiCommand;
+pub use crate::socket::SocketCommand;
 
 /// Connection status of the Atwinc1500
 #[derive(Default, Eq, PartialEq, Debug, defmt::Format)]
@@ -373,13 +374,17 @@ where
     /// use atwinc1500::wifi::Connection;
     /// use atwinc1500::Atwinc1500;
     ///
-    /// let connection = Connection::wpa_psk("my_network".as_bytes(), "my_password".as_bytes(), Channel::default(), 0);
-    /// let mut atwinc = Atwinc1500::new(spi, delay, cs, reset, false);
-    /// match atwinc.initialize() {
-    ///     Err(e) => info!("{:?}", e),
-    /// }
-    /// match atwinc.connect_network(connection) {
-    ///     Err(e) => info!("{:?}", e),
+    /// fn main() {
+    ///     let connection = Connection::wpa_psk("my_network".as_bytes(), "my_password".as_bytes(), Channel::default(), 0);
+    ///     let mut atwinc = Atwinc1500::new(spi, delay, cs, reset, false);
+    ///     match atwinc.initialize() {
+    ///         Ok(_) => {},
+    ///         Err(e) => info!("{:?}", e),
+    ///     }
+    ///     match atwinc.connect_network(connection) {
+    ///         Ok(_) => {},
+    ///         Err(e) => info!("{:?}", e),
+    ///     }
     /// }
     /// ```
     pub fn connect_network(&mut self, connection: Connection) -> Result<(), Error> {
@@ -468,14 +473,20 @@ where
     /// handle_events method can also be called in a synchronous fashion after
     /// any Atwinc1500 method that uses a callback.
     ///
+    /// The handle_events method returns an `Option<Command>` that can be used
+    /// to trigger actions when a specific event is handled. Look at [Command](Command)
+    /// to see an example of this.
+    ///
     /// # Examples
     ///
     /// Handling events synchronously:
     /// ```ignore
     /// match atwinc1500.request_system_time() {
+    ///     Ok(_) => {},
     ///     Err(e) => info!("{}", e),
     /// }
-    /// match atwinc1500.handle_events().unwrap() {
+    /// match atwinc1500.handle_events() {
+    ///     Ok(_) => {},
     ///     Err(e) => info!("{}", e),
     /// }
     /// if let Some(time) = atwinc1500.get_system_time() {
