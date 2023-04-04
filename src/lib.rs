@@ -47,12 +47,10 @@ use spi::SpiBus;
 use types::{FirmwareVersion, MacAddress};
 use wifi::{
     Channel, Connection, ConnectionInfo, OldConnection, ScanChannel, ScanResult, ScanResultIndex,
-    SystemTime,
+    SystemTime, WifiCommand,
 };
 
 pub use crate::hif::Command;
-pub use crate::hif::WifiCommand;
-pub use crate::socket::SocketCommand;
 
 /// Connection status of the Atwinc1500
 #[derive(Default, Eq, PartialEq, Debug, defmt::Format)]

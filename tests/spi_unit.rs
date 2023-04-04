@@ -145,7 +145,12 @@ mod spi_unit_tests {
             Ok(_) => assert!(false),
             Err(e) => assert_eq!(
                 e,
-                SpiError::ReadRegisterError(spi::Command::CmdSingleRead as u8, 0.into(), 0xee,)
+                SpiError::ReadRegisterError(
+                    spi::Command::CmdSingleRead as u8,
+                    address,
+                    0.into(),
+                    0xee,
+                )
             ),
         }
     }
@@ -292,7 +297,11 @@ mod spi_unit_tests {
             Ok(_) => assert!(false),
             Err(e) => assert_eq!(
                 e,
-                SpiError::WriteRegisterError(spi::Command::CmdSingleWrite as u8, 0xff.into())
+                SpiError::WriteRegisterError(
+                    spi::Command::CmdSingleWrite as u8,
+                    address,
+                    0xff.into()
+                )
             ),
         }
     }
