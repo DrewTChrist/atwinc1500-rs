@@ -1,4 +1,5 @@
 //! Wifi connection items
+use crate::error::Error;
 use crate::types::MacAddress;
 
 // constants
@@ -285,6 +286,28 @@ impl Connection {
                 options,
             ),
         }
+    }
+    pub(crate) fn validate(&self) -> Result<(), Error> {
+        let mut valid = Ok(());
+        match self.parameters {
+            ConnectionParameters::Open(ssid, _) => {
+                if ssid[0] == 0 {
+                    valid = Err(Error::BadCredentials);
+                }
+            }
+            ConnectionParameters::_Wep() => {}
+            ConnectionParameters::WpaPsk(ssid, pwd, _) => {
+                if ssid[0] == 0 || pwd[0] == 0 {
+                    valid = Err(Error::BadCredentials);
+                }
+            }
+            ConnectionParameters::WpaEnterprise(ssid, user, pwd, _) => {
+                if ssid[0] == 0 || user[0] == 0 || pwd[0] == 0 {
+                    valid = Err(Error::BadCredentials);
+                }
+            }
+        }
+        valid
     }
 }
 

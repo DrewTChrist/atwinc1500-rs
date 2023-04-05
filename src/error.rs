@@ -163,6 +163,7 @@ pub enum Error {
     ScanError(ScanError),
     /// Error occurred during Spi interaction
     SpiError(SpiError),
+    BadCredentials,
     /// Error updating pin state
     PinStateError,
 }
@@ -173,6 +174,7 @@ impl core::fmt::Display for Error {
             Error::HifError(hif_error) => write!(f, "{:?}", hif_error),
             Error::ScanError(scan_error) => write!(f, "{:?}", scan_error),
             Error::SpiError(spi_error) => write!(f, "{:?}", spi_error),
+            Error::BadCredentials => write!(f, "Bad Credentials"),
             Error::PinStateError => write!(f, "Pin State Error"),
         }
     }

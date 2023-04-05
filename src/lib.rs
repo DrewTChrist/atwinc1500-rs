@@ -386,6 +386,7 @@ where
     /// }
     /// ```
     pub fn connect_network(&mut self, connection: Connection) -> Result<(), Error> {
+        connection.validate()?;
         let mut conn_header: OldConnection = connection.into();
         let hif_header = HifHeader::new(
             group_ids::WIFI,
