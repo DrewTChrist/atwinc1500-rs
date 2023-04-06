@@ -163,6 +163,7 @@ pub enum Error {
     ScanError(ScanError),
     /// Error occurred during Spi interaction
     SpiError(SpiError),
+    /// Connection credentials are empty
     BadCredentials,
     /// Error updating pin state
     PinStateError,

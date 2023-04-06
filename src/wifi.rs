@@ -13,6 +13,22 @@ const _WEP_104_KEY_STRING_SIZE: usize = 26;
 const _WEP_KEY_MAX_INDEX: usize = 4;
 const CONN_HEADER_LEN: usize = 108;
 
+macro_rules! size {
+    ($struct:ty, $value:literal) => {
+        impl $struct {
+            pub(crate) const fn size() -> usize {
+                $value
+            }
+        }
+    };
+}
+
+size!(ConnectionInfo, 48);
+size!(ScanResultCount, 4);
+size!(ScanResult, 44);
+size!(StateChange, 4);
+size!(SystemTime, 8);
+
 /// WifiCommand variants represent
 /// valid Atwinc1500 wifi commands
 /// and responses
@@ -408,8 +424,9 @@ pub(crate) struct StateChange {
     pub _error_code: StateChangeErrorCode,
 }
 
-impl From<[u8; 4]> for StateChange {
-    fn from(data: [u8; 4]) -> Self {
+#[doc(hidden)]
+impl From<[u8; StateChange::size()]> for StateChange {
+    fn from(data: [u8; StateChange::size()]) -> Self {
         Self {
             current_state: ConnectionState::from(data[0]),
             _error_code: StateChangeErrorCode::from(data[1]),
@@ -467,8 +484,9 @@ pub(crate) struct ScanResultCount {
     pub _scan_state: i8,
 }
 
-impl From<[u8; 4]> for ScanResultCount {
-    fn from(data: [u8; 4]) -> Self {
+#[doc(hidden)]
+impl From<[u8; ScanResultCount::size()]> for ScanResultCount {
+    fn from(data: [u8; ScanResultCount::size()]) -> Self {
         Self {
             num_ap: data[0],
             _scan_state: data[1] as i8,
@@ -506,8 +524,9 @@ pub struct ScanResult {
     pub ssid: [u8; MAX_SSID_LEN],
 }
 
-impl From<[u8; 44]> for ScanResult {
-    fn from(data: [u8; 44]) -> Self {
+#[doc(hidden)]
+impl From<[u8; ScanResult::size()]> for ScanResult {
+    fn from(data: [u8; ScanResult::size()]) -> Self {
         let mut bssid = [0; 6];
         bssid.copy_from_slice(&data[4..10]);
         let mut ssid = [0; MAX_SSID_LEN];
@@ -567,8 +586,9 @@ pub struct SystemTime {
     pub second: u8,
 }
 
-impl From<[u8; 8]> for SystemTime {
-    fn from(data: [u8; 8]) -> Self {
+#[doc(hidden)]
+impl From<[u8; SystemTime::size()]> for SystemTime {
+    fn from(data: [u8; SystemTime::size()]) -> Self {
         Self {
             year: (((data[1] as u16) << 8) | data[0] as u16),
             month: data[2],
@@ -599,8 +619,9 @@ pub struct ConnectionInfo {
     pub rssi: i8,
 }
 
-impl From<&[u8]> for ConnectionInfo {
-    fn from(slice: &[u8]) -> Self {
+#[doc(hidden)]
+impl From<[u8; ConnectionInfo::size()]> for ConnectionInfo {
+    fn from(slice: [u8; ConnectionInfo::size()]) -> Self {
         let mut ssid: [u8; MAX_SSID_LEN] = [0; MAX_SSID_LEN];
         let mut ip: [u8; 4] = [0; 4];
         let mut mac: [u8; 6] = [0; 6];

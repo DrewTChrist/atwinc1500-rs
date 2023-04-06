@@ -17,6 +17,7 @@
 //! prefixed by `get` do not require a callback or are meant to collect the response after a
 //! `request`.
 #![no_std]
+#![deny(unsafe_code)]
 #![warn(missing_docs)]
 
 extern crate from_u8_derive;
@@ -50,7 +51,7 @@ use wifi::{
     SystemTime, WifiCommand,
 };
 
-pub use crate::hif::Command;
+pub use hif::Command;
 
 /// Connection status of the Atwinc1500
 #[derive(Default, Eq, PartialEq, Debug, defmt::Format)]
@@ -166,9 +167,12 @@ where
 {
     /// Returns an Atwin1500 struct
     ///
+    /// The [initialize](Atwinc1500::initialize) method must be called after
+    /// creating a new Atwinc1500 struct.
+    ///
     /// # Arguments
     ///
-    /// * `spi` - An spi struct implementing traits from embedded-hal
+    /// * `spi` - An spi struct implementing `Transfer<u8>` for Spi from embedded-hal
     ///
     /// * `delay` - A delay implementing Delay from embedded-hal
     ///
@@ -176,7 +180,7 @@ where
     ///
     /// * `reset` - An OutputPin for chip reset
     ///
-    /// * `crc` - Turn on CRC in transactions
+    /// * `crc` - Turn on CRC in spi transactions
     ///
     pub fn new(spi: SPI, delay: D, cs: O, reset: O, crc: bool) -> Self {
         Self {
@@ -265,6 +269,7 @@ where
         Ok(())
     }
 
+    /// Enable interrupt signals from the Atwinc1500 to the host
     fn enable_chip_interrupt(&mut self) -> Result<(), Error> {
         let mux: u32 = self.spi_bus.read_register(registers::NMI_PIN_MUX_0)?;
         self.spi_bus
@@ -523,7 +528,7 @@ where
         &self.state.system_time
     }
 
-    /// Returns the [ConnectionInfo] for the current connection
+    /// Returns the connection information for the current connection
     /// after calling [request_connection_info](Atwinc1500::request_connection_info)
     pub fn get_connection_info(&self) -> &Option<ConnectionInfo> {
         &self.state.connection_info

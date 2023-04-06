@@ -390,7 +390,7 @@ impl HostInterface {
     {
         match opcode {
             WifiCommand::RespConStateChanged => {
-                let mut data_buf: [u8; 4] = [0; 4];
+                let mut data_buf = [0u8; StateChange::size()];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let state_change = StateChange::from(data_buf);
                 match state_change.current_state {
@@ -416,7 +416,7 @@ impl HostInterface {
                 }
             }
             WifiCommand::RespGetSysTime => {
-                let mut data_buf: [u8; 8] = [0; 8];
+                let mut data_buf = [0u8; SystemTime::size()];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let system_time = SystemTime::from(data_buf);
                 if system_time.year > 0 {
@@ -425,15 +425,15 @@ impl HostInterface {
                 // may need to return an error here
             }
             WifiCommand::RespConnInfo => {
-                let mut data_buf: [u8; 48] = [0; 48];
+                let mut data_buf = [0u8; ConnectionInfo::size()];
                 self.receive(spi_bus, address, &mut data_buf)?;
-                state.connection_info = Some(ConnectionInfo::from(data_buf.as_slice()));
+                state.connection_info = Some(ConnectionInfo::from(data_buf));
             }
             WifiCommand::ReqDhcpConf => {}
             WifiCommand::ReqWps => {}
             WifiCommand::RespIpConflict => {}
             WifiCommand::RespScanDone => {
-                let mut data_buf: [u8; 4] = [0; 4];
+                let mut data_buf = [0u8; ScanResultCount::size()];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let scan_count = ScanResultCount::from(data_buf);
                 state.num_ap = scan_count.num_ap;
@@ -441,7 +441,7 @@ impl HostInterface {
                 // TODO: Handle potential scan_count.scan_state error
             }
             WifiCommand::RespScanResult => {
-                let mut data_buf: [u8; 44] = [0; 44];
+                let mut data_buf = [0u8; ScanResult::size()];
                 self.receive(spi_bus, address, &mut data_buf)?;
                 let result = ScanResult::from(data_buf);
                 state.scan_result = Some(result);
