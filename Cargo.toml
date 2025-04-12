@@ -12,8 +12,8 @@ categories = ["no-std", "embedded", "hardware-support"]
 exclude = ["/diagrams", "/tests", "/.github", ".gitignore"]
 
 [dependencies]
-embedded-hal = { version = "0.2", features=["unproven"] }
-embedded-nal = "0.6"
+embedded-hal = "1.0"
+embedded-nal = "0.9"
 defmt = "0.3.0"
 
 [dependencies.from-u8-derive]

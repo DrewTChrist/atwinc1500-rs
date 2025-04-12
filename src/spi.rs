@@ -1,7 +1,7 @@
 use crate::crc::crc7;
 use crate::error::{SpiCommandError, SpiError};
-use embedded_hal::blocking::spi::Transfer;
-use embedded_hal::digital::v2::OutputPin;
+use embedded_hal::spi::SpiBus as HalSpiBus;
+use embedded_hal::digital::OutputPin;
 
 /// This enum contains the valid
 /// spi commands for the Atwinc1500
@@ -60,7 +60,7 @@ enum SpiPacket {
 /// happen over the FullDuplex spi bus
 pub struct SpiBus<SPI, O>
 where
-    SPI: Transfer<u8>,
+    SPI: HalSpiBus<u8>,
     O: OutputPin,
 {
     spi: SPI,
@@ -71,7 +71,7 @@ where
 
 impl<SPI, O> SpiBus<SPI, O>
 where
-    SPI: Transfer<u8>,
+    SPI: HalSpiBus<u8>,
     O: OutputPin,
 {
     /// Creates a new SpiBus struct
@@ -104,7 +104,7 @@ where
         if self.cs.set_low().is_err() {
             return Err(SpiError::PinStateError);
         }
-        if self.spi.transfer(words).is_err() {
+        if self.spi.transfer_in_place(words).is_err() {
             return Err(SpiError::TransferError);
         }
         if self.cs.set_high().is_err() {

@@ -7,8 +7,8 @@ use crate::wifi::{
     WifiCommand,
 };
 use crate::{Mode, State, Status};
-use embedded_hal::blocking::spi::Transfer;
-use embedded_hal::digital::v2::OutputPin;
+use embedded_hal::spi::SpiBus as HalSpiBus;
+use embedded_hal::digital::OutputPin;
 
 pub mod group_ids {
     pub const _MAIN: u8 = 0;
@@ -166,7 +166,7 @@ impl HostInterface {
     /// This method wakes the chip from sleep mode using clockless register access
     pub fn _chip_wake<SPI, O>(&mut self, spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
     where
-        SPI: Transfer<u8>,
+        SPI: HalSpiBus<u8>,
         O: OutputPin,
     {
         let mut trials: u32 = 0;
@@ -201,7 +201,7 @@ impl HostInterface {
     /// This method enables sleep mode for the chip
     pub fn _chip_sleep<SPI, O>(&mut self, spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
     where
-        SPI: Transfer<u8>,
+        SPI: HalSpiBus<u8>,
         O: OutputPin,
     {
         let mut register_val: u32;
@@ -232,7 +232,7 @@ impl HostInterface {
         state: &mut State,
     ) -> Result<Option<Command>, Error>
     where
-        SPI: Transfer<u8>,
+        SPI: HalSpiBus<u8>,
         O: OutputPin,
     {
         let mut command = None;
@@ -289,7 +289,7 @@ impl HostInterface {
         buffer: &mut [u8],
     ) -> Result<(), Error>
     where
-        SPI: Transfer<u8>,
+        SPI: HalSpiBus<u8>,
         O: OutputPin,
     {
         if buffer.len() as u32 > self.ctx.read_size {
@@ -307,7 +307,7 @@ impl HostInterface {
     /// Lets the atwinc1500 know we're done receiving data
     fn finish_reception<SPI, O>(&mut self, spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
     where
-        SPI: Transfer<u8>,
+        SPI: HalSpiBus<u8>,
         O: OutputPin,
     {
         self.ctx.read_done = true;
@@ -325,7 +325,7 @@ impl HostInterface {
         ctrl_buffer: &mut [u8],
     ) -> Result<(), Error>
     where
-        SPI: Transfer<u8>,
+        SPI: HalSpiBus<u8>,
         O: OutputPin,
     {
         let offset: u32 = data_buffer.len() as u32;
@@ -361,7 +361,7 @@ impl HostInterface {
     /// This method sets the chip sleep mode
     pub fn _set_sleep_mode<SPI, O>(&mut self, _spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
     where
-        SPI: Transfer<u8>,
+        SPI: HalSpiBus<u8>,
         O: OutputPin,
     {
         todo!()
@@ -370,7 +370,7 @@ impl HostInterface {
     /// This method returns the chip sleep mode
     pub fn _get_sleep_mode<SPI, O>(&mut self, _spi_bus: &mut SpiBus<SPI, O>) -> Result<(), Error>
     where
-        SPI: Transfer<u8>,
+        SPI: HalSpiBus<u8>,
         O: OutputPin,
     {
         todo!()
@@ -385,7 +385,7 @@ impl HostInterface {
         state: &mut State,
     ) -> Result<(), Error>
     where
-        SPI: Transfer<u8>,
+        SPI: HalSpiBus<u8>,
         O: OutputPin,
     {
         match opcode {
@@ -461,7 +461,7 @@ impl HostInterface {
         _state: &mut State,
     ) -> Result<(), Error>
     where
-        SPI: Transfer<u8>,
+        SPI: HalSpiBus<u8>,
         O: OutputPin,
     {
         match opcode {

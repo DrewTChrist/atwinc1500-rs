@@ -36,9 +36,11 @@ pub mod spi;
 pub mod types;
 pub mod wifi;
 
-use embedded_hal::blocking::{delay::DelayMs, spi::Transfer};
-use embedded_hal::digital::v2::OutputPin;
-use embedded_nal::{SocketAddr, TcpClientStack, TcpFullStack};
+use core::net::SocketAddr;
+
+use embedded_hal::{delay::DelayNs, spi::SpiBus as HalSpiBus};
+use embedded_hal::digital::OutputPin;
+use embedded_nal::{TcpClientStack, TcpFullStack};
 
 use error::{Error, ScanError};
 use gpio::{AtwincGpio, GpioDirection, GpioValue};
@@ -145,8 +147,8 @@ impl State {
 /// Atwin1500 driver struct
 pub struct Atwinc1500<SPI, D, O>
 where
-    SPI: Transfer<u8>,
-    D: DelayMs<u32>,
+    SPI: HalSpiBus<u8>,
+    D: DelayNs,
     O: OutputPin,
 {
     delay: D,
@@ -161,8 +163,8 @@ where
 /// public methods
 impl<SPI, D, O> Atwinc1500<SPI, D, O>
 where
-    SPI: Transfer<u8>,
-    D: DelayMs<u32>,
+    SPI: HalSpiBus<u8>,
+    D: DelayNs,
     O: OutputPin,
 {
     /// Returns an Atwin1500 struct
@@ -538,8 +540,8 @@ where
 #[doc(hidden)]
 impl<SPI, D, O> TcpClientStack for Atwinc1500<SPI, D, O>
 where
-    SPI: Transfer<u8>,
-    D: DelayMs<u32>,
+    SPI: HalSpiBus<u8>,
+    D: DelayNs,
     O: OutputPin,
 {
     type TcpSocket = TcpSocket;
@@ -554,10 +556,6 @@ where
         _socket: &mut TcpSocket,
         _address: SocketAddr,
     ) -> Result<(), embedded_nal::nb::Error<Error>> {
-        todo!()
-    }
-
-    fn is_connected(&mut self, _socket: &TcpSocket) -> Result<bool, Error> {
         todo!()
     }
 
@@ -585,8 +583,8 @@ where
 #[doc(hidden)]
 impl<SPI, D, O> TcpFullStack for Atwinc1500<SPI, D, O>
 where
-    SPI: Transfer<u8>,
-    D: DelayMs<u32>,
+    SPI: HalSpiBus<u8>,
+    D: DelayNs,
     O: OutputPin,
 {
     fn bind(&mut self, _socket: &mut TcpSocket, _port: u16) -> Result<(), Error> {

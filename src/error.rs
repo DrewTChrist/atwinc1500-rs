@@ -1,5 +1,7 @@
 //! Atwinc1500 error definitions
 
+use embedded_nal::{TcpError, TcpErrorKind};
+
 /// These are the error values defined
 /// in the Atwinc data sheet. InvalidError is
 /// a catch all for error values greater than
@@ -167,6 +169,12 @@ pub enum Error {
     BadCredentials,
     /// Error updating pin state
     PinStateError,
+}
+
+impl TcpError for Error {
+    fn kind(&self) -> TcpErrorKind {
+        TcpErrorKind::Other
+    }
 }
 
 impl core::fmt::Display for Error {
