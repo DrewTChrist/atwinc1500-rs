@@ -145,27 +145,29 @@ impl State {
 }
 
 /// Atwin1500 driver struct
-pub struct Atwinc1500<SPI, D, O>
+pub struct Atwinc1500<SPI, D, CS, RST>
 where
     SPI: HalSpiBus<u8>,
     D: DelayNs,
-    O: OutputPin,
+    CS: OutputPin,
+    RST: OutputPin,
 {
     delay: D,
-    spi_bus: SpiBus<SPI, O>,
+    spi_bus: SpiBus<SPI, CS>,
     hif: HostInterface,
-    reset: O,
+    reset: RST,
     crc: bool,
     state: State,
 }
 
 /// Atwinc1500 struct implementation containing non embedded-nal
 /// public methods
-impl<SPI, D, O> Atwinc1500<SPI, D, O>
+impl<SPI, D, CS, RST> Atwinc1500<SPI, D, CS, RST>
 where
     SPI: HalSpiBus<u8>,
     D: DelayNs,
-    O: OutputPin,
+    CS: OutputPin,
+    RST: OutputPin,
 {
     /// Returns an Atwin1500 struct
     ///
@@ -184,7 +186,7 @@ where
     ///
     /// * `crc` - Turn on CRC in spi transactions
     ///
-    pub fn new(spi: SPI, delay: D, cs: O, reset: O, crc: bool) -> Self {
+    pub fn new(spi: SPI, delay: D, cs: CS, reset: RST, crc: bool) -> Self {
         Self {
             delay,
             spi_bus: SpiBus::new(spi, cs, crc),
@@ -538,11 +540,12 @@ where
 }
 
 #[doc(hidden)]
-impl<SPI, D, O> TcpClientStack for Atwinc1500<SPI, D, O>
+impl<SPI, D, CS, RST> TcpClientStack for Atwinc1500<SPI, D, CS, RST>
 where
     SPI: HalSpiBus<u8>,
     D: DelayNs,
-    O: OutputPin,
+    CS: OutputPin,
+    RST: OutputPin,
 {
     type TcpSocket = TcpSocket;
     type Error = Error;
@@ -581,11 +584,12 @@ where
 }
 
 #[doc(hidden)]
-impl<SPI, D, O> TcpFullStack for Atwinc1500<SPI, D, O>
+impl<SPI, D, CS, RST> TcpFullStack for Atwinc1500<SPI, D, CS, RST>
 where
     SPI: HalSpiBus<u8>,
     D: DelayNs,
-    O: OutputPin,
+    CS: OutputPin,
+    RST: OutputPin,
 {
     fn bind(&mut self, _socket: &mut TcpSocket, _port: u16) -> Result<(), Error> {
         todo!()
